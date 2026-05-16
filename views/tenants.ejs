@@ -1,0 +1,145 @@
+<div class="page-header">
+  <h1>Tenants</h1>
+  <button class="btn btn-primary" onclick="openModal('addModal')">➕ Add Tenant</button>
+</div>
+
+<div class="section-card">
+  <% if (tenants.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Unit</th>
+            <th>Lease</th>
+            <th>Rent</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% tenants.forEach(t => {
+            const unit = units.find(u => u.UnitID === t.UnitID) || {};
+          %>
+            <tr>
+              <td><strong><%= t.FullName %></strong></td>
+              <td><%= unit.UnitNumber || t.UnitID %></td>
+              <td><%= t.LeaseStart %> to <%= t.LeaseEnd %></td>
+              <td>$<%= parseFloat(t.RentAmount).toFixed(2) %></td>
+              <td><span class="badge <%= t.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= t.Status %></span></td>
+              <td class="actions">
+                <button class="btn-small" onclick="editTenant('<%= t.TenantID %>', '<%= t.FullName %>', '<%= t.Email %>', '<%= t.Phone %>', '<%= t.UnitID %>', '<%= t.LeaseStart %>', '<%= t.LeaseEnd %>', '<%= t.RentAmount %>', '<%= t.Deposit %>', '<%= t.Status %>')">✏️</button>
+                <form action="/tenants/<%= t.TenantID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this tenant?')">
+                  <button type="submit" class="btn-small btn-danger">🗑️</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards">
+      <% tenants.forEach(t => {
+        const unit = units.find(u => u.UnitID === t.UnitID) || {};
+      %>
+        <div class="card">
+          <div class="card-header">
+            <h3><%= t.FullName %></h3>
+            <span class="badge <%= t.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= t.Status %></span>
+          </div>
+          <p>🏠 Unit: <%= unit.UnitNumber || t.UnitID %></p>
+          <p>📅 <%= t.LeaseStart %> to <%= t.LeaseEnd %></p>
+          <p>💵 $<%= parseFloat(t.RentAmount).toFixed(2) %></p>
+          <p>📧 <%= t.Email %></p>
+          <p>📱 <%= t.Phone %></p>
+          <div class="card-actions">
+            <button class="btn-small" onclick="editTenant('<%= t.TenantID %>', '<%= t.FullName %>', '<%= t.Email %>', '<%= t.Phone %>', '<%= t.UnitID %>', '<%= t.LeaseStart %>', '<%= t.LeaseEnd %>', '<%= t.RentAmount %>', '<%= t.Deposit %>', '<%= t.Status %>')">✏️ Edit</button>
+            <form action="/tenants/<%= t.TenantID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn-small btn-danger">🗑️</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="empty">No tenants found. Add your first tenant.</p>
+  <% } %>
+</div>
+
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('addModal')">&times;</span>
+    <h2>Add Tenant</h2>
+    <form action="/tenants" method="POST">
+      <div class="form-group"><label>Full Name</label><input type="text" name="fullName" required></div>
+      <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
+      <div class="form-group"><label>Phone</label><input type="tel" name="phone" required></div>
+      <div class="form-group"><label>Unit</label>
+        <select name="unitId" required>
+          <option value="">Select Unit</option>
+          <% units.filter(u => u.Status === 'Vacant').forEach(u => {
+            const property = properties.find(p => p.PropertyID === u.PropertyID) || {};
+          %>
+            <option value="<%= u.UnitID %>"><%= property.PropertyName || 'N/A' %> - Unit <%= u.UnitNumber %> ($<%= u.RentAmount %>)</option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Lease Start</label><input type="date" name="leaseStart" required></div>
+      <div class="form-group"><label>Lease End</label><input type="date" name="leaseEnd" required></div>
+      <div class="form-group"><label>Monthly Rent ($)</label><input type="number" name="rentAmount" step="0.01" required></div>
+      <div class="form-group"><label>Deposit ($)</label><input type="number" name="deposit" step="0.01" value="0"></div>
+      <button type="submit" class="btn btn-primary">Save Tenant</button>
+    </form>
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('editModal')">&times;</span>
+    <h2>Edit Tenant</h2>
+    <form id="editForm" method="POST">
+      <input type="hidden" name="_method" value="PUT">
+      <div class="form-group"><label>Full Name</label><input type="text" name="fullName" id="editName" required></div>
+      <div class="form-group"><label>Email</label><input type="email" name="email" id="editEmail" required></div>
+      <div class="form-group"><label>Phone</label><input type="tel" name="phone" id="editPhone" required></div>
+      <div class="form-group"><label>Unit</label>
+        <select name="unitId" id="editUnit" required>
+          <% units.forEach(u => {
+            const property = properties.find(p => p.PropertyID === u.PropertyID) || {};
+          %>
+            <option value="<%= u.UnitID %>"><%= property.PropertyName || 'N/A' %> - Unit <%= u.UnitNumber %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Lease Start</label><input type="date" name="leaseStart" id="editStart" required></div>
+      <div class="form-group"><label>Lease End</label><input type="date" name="leaseEnd" id="editEnd" required></div>
+      <div class="form-group"><label>Monthly Rent ($)</label><input type="number" name="rentAmount" id="editRent" step="0.01" required></div>
+      <div class="form-group"><label>Deposit ($)</label><input type="number" name="deposit" id="editDeposit" step="0.01"></div>
+      <div class="form-group"><label>Status</label>
+        <select name="status" id="editStatus">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          <option value="Evicted">Evicted</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Update Tenant</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function editTenant(id, name, email, phone, unitId, start, end, rent, deposit, status) {
+  document.getElementById('editForm').action = '/tenants/' + id;
+  document.getElementById('editName').value = name;
+  document.getElementById('editEmail').value = email;
+  document.getElementById('editPhone').value = phone;
+  document.getElementById('editUnit').value = unitId;
+  document.getElementById('editStart').value = start;
+  document.getElementById('editEnd').value = end;
+  document.getElementById('editRent').value = rent;
+  document.getElementById('editDeposit').value = deposit || '0';
+  document.getElementById('editStatus').value = status || 'Active';
+  openModal('editModal');
+}
+</script>
