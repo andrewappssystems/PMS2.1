@@ -1,0 +1,138 @@
+<div class="page-header">
+  <h1>Properties</h1>
+  <button class="btn btn-primary" onclick="openModal('addModal')">➕ Add Property</button>
+</div>
+
+<div class="section-card">
+  <% if (properties.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Landlord</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% properties.forEach(p => {
+            const landlord = landlords.find(l => l.LandlordID === p.LandlordID) || {};
+          %>
+            <tr>
+              <td><strong><%= p.PropertyName %></strong></td>
+              <td><%= p.Address %></td>
+              <td><%= landlord.FullName || 'N/A' %></td>
+              <td><%= p.Type || 'Residential' %></td>
+              <td><span class="badge <%= p.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= p.Status %></span></td>
+              <td class="actions">
+                <button class="btn-small" onclick="editProperty('<%= p.PropertyID %>', '<%= p.PropertyName %>', '<%= p.Address %>', '<%= p.LandlordID %>', '<%= p.Type %>', '<%= p.Status %>')">✏️</button>
+                <form action="/properties/<%= p.PropertyID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this property?')">
+                  <button type="submit" class="btn-small btn-danger">🗑️</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards">
+      <% properties.forEach(p => {
+        const landlord = landlords.find(l => l.LandlordID === p.LandlordID) || {};
+      %>
+        <div class="card">
+          <div class="card-header">
+            <h3><%= p.PropertyName %></h3>
+            <span class="badge <%= p.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= p.Status %></span>
+          </div>
+          <p>📍 <%= p.Address %></p>
+          <p>👤 <%= landlord.FullName || 'N/A' %></p>
+          <p>🏷️ <%= p.Type || 'Residential' %></p>
+          <div class="card-actions">
+            <button class="btn-small" onclick="editProperty('<%= p.PropertyID %>', '<%= p.PropertyName %>', '<%= p.Address %>', '<%= p.LandlordID %>', '<%= p.Type %>', '<%= p.Status %>')">✏️ Edit</button>
+            <form action="/properties/<%= p.PropertyID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete?')">
+              <button type="submit" class="btn-small btn-danger">🗑️</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="empty">No properties found. Add your first property.</p>
+  <% } %>
+</div>
+
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('addModal')">&times;</span>
+    <h2>Add Property</h2>
+    <form action="/properties" method="POST">
+      <div class="form-group"><label>Property Name</label><input type="text" name="propertyName" required></div>
+      <div class="form-group"><label>Address</label><textarea name="address" required></textarea></div>
+      <div class="form-group"><label>Landlord</label>
+        <select name="landlordId" required>
+          <option value="">Select Landlord</option>
+          <% landlords.filter(l => l.Status === 'Active').forEach(l => { %>
+            <option value="<%= l.LandlordID %>"><%= l.FullName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Type</label>
+        <select name="type">
+          <option value="Residential">Residential</option>
+          <option value="Commercial">Commercial</option>
+          <option value="Industrial">Industrial</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Save Property</button>
+    </form>
+  </div>
+</div>
+
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('editModal')">&times;</span>
+    <h2>Edit Property</h2>
+    <form id="editForm" method="POST">
+      <input type="hidden" name="_method" value="PUT">
+      <div class="form-group"><label>Property Name</label><input type="text" name="propertyName" id="editName" required></div>
+      <div class="form-group"><label>Address</label><textarea name="address" id="editAddress" required></textarea></div>
+      <div class="form-group"><label>Landlord</label>
+        <select name="landlordId" id="editLandlord" required>
+          <% landlords.filter(l => l.Status === 'Active').forEach(l => { %>
+            <option value="<%= l.LandlordID %>"><%= l.FullName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Type</label>
+        <select name="type" id="editType">
+          <option value="Residential">Residential</option>
+          <option value="Commercial">Commercial</option>
+          <option value="Industrial">Industrial</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select name="status" id="editStatus">
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Update Property</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function editProperty(id, name, address, landlordId, type, status) {
+  document.getElementById('editForm').action = '/properties/' + id;
+  document.getElementById('editName').value = name;
+  document.getElementById('editAddress').value = address;
+  document.getElementById('editLandlord').value = landlordId;
+  document.getElementById('editType').value = type || 'Residential';
+  document.getElementById('editStatus').value = status || 'Active';
+  openModal('editModal');
+}
+</script>
