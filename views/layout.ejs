@@ -26,8 +26,11 @@
         <a href="/tenants" class="<%= title === 'Tenants' ? 'active' : '' %>">🏠 Tenants</a>
         <a href="/payments" class="<%= title === 'Rent Payments' ? 'active' : '' %>">💵 Payments</a>
         <a href="/expenses" class="<%= title === 'Expenses' ? 'active' : '' %>">📉 Expenses</a>
-        <a href="/invoices" class="<%= title === 'Management Invoices' ? 'active' : '' %>">📄 Invoices</a>
+        <a href="/invoices" class="<%= title === 'Invoices' ? 'active' : '' %>">📄 Invoices</a>
         <a href="/arrears" class="<%= title === 'Arrears Report' ? 'active' : '' %>">⚠️ Arrears</a>
+        <% if (user.Role === 'Admin' || user.Role === 'Manager') { %>
+          <a href="/audit-log" class="<%= title === 'Audit Log' ? 'active' : '' %>">📋 Audit Log</a>
+        <% } %>
         <a href="/logout" class="logout">🚪 Logout</a>
       </nav>
     </aside>
