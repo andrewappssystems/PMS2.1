@@ -1,8 +1,48 @@
 <div class="dashboard">
+  <style>
+    .dashboard { padding: 20px; }
+    .page-title { font-size: 28px; margin-bottom: 24px; color: #1a237e; font-weight: 700; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #ffffff; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #1a237e; }
+    .stat-card.success { border-left-color: #43a047; }
+    .stat-card.warning { border-left-color: #fb8c00; }
+    .stat-card.danger { border-left-color: #e53935; }
+    .stat-icon { font-size: 32px; }
+    .stat-info h3 { font-size: 24px; font-weight: 700; color: #2c3e50; }
+    .stat-info p { color: #666; font-size: 13px; text-transform: uppercase; }
+    .quick-actions { margin-bottom: 24px; }
+    .quick-actions h2 { font-size: 18px; margin-bottom: 12px; color: #1a237e; }
+    .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .action-btn { background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 16px; text-align: center; text-decoration: none; color: #2c3e50; font-size: 14px; font-weight: 500; transition: all 0.2s; display: block; }
+    .action-btn:hover { border-color: #1a237e; transform: translateY(-2px); }
+    .section-card { background: #ffffff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .section-card h2 { font-size: 18px; margin-bottom: 16px; color: #1a237e; }
+    .list-group { display: flex; flex-direction: column; gap: 12px; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f5f6fa; border-radius: 8px; flex-wrap: wrap; gap: 8px; }
+    .item-main { display: flex; align-items: center; gap: 10px; flex: 1; }
+    .item-sub { display: flex; gap: 16px; color: #666; font-size: 13px; }
+    .amount { font-weight: 700; color: #43a047; font-size: 16px; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #f5f6fa; }
+    .btn-small { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid #e0e0e0; background: white; cursor: pointer; text-decoration: none; color: #2c3e50; display: inline-flex; align-items: center; gap: 4px; }
+    .finance-grid { display: grid; gap: 16px; }
+    .finance-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f5f6fa; border-radius: 8px; }
+    .finance-item.highlight { background: #1a237e; color: white; }
+    .finance-item.highlight strong { color: white; }
+    .text-danger { color: #e53935; }
+    .empty { text-align: center; padding: 40px; color: #999; font-size: 15px; }
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .action-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-title { font-size: 22px; }
+      .list-item { flex-direction: column; align-items: flex-start; }
+      .item-sub { width: 100%; justify-content: space-between; }
+    }
+  </style>
+
   <h1 class="page-title">Dashboard</h1>
 
   <div class="stats-grid">
-    <div class="stat-card primary">
+    <div class="stat-card">
       <div class="stat-icon">🏢</div>
       <div class="stat-info">
         <h3><%= stats.properties %></h3>
@@ -49,14 +89,14 @@
         <% recentPayments.forEach(p => { %>
           <div class="list-item">
             <div class="item-main">
-              <strong><%= p.TenantID %></strong>
-              <span class="badge"><%= p.PaymentMethod || 'Cash' %></span>
+              <strong><%= p.TenantID || p.tenantId %></strong>
+              <span class="badge"><%= p.PaymentMethod || p.paymentMethod || 'Cash' %></span>
             </div>
             <div class="item-sub">
-              <span><%= p.Period %></span>
-              <span class="amount">$<%= parseFloat(p.Amount).toFixed(2) %></span>
+              <span><%= p.Period || p.period %></span>
+              <span class="amount">$<%= parseFloat(p.Amount || p.amount || 0).toFixed(2) %></span>
             </div>
-            <a href="/receipt/<%= p.PaymentID %>" target="_blank" class="btn-small">🧾 Receipt</a>
+            <a href="/receipt/<%= p.PaymentID || p.paymentId %>" target="_blank" class="btn-small">🧾 Receipt</a>
           </div>
         <% }) %>
       </div>
