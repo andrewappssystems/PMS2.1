@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 const moment = require('moment');
 const methodOverride = require('method-override');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -12,7 +13,13 @@ const PORT = process.env.PORT || 3000;
 
 // ====== MIDDLEWARE ======
 app.set('view engine', 'ejs');
-app.use(express.static('public'));
+app.set('views', path.join(__dirname, 'views'));
+
+// Serve static files with absolute path
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
+app.use('/js', express.static(path.join(__dirname, 'public', 'js')));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
