@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a237e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title><%= title %> | PMS</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h2>PMS</h2>
+        <p><%= user.FullName %></p>
+        <small><%= user.Role %></small>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/dashboard" class="<%= title === 'Dashboard' ? 'active' : '' %>">📊 Dashboard</a>
+        <a href="/landlords" class="<%= title === 'Landlords' ? 'active' : '' %>">👤 Landlords</a>
+        <a href="/properties" class="<%= title === 'Properties' ? 'active' : '' %>">🏢 Properties</a>
+        <a href="/units" class="<%= title === 'Units' ? 'active' : '' %>">🔑 Units</a>
+        <a href="/tenants" class="<%= title === 'Tenants' ? 'active' : '' %>">🏠 Tenants</a>
+        <a href="/payments" class="<%= title === 'Rent Payments' ? 'active' : '' %>">💵 Payments</a>
+        <a href="/expenses" class="<%= title === 'Expenses' ? 'active' : '' %>">📉 Expenses</a>
+        <a href="/invoices" class="<%= title === 'Management Invoices' ? 'active' : '' %>">📄 Invoices</a>
+        <a href="/arrears" class="<%= title === 'Arrears Report' ? 'active' : '' %>">⚠️ Arrears</a>
+        <a href="/logout" class="logout">🚪 Logout</a>
+      </nav>
+    </aside>
+
+    <header class="mobile-header">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <h1><%= title %></h1>
+      <div class="user-avatar"><%= user.FullName.charAt(0) %></div>
+    </header>
+
+    <nav class="bottom-nav">
+      <a href="/dashboard" class="<%= title === 'Dashboard' ? 'active' : '' %>">📊<span>Home</span></a>
+      <a href="/payments" class="<%= title === 'Rent Payments' ? 'active' : '' %>">💵<span>Pay</span></a>
+      <a href="/tenants" class="<%= title === 'Tenants' ? 'active' : '' %>">🏠<span>Tenants</span></a>
+      <a href="/arrears" class="<%= title === 'Arrears Report' ? 'active' : '' %>">⚠️<span>Alerts</span></a>
+      <a href="/logout">🚪<span>Exit</span></a>
+    </nav>
+  <% } %>
+
+  <main class="main-content <%= typeof user !== 'undefined' && user ? 'with-sidebar' : '' %>">
+    <%- body %>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
