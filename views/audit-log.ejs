@@ -1,0 +1,55 @@
+<div class="page-header">
+  <h1>Audit Log</h1>
+  <span class="badge badge-warning">Admin Only</span>
+</div>
+
+<div class="section-card">
+  <% if (logs.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Role</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>Details</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(log => { %>
+            <tr>
+              <td><%= log.Timestamp || log.timestamp || log['Created Date'] %></td>
+              <td><strong><%= log.UserName || log.userName || log['Full Name'] || 'System' %></strong></td>
+              <td><span class="badge"><%= log.Role || log.role || 'N/A' %></span></td>
+              <td><span class="badge <%= (log.Action || log.action) === 'DELETE' ? 'badge-danger' : ((log.Action || log.action) === 'CREATE' ? 'badge-success' : 'badge-warning') %>"><%= log.Action || log.action %></span></td>
+              <td><%= log.Target || log.target %></td>
+              <td><%= log.Details || log.details || '' %></td>
+              <td><small class="text-muted"><%= log.IP || log.ip || 'N/A' %></small></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards">
+      <% logs.forEach(log => { %>
+        <div class="card">
+          <div class="card-header">
+            <h3><%= log.Action || log.action %></h3>
+            <span class="badge <%= (log.Action || log.action) === 'DELETE' ? 'badge-danger' : ((log.Action || log.action) === 'CREATE' ? 'badge-success' : 'badge-warning') %>"><%= log.Action || log.action %></span>
+          </div>
+          <p>👤 <strong><%= log.UserName || log.userName || log['Full Name'] || 'System' %></strong> (<%= log.Role || log.role %>)</p>
+          <p>🎯 <%= log.Target || log.target %></p>
+          <p>📝 <%= log.Details || log.details || '' %></p>
+          <p>📅 <%= log.Timestamp || log.timestamp || log['Created Date'] %></p>
+          <p>🌐 <small><%= log.IP || log.ip || 'N/A' %></small></p>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="empty">No audit logs found.</p>
+  <% } %>
+</div>
