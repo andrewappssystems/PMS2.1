@@ -1,125 +1,179 @@
-<div class="dashboard">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PMS — Dashboard</title>
   <style>
-    .dashboard { padding: 20px; }
-    .page-title { font-size: 28px; margin-bottom: 24px; color: #1a237e; font-weight: 700; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: #ffffff; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #1a237e; }
-    .stat-card.success { border-left-color: #43a047; }
-    .stat-card.warning { border-left-color: #fb8c00; }
-    .stat-card.danger { border-left-color: #e53935; }
-    .stat-icon { font-size: 32px; }
-    .stat-info h3 { font-size: 24px; font-weight: 700; color: #2c3e50; }
-    .stat-info p { color: #666; font-size: 13px; text-transform: uppercase; }
-    .quick-actions { margin-bottom: 24px; }
-    .quick-actions h2 { font-size: 18px; margin-bottom: 12px; color: #1a237e; }
-    .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-    .action-btn { background: #ffffff; border: 2px solid #e0e0e0; border-radius: 12px; padding: 16px; text-align: center; text-decoration: none; color: #2c3e50; font-size: 14px; font-weight: 500; transition: all 0.2s; display: block; }
-    .action-btn:hover { border-color: #1a237e; transform: translateY(-2px); }
-    .section-card { background: #ffffff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .section-card h2 { font-size: 18px; margin-bottom: 16px; color: #1a237e; }
-    .list-group { display: flex; flex-direction: column; gap: 12px; }
-    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f5f6fa; border-radius: 8px; flex-wrap: wrap; gap: 8px; }
-    .item-main { display: flex; align-items: center; gap: 10px; flex: 1; }
-    .item-sub { display: flex; gap: 16px; color: #666; font-size: 13px; }
-    .amount { font-weight: 700; color: #43a047; font-size: 16px; }
-    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #f5f6fa; }
-    .btn-small { padding: 6px 12px; font-size: 13px; border-radius: 6px; border: 1px solid #e0e0e0; background: white; cursor: pointer; text-decoration: none; color: #2c3e50; display: inline-flex; align-items: center; gap: 4px; }
-    .finance-grid { display: grid; gap: 16px; }
-    .finance-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f5f6fa; border-radius: 8px; }
-    .finance-item.highlight { background: #1a237e; color: white; }
-    .finance-item.highlight strong { color: white; }
-    .text-danger { color: #e53935; }
-    .empty { text-align: center; padding: 40px; color: #999; font-size: 15px; }
+    :root {
+      --primary: #0f766e; --primary-dark: #0d9488; --accent: #14b8a6;
+      --bg: #f1f5f9; --text-dark: #0f172a; --text-muted: #64748b;
+      --white: #ffffff; --danger: #ef4444; --success: #22c55e; --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text-dark); }
+    .topbar {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white; padding: 0 24px; height: 60px; display: flex;
+      align-items: center; justify-content: space-between;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+    .role-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; }
+    .btn-logout:hover { background: rgba(255,255,255,0.2); }
+    .sidebar {
+      position: fixed; top: 60px; left: 0; bottom: 0; width: 260px;
+      background: #022c22; overflow-y: auto; z-index: 90; padding-top: 16px;
+    }
+    .nav-section { margin-bottom: 8px; }
+    .nav-label { font-size: 11px; font-weight: 700; color: #5eead4; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px 20px 8px; opacity: 0.6; }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+      color: #cbd5e1; cursor: pointer; font-size: 14px; font-weight: 500;
+      transition: 0.2s; border-left: 3px solid transparent; text-decoration: none;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    .nav-item.active { background: rgba(20,184,166,0.15); color: #5eead4; border-left-color: var(--accent); }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .main { margin-left: 260px; margin-top: 60px; padding: 32px; min-height: calc(100vh - 60px); }
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 28px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .page-sub { font-size: 15px; color: var(--text-muted); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .stat-card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-top: 4px solid #3b82f6; }
+    .stat-card.green { border-top-color: var(--success); }
+    .stat-card.red { border-top-color: var(--danger); }
+    .stat-card.purple { border-top-color: #8b5cf6; }
+    .stat-label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+    .stat-value { font-size: 32px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .stat-sub { font-size: 13px; color: #94a3b8; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+    .card-title { font-size: 16px; font-weight: 700; color: var(--text-dark); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #f1f5f9; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: #f8fafc; color: #475569; padding: 12px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 12px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+    tr:hover td { background: #f8fafc; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .btn-primary { background: var(--primary); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #64748b; color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-danger { background: var(--danger); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .btn-edit { background: var(--accent); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 4px; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .flabel { display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px; }
+    .finput { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; }
+    .finput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(20,184,166,0.1); }
+    .content-area { display: none; }
+    .content-area.active { display: block; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; padding: 32px; border-radius: 16px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    .action-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .action-btn { padding: 16px; border: none; border-radius: 8px; color: white; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; }
+    .action-btn:hover { transform: translateY(-2px); }
     @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .action-grid { grid-template-columns: repeat(2, 1fr); }
-      .page-title { font-size: 22px; }
-      .list-item { flex-direction: column; align-items: flex-start; }
-      .item-sub { width: 100%; justify-content: space-between; }
     }
   </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">🏢 <span>Property Management</span></div>
+    <div class="topbar-right">
+      <span id="userGreeting">Hi, <%= user.name %></span>
+      <span class="role-badge"><%= user.role %></span>
+      <a href="/logout" class="btn-logout">Sign Out</a>
+    </div>
+  </div>
 
-  <h1 class="page-title">Dashboard</h1>
+  <div class="sidebar">
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/" class="nav-item active"><span class="icon">📊</span> Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <a href="/landlords" class="nav-item"><span class="icon">👤</span> Landlords</a>
+      <a href="/properties" class="nav-item"><span class="icon">🏘</span> Properties</a>
+      <a href="/units" class="nav-item"><span class="icon">🚪</span> Units</a>
+      <a href="/tenants" class="nav-item"><span class="icon">🧑</span> Tenants</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Finance</div>
+      <a href="/rent" class="nav-item"><span class="icon">💵</span> Rent Collection</a>
+      <a href="/expenses" class="nav-item"><span class="icon">💳</span> Expenses</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Analysis</div>
+      <a href="/arrears" class="nav-item"><span class="icon">🔴</span> Arrears</a>
+    </div>
+  </div>
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">🏢</div>
-      <div class="stat-info">
-        <h3><%= stats.properties %></h3>
-        <p>Properties</p>
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title">System Overview</div>
+      <div class="page-sub" id="dashDate"></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card purple">
+        <div class="stat-label">Landlords</div>
+        <div class="stat-value"><%= stats.landlords %></div>
+        <div class="stat-sub">Registered landlords</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Properties</div>
+        <div class="stat-value"><%= stats.properties %></div>
+        <div class="stat-sub">Active portfolio</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Occupancy</div>
+        <div class="stat-value"><%= stats.occupied %>/<%= stats.units %></div>
+        <div class="stat-sub"><%= stats.occRate %>% occupied</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-label">Arrears</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">Tenants in debt</div>
       </div>
     </div>
-    <div class="stat-card success">
-      <div class="stat-icon">🔑</div>
-      <div class="stat-info">
-        <h3><%= stats.occupied %>/<%= stats.units %></h3>
-        <p>Occupied</p>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div class="card">
+        <div class="card-title">⚡ Quick Actions</div>
+        <div class="action-grid">
+          <button class="action-btn" style="background:#7c3aed" onclick="location.href='/landlords'">Add Landlord</button>
+          <button class="action-btn" style="background:#2563eb" onclick="location.href='/properties'">Add Property</button>
+          <button class="action-btn" style="background:#16a34a" onclick="location.href='/tenants'">Add Tenant</button>
+          <button class="action-btn" style="background:#0d9488" onclick="location.href='/rent'">Record Rent</button>
+          <button class="action-btn" style="background:#dc2626" onclick="location.href='/arrears'">Check Arrears</button>
+          <button class="action-btn" style="background:#f59e0b" onclick="location.href='/expenses'">Expenses</button>
+        </div>
       </div>
-    </div>
-    <div class="stat-card warning">
-      <div class="stat-icon">🏠</div>
-      <div class="stat-info">
-        <h3><%= stats.tenants %></h3>
-        <p>Tenants</p>
-      </div>
-    </div>
-    <div class="stat-card danger">
-      <div class="stat-icon">💵</div>
-      <div class="stat-info">
-        <h3>$<%= stats.collected.toFixed(2) %></h3>
-        <p>Collected</p>
+      <div class="card">
+        <div class="card-title">⚠️ Lease Warnings</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tenant</th><th>Unit</th><th>Expires</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="4">No expiring leases</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="quick-actions">
-    <h2>Quick Actions</h2>
-    <div class="action-grid">
-      <a href="/payments" class="action-btn">💵 Record Payment</a>
-      <a href="/tenants" class="action-btn">➕ Add Tenant</a>
-      <a href="/expenses" class="action-btn">📉 Add Expense</a>
-      <a href="/invoices" class="action-btn">📄 Gen Invoice</a>
-    </div>
-  </div>
-
-  <div class="section-card">
-    <h2>Recent Payments</h2>
-    <% if (recentPayments.length > 0) { %>
-      <div class="list-group">
-        <% recentPayments.forEach(p => { %>
-          <div class="list-item">
-            <div class="item-main">
-              <strong><%= p.TenantID || p.tenantId %></strong>
-              <span class="badge"><%= p.PaymentMethod || p.paymentMethod || 'Cash' %></span>
-            </div>
-            <div class="item-sub">
-              <span><%= p.Period || p.period %></span>
-              <span class="amount">$<%= parseFloat(p.Amount || p.amount || 0).toFixed(2) %></span>
-            </div>
-            <a href="/receipt/<%= p.PaymentID || p.paymentId %>" target="_blank" class="btn-small">🧾 Receipt</a>
-          </div>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="empty">No payments recorded yet.</p>
-    <% } %>
-  </div>
-
-  <div class="section-card">
-    <h2>Financial Overview</h2>
-    <div class="finance-grid">
-      <div class="finance-item">
-        <span>Monthly Rent Potential</span>
-        <strong>$<%= stats.monthlyRent.toFixed(2) %></strong>
-      </div>
-      <div class="finance-item">
-        <span>Total Expenses</span>
-        <strong class="text-danger">$<%= stats.expenses.toFixed(2) %></strong>
-      </div>
-      <div class="finance-item highlight">
-        <span>Net Balance</span>
-        <strong>$<%= stats.balance.toFixed(2) %></strong>
-      </div>
-    </div>
-  </div>
-</div>
+  <script>
+    document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-GB', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+  </script>
+</body>
+</html>
