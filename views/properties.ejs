@@ -12,6 +12,7 @@
             <th>Name</th>
             <th>Address</th>
             <th>Landlord</th>
+            <th>Short Code</th>
             <th>Type</th>
             <th>Status</th>
             <th>Actions</th>
@@ -25,10 +26,11 @@
               <td><strong><%= p.PropertyName %></strong></td>
               <td><%= p.Address %></td>
               <td><%= landlord.FullName || 'N/A' %></td>
+              <td><%= p.ShortCode || '-' %></td>
               <td><%= p.Type || 'Residential' %></td>
               <td><span class="badge <%= p.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= p.Status %></span></td>
               <td class="actions">
-                <button class="btn-small" onclick="editProperty('<%= p.PropertyID %>', '<%= p.PropertyName %>', '<%= p.Address %>', '<%= p.LandlordID %>', '<%= p.Type %>', '<%= p.Status %>')">✏️</button>
+                <button class="btn-small" onclick="editProperty('<%= p.PropertyID %>', '<%= p.PropertyName %>', '<%= p.Address %>', '<%= p.LandlordID %>', '<%= p.ShortCode %>', '<%= p.Type %>', '<%= p.Status %>')">✏️</button>
                 <form action="/properties/<%= p.PropertyID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this property?')">
                   <button type="submit" class="btn-small btn-danger">🗑️</button>
                 </form>
@@ -50,9 +52,10 @@
           </div>
           <p>📍 <%= p.Address %></p>
           <p>👤 <%= landlord.FullName || 'N/A' %></p>
+          <p>🏷️ <%= p.ShortCode || '-' %></p>
           <p>🏷️ <%= p.Type || 'Residential' %></p>
           <div class="card-actions">
-            <button class="btn-small" onclick="editProperty('<%= p.PropertyID %>', '<%= p.PropertyName %>', '<%= p.Address %>', '<%= p.LandlordID %>', '<%= p.Type %>', '<%= p.Status %>')">✏️ Edit</button>
+            <button class="btn-small" onclick="editProperty('<%= p.PropertyID %>', '<%= p.PropertyName %>', '<%= p.Address %>', '<%= p.LandlordID %>', '<%= p.ShortCode %>', '<%= p.Type %>', '<%= p.Status %>')">✏️ Edit</button>
             <form action="/properties/<%= p.PropertyID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete?')">
               <button type="submit" class="btn-small btn-danger">🗑️</button>
             </form>
@@ -80,6 +83,7 @@
           <% }) %>
         </select>
       </div>
+      <div class="form-group"><label>Short Code</label><input type="text" name="shortCode" placeholder="e.g. PROP001"></div>
       <div class="form-group"><label>Type</label>
         <select name="type">
           <option value="Residential">Residential</option>
@@ -107,6 +111,7 @@
           <% }) %>
         </select>
       </div>
+      <div class="form-group"><label>Short Code</label><input type="text" name="shortCode" id="editShortCode"></div>
       <div class="form-group"><label>Type</label>
         <select name="type" id="editType">
           <option value="Residential">Residential</option>
@@ -126,11 +131,12 @@
 </div>
 
 <script>
-function editProperty(id, name, address, landlordId, type, status) {
+function editProperty(id, name, address, landlordId, shortCode, type, status) {
   document.getElementById('editForm').action = '/properties/' + id;
   document.getElementById('editName').value = name;
   document.getElementById('editAddress').value = address;
   document.getElementById('editLandlord').value = landlordId;
+  document.getElementById('editShortCode').value = shortCode || '';
   document.getElementById('editType').value = type || 'Residential';
   document.getElementById('editStatus').value = status || 'Active';
   openModal('editModal');
