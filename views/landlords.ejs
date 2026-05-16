@@ -12,7 +12,7 @@
             <th>Name</th>
             <th>Email</th>
             <th>Phone</th>
-            <th>Fee %</th>
+            <th>Short Code</th>
             <th>Status</th>
             <th>Actions</th>
           </tr>
@@ -23,10 +23,10 @@
               <td><strong><%= l.FullName %></strong></td>
               <td><%= l.Email %></td>
               <td><%= l.Phone %></td>
-              <td><%= l['Management Fee'] || '10' %>%</td>
+              <td><%= l.ShortCode || '-' %></td>
               <td><span class="badge <%= l.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= l.Status %></span></td>
               <td class="actions">
-                <button class="btn-small" onclick="editLandlord('<%= l.LandlordID %>', '<%= l.FullName %>', '<%= l.Email %>', '<%= l.Phone %>', '<%= l.Address %>', '<%= l.BankDetails %>', '<%= l.Status %>', '<%= l['Management Fee'] %>')">✏️</button>
+                <button class="btn-small" onclick="editLandlord('<%= l.LandlordID %>', '<%= l.FullName %>', '<%= l.Email %>', '<%= l.Phone %>', '<%= l.ShortCode %>', '<%= l.Status %>')">✏️</button>
                 <form action="/landlords/<%= l.LandlordID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this landlord?')">
                   <button type="submit" class="btn-small btn-danger">🗑️</button>
                 </form>
@@ -46,9 +46,9 @@
           </div>
           <p>📧 <%= l.Email %></p>
           <p>📱 <%= l.Phone %></p>
-          <p>💰 Fee: <%= l['Management Fee'] || '10' %>%</p>
+          <p>🏷️ <%= l.ShortCode || '-' %></p>
           <div class="card-actions">
-            <button class="btn-small" onclick="editLandlord('<%= l.LandlordID %>', '<%= l.FullName %>', '<%= l.Email %>', '<%= l.Phone %>', '<%= l.Address %>', '<%= l.BankDetails %>', '<%= l.Status %>', '<%= l['Management Fee'] %>')">✏️ Edit</button>
+            <button class="btn-small" onclick="editLandlord('<%= l.LandlordID %>', '<%= l.FullName %>', '<%= l.Email %>', '<%= l.Phone %>', '<%= l.ShortCode %>', '<%= l.Status %>')">✏️ Edit</button>
             <form action="/landlords/<%= l.LandlordID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete?')">
               <button type="submit" class="btn-small btn-danger">🗑️</button>
             </form>
@@ -69,9 +69,7 @@
       <div class="form-group"><label>Full Name</label><input type="text" name="fullName" required></div>
       <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
       <div class="form-group"><label>Phone</label><input type="tel" name="phone" required></div>
-      <div class="form-group"><label>Address</label><textarea name="address"></textarea></div>
-      <div class="form-group"><label>Bank Details</label><input type="text" name="bankDetails"></div>
-      <div class="form-group"><label>Management Fee %</label><input type="number" name="managementFee" value="10" min="0" max="100"></div>
+      <div class="form-group"><label>Short Code</label><input type="text" name="shortCode" placeholder="e.g. LL001"></div>
       <button type="submit" class="btn btn-primary">Save Landlord</button>
     </form>
   </div>
@@ -86,9 +84,7 @@
       <div class="form-group"><label>Full Name</label><input type="text" name="fullName" id="editName" required></div>
       <div class="form-group"><label>Email</label><input type="email" name="email" id="editEmail" required></div>
       <div class="form-group"><label>Phone</label><input type="tel" name="phone" id="editPhone" required></div>
-      <div class="form-group"><label>Address</label><textarea name="address" id="editAddress"></textarea></div>
-      <div class="form-group"><label>Bank Details</label><input type="text" name="bankDetails" id="editBank"></div>
-      <div class="form-group"><label>Management Fee %</label><input type="number" name="managementFee" id="editFee" min="0" max="100"></div>
+      <div class="form-group"><label>Short Code</label><input type="text" name="shortCode" id="editShortCode"></div>
       <div class="form-group"><label>Status</label>
         <select name="status" id="editStatus">
           <option value="Active">Active</option>
@@ -101,15 +97,13 @@
 </div>
 
 <script>
-function editLandlord(id, name, email, phone, address, bank, status, fee) {
+function editLandlord(id, name, email, phone, shortCode, status) {
   document.getElementById('editForm').action = '/landlords/' + id;
   document.getElementById('editName').value = name;
   document.getElementById('editEmail').value = email;
   document.getElementById('editPhone').value = phone;
-  document.getElementById('editAddress').value = address || '';
-  document.getElementById('editBank').value = bank || '';
+  document.getElementById('editShortCode').value = shortCode || '';
   document.getElementById('editStatus').value = status || 'Active';
-  document.getElementById('editFee').value = fee || '10';
   openModal('editModal');
 }
 </script>
