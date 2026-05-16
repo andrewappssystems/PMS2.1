@@ -1,0 +1,44 @@
+<div class="page-header">
+  <h1>Arrears Report</h1>
+  <span class="badge badge-warning"><%= currentMonth %></span>
+</div>
+
+<div class="section-card">
+  <% if (arrears.length > 0) { %>
+    <div class="stats-grid" style="margin-bottom: 20px;">
+      <div class="stat-card danger">
+        <div class="stat-info">
+          <h3><%= arrears.length %></h3>
+          <p>Tenants Owing</p>
+        </div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-info">
+          <h3>$<%= arrears.reduce((s, a) => s + a.balance, 0).toFixed(2) %></h3>
+          <p>Total Due</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mobile-cards">
+      <% arrears.forEach(a => { %>
+        <div class="card card-danger">
+          <div class="card-header">
+            <h3><%= a.tenant.FullName %></h3>
+            <span class="badge badge-danger">$<%= a.balance.toFixed(2) %></span>
+          </div>
+          <p>🏠 Unit: <%= a.unit.UnitNumber || a.tenant.UnitID %></p>
+          <p>💵 Rent: $<%= a.rent.toFixed(2) %></p>
+          <p>✅ Paid: $<%= a.paid.toFixed(2) %></p>
+          <p>📞 <%= a.tenant.Phone %></p>
+          <a href="/tenants" class="btn-small">View Tenant</a>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <h3>🎉 All Paid Up!</h3>
+      <p>No arrears for <%= currentMonth %></p>
+    </div>
+  <% } %>
+</div>
