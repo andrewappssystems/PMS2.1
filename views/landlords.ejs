@@ -1,109 +1,82 @@
-<div class="page-header">
-  <h1>Landlords</h1>
-  <button class="btn btn-primary" onclick="openModal('addModal')">➕ Add Landlord</button>
-</div>
-
-<div class="section-card">
-  <% if (landlords.length > 0) { %>
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Short Code</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% landlords.forEach(l => { %>
-            <tr>
-              <td><strong><%= l.FullName %></strong></td>
-              <td><%= l.Email %></td>
-              <td><%= l.Phone %></td>
-              <td><%= l.ShortCode || '-' %></td>
-              <td><span class="badge <%= l.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= l.Status %></span></td>
-              <td class="actions">
-                <button class="btn-small" onclick="editLandlord('<%= l.LandlordID %>', '<%= l.FullName %>', '<%= l.Email %>', '<%= l.Phone %>', '<%= l.ShortCode %>', '<%= l.Status %>')">✏️</button>
-                <form action="/landlords/<%= l.LandlordID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this landlord?')">
-                  <button type="submit" class="btn-small btn-danger">🗑️</button>
-                </form>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | PMS</title>
+  <style>
+    :root { --primary: #0f766e; --primary-dark: #0d9488; --accent: #14b8a6; --bg: #f1f5f9; --text-dark: #0f172a; --text-muted: #64748b; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text-dark); }
+    .topbar { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+    .role-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; }
+    .sidebar { position: fixed; top: 60px; left: 0; bottom: 0; width: 260px; background: #022c22; overflow-y: auto; z-index: 90; padding-top: 16px; }
+    .nav-section { margin-bottom: 8px; }
+    .nav-label { font-size: 11px; font-weight: 700; color: #5eead4; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px 20px 8px; opacity: 0.6; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #cbd5e1; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    .nav-item.active { background: rgba(20,184,166,0.15); color: #5eead4; border-left-color: var(--accent); }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .main { margin-left: 260px; margin-top: 60px; padding: 32px; min-height: calc(100vh - 60px); }
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 28px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .page-sub { font-size: 15px; color: var(--text-muted); }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+    .btn-primary { background: var(--primary); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .empty { text-align: center; padding: 60px 20px; color: #94a3b8; }
+    .empty h2 { font-size: 24px; margin-bottom: 10px; color: var(--text-dark); }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">🏢 <span>Property Management</span></div>
+    <div class="topbar-right">
+      <span>Hi, <%= user.name %></span>
+      <span class="role-badge"><%= user.role %></span>
+      <a href="/logout" class="btn-logout">Sign Out</a>
     </div>
-
-    <div class="mobile-cards">
-      <% landlords.forEach(l => { %>
-        <div class="card">
-          <div class="card-header">
-            <h3><%= l.FullName %></h3>
-            <span class="badge <%= l.Status === 'Active' ? 'badge-success' : 'badge-danger' %>"><%= l.Status %></span>
-          </div>
-          <p>📧 <%= l.Email %></p>
-          <p>📱 <%= l.Phone %></p>
-          <p>🏷️ <%= l.ShortCode || '-' %></p>
-          <div class="card-actions">
-            <button class="btn-small" onclick="editLandlord('<%= l.LandlordID %>', '<%= l.FullName %>', '<%= l.Email %>', '<%= l.Phone %>', '<%= l.ShortCode %>', '<%= l.Status %>')">✏️ Edit</button>
-            <form action="/landlords/<%= l.LandlordID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete?')">
-              <button type="submit" class="btn-small btn-danger">🗑️</button>
-            </form>
-          </div>
-        </div>
-      <% }) %>
-    </div>
-  <% } else { %>
-    <p class="empty">No landlords found. Add your first landlord.</p>
-  <% } %>
-</div>
-
-<div id="addModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('addModal')">&times;</span>
-    <h2>Add Landlord</h2>
-    <form action="/landlords" method="POST">
-      <div class="form-group"><label>Full Name</label><input type="text" name="fullName" required></div>
-      <div class="form-group"><label>Email</label><input type="email" name="email" required></div>
-      <div class="form-group"><label>Phone</label><input type="tel" name="phone" required></div>
-      <div class="form-group"><label>Short Code</label><input type="text" name="shortCode" placeholder="e.g. LL001"></div>
-      <button type="submit" class="btn btn-primary">Save Landlord</button>
-    </form>
   </div>
-</div>
 
-<div id="editModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('editModal')">&times;</span>
-    <h2>Edit Landlord</h2>
-    <form id="editForm" method="POST">
-      <input type="hidden" name="_method" value="PUT">
-      <div class="form-group"><label>Full Name</label><input type="text" name="fullName" id="editName" required></div>
-      <div class="form-group"><label>Email</label><input type="email" name="email" id="editEmail" required></div>
-      <div class="form-group"><label>Phone</label><input type="tel" name="phone" id="editPhone" required></div>
-      <div class="form-group"><label>Short Code</label><input type="text" name="shortCode" id="editShortCode"></div>
-      <div class="form-group"><label>Status</label>
-        <select name="status" id="editStatus">
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
+  <div class="sidebar">
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/" class="nav-item <%= title === 'Dashboard' ? 'active' : '' %>"><span class="icon">📊</span> Dashboard</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <a href="/landlords" class="nav-item <%= title === 'Landlords' ? 'active' : '' %>"><span class="icon">👤</span> Landlords</a>
+      <a href="/properties" class="nav-item <%= title === 'Properties' ? 'active' : '' %>"><span class="icon">🏘</span> Properties</a>
+      <a href="/units" class="nav-item <%= title === 'Units' ? 'active' : '' %>"><span class="icon">🚪</span> Units</a>
+      <a href="/tenants" class="nav-item <%= title === 'Tenants' ? 'active' : '' %>"><span class="icon">🧑</span> Tenants</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Finance</div>
+      <a href="/rent" class="nav-item <%= title === 'Rent Collection' ? 'active' : '' %>"><span class="icon">💵</span> Rent Collection</a>
+      <a href="/expenses" class="nav-item <%= title === 'Expenses' ? 'active' : '' %>"><span class="icon">💳</span> Expenses</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Analysis</div>
+      <a href="/arrears" class="nav-item <%= title === 'Arrears' ? 'active' : '' %>"><span class="icon">🔴</span> Arrears</a>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title"><%= title %></div>
+      <div class="page-sub">Coming soon</div>
+    </div>
+    <div class="card">
+      <div class="empty">
+        <h2>🚧 <%= title %></h2>
+        <p>This module is being built. Check back soon!</p>
+        <br>
+        <a href="/" class="btn-primary">← Back to Dashboard</a>
       </div>
-      <button type="submit" class="btn btn-primary">Update Landlord</button>
-    </form>
+    </div>
   </div>
-</div>
-
-<script>
-function editLandlord(id, name, email, phone, shortCode, status) {
-  document.getElementById('editForm').action = '/landlords/' + id;
-  document.getElementById('editName').value = name;
-  document.getElementById('editEmail').value = email;
-  document.getElementById('editPhone').value = phone;
-  document.getElementById('editShortCode').value = shortCode || '';
-  document.getElementById('editStatus').value = status || 'Active';
-  openModal('editModal');
-}
-</script>
+</body>
+</html>
