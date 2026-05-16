@@ -1,0 +1,93 @@
+<div class="page-header">
+  <h1>Management Invoices</h1>
+  <button class="btn btn-primary" onclick="openModal('genModal')">📄 Generate Invoice</button>
+</div>
+
+<div class="section-card">
+  <% if (invoices.length > 0) { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Landlord</th>
+            <th>Period</th>
+            <th>Collected</th>
+            <th>Fee</th>
+            <th>Net</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% invoices.forEach(i => {
+            const landlord = landlords.find(l => l.LandlordID === i.LandlordID) || {};
+          %>
+            <tr>
+              <td><strong><%= i.InvoiceNo %></strong></td>
+              <td><%= landlord.FullName || 'N/A' %></td>
+              <td><%= i.Period %></td>
+              <td>$<%= parseFloat(i['Total Collected']).toFixed(2) %></td>
+              <td class="text-danger">$<%= parseFloat(i['Fee Amount']).toFixed(2) %></td>
+              <td class="amount">$<%= parseFloat(i['Net Amount']).toFixed(2) %></td>
+              <td><span class="badge <%= i.Status === 'Paid' ? 'badge-success' : 'badge-warning' %>"><%= i.Status %></span></td>
+              <td class="actions">
+                <a href="/invoice/<%= i.InvoiceID %>/pdf" target="_blank" class="btn-small">📄 PDF</a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards">
+      <% invoices.forEach(i => {
+        const landlord = landlords.find(l => l.LandlordID === i.LandlordID) || {};
+      %>
+        <div class="card">
+          <div class="card-header">
+            <h3><%= i.InvoiceNo %></h3>
+            <span class="badge <%= i.Status === 'Paid' ? 'badge-success' : 'badge-warning' %>"><%= i.Status %></span>
+          </div>
+          <p>👤 <%= landlord.FullName || 'N/A' %></p>
+          <p>📅 Period: <%= i.Period %></p>
+          <p>💰 Collected: $<%= parseFloat(i['Total Collected']).toFixed(2) %></p>
+          <p>📉 Fee (<%= i['Management Fee'] %>%): $<%= parseFloat(i['Fee Amount']).toFixed(2) %></p>
+          <p class="highlight">💵 Net: $<%= parseFloat(i['Net Amount']).toFixed(2) %></p>
+          <div class="card-actions">
+            <a href="/invoice/<%= i.InvoiceID %>/pdf" target="_blank" class="btn-small">📄 View PDF</a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p class="empty">No invoices generated yet.</p>
+  <% } %>
+</div>
+
+<div id="genModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('genModal')">&times;</span>
+    <h2>Generate Management Invoice</h2>
+    <form action="/invoices/generate" method="POST">
+      <div class="form-group"><label>Landlord</label>
+        <select name="landlordId" required>
+          <option value="">Select Landlord</option>
+          <% landlords.filter(l => l.Status === 'Active').forEach(l => { %>
+            <option value="<%= l.LandlordID %>"><%= l.FullName %> (<%= l['Management Fee'] || 10 %>%)</option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Property (Optional)</label>
+        <select name="propertyId">
+          <option value="">All Properties</option>
+          <% properties.filter(p => p.Status === 'Active').forEach(p => { %>
+            <option value="<%= p.PropertyID %>"><%= p.PropertyName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="form-group"><label>Period (YYYY-MM)</label><input type="text" name="period" value="<%= new Date().toISOString().slice(0, 7) %>" required pattern="\d{4}-\d{2}"></div>
+      <button type="submit" class="btn btn-primary">Generate Invoice</button>
+    </form>
+  </div>
+</div>
