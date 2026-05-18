@@ -8,8 +8,6 @@
 :root { --primary:#0f766e; --primary-light:#14b8a6; --primary-dark:#0d5c56; --danger:#ef4444; --success:#22c55e; --warning:#f59e0b; --bg:#f1f5f9; --card:#fff; --text:#0f172a; --text-light:#64748b; --border:#e2e8f0; }
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-
-/* Layout */
 .app { display:flex; min-height:100vh; }
 .sidebar { width:260px; background:var(--primary-dark); color:#fff; position:fixed; height:100vh; overflow-y:auto; z-index:100; transition:transform .3s; }
 .sidebar .logo { padding:24px 20px; font-size:20px; font-weight:700; border-bottom:1px solid rgba(255,255,255,.1); display:flex; align-items:center; gap:10px; }
@@ -17,39 +15,27 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
 .sidebar nav { padding:12px 0; }
 .sidebar nav a { display:flex; align-items:center; gap:12px; padding:12px 20px; color:rgba(255,255,255,.8); text-decoration:none; font-size:14px; font-weight:500; transition:.2s; cursor:pointer; }
 .sidebar nav a:hover, .sidebar nav a.active { background:rgba(255,255,255,.1); color:#fff; }
-.sidebar nav a svg { width:20px; height:20px; opacity:.7; }
 .sidebar .nav-section { padding:8px 20px 4px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:rgba(255,255,255,.4); font-weight:700; }
 .sidebar .user { position:absolute; bottom:0; left:0; right:0; padding:16px 20px; border-top:1px solid rgba(255,255,255,.1); background:var(--primary-dark); }
 .sidebar .user .name { font-weight:600; font-size:14px; }
 .sidebar .user .role { font-size:12px; color:rgba(255,255,255,.6); }
 .sidebar .user .logout { margin-top:8px; font-size:12px; color:#fca5a5; cursor:pointer; background:none; border:none; }
-
 .main { flex:1; margin-left:260px; min-height:100vh; }
 .topbar { background:var(--card); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
 .topbar h1 { font-size:20px; font-weight:700; }
 .topbar .date { color:var(--text-light); font-size:14px; }
 .topbar .mobile-menu { display:none; background:none; border:none; font-size:24px; cursor:pointer; }
-
 .content { padding:24px; }
-
-/* Stats Cards */
 .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
 .stat-card { background:var(--card); border-radius:12px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
 .stat-card .label { font-size:12px; color:var(--text-light); text-transform:uppercase; font-weight:600; letter-spacing:.5px; }
 .stat-card .value { font-size:28px; font-weight:700; margin-top:4px; color:var(--primary); }
-.stat-card .change { font-size:12px; margin-top:4px; }
-.stat-card .change.up { color:var(--success); }
-.stat-card .change.down { color:var(--danger); }
-
-/* Quick Actions */
 .quick-actions { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
-.quick-actions button { padding:10px 20px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-weight:600; font-size:14px; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:6px; }
+.quick-actions button { padding:10px 20px; border-radius:8px; border:none; background:var(--primary); color:#fff; font-weight:600; font-size:14px; cursor:pointer; transition:.2s; }
 .quick-actions button:hover { background:var(--primary-dark); }
 .quick-actions button.secondary { background:var(--card); color:var(--primary); border:1px solid var(--primary); }
-
-/* Tables */
 .data-table { background:var(--card); border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.05); }
-.data-table .table-header { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
+.data-table .table-header { padding:16px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:12px; }
 .data-table .table-header h3 { font-size:16px; font-weight:700; }
 .data-table .table-header .search { padding:8px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; width:240px; }
 .data-table table { width:100%; border-collapse:collapse; font-size:14px; }
@@ -66,14 +52,10 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
 .data-table .actions .btn-edit { background:#dbeafe; color:#1e40af; }
 .data-table .actions .btn-delete { background:#fee2e2; color:#991b1b; }
 .data-table .actions .btn-view { background:#f3f4f6; color:#374151; }
-
-/* Empty State */
+.data-table .actions .btn-receipt { background:#dcfce7; color:#166534; }
 .empty-state { text-align:center; padding:60px 20px; }
 .empty-state .icon { font-size:48px; margin-bottom:16px; }
 .empty-state h3 { font-size:18px; color:var(--text-light); margin-bottom:8px; }
-.empty-state p { color:var(--text-light); font-size:14px; }
-
-/* Modal */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; align-items:center; justify-content:center; padding:20px; }
 .modal-overlay.active { display:flex; }
 .modal { background:var(--card); border-radius:16px; width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
@@ -88,26 +70,27 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
 .form-group input, .form-group select, .form-group textarea { padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-size:14px; font-family:inherit; outline:none; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--primary); }
 .form-group textarea { min-height:80px; resize:vertical; }
+.form-group select { cursor:pointer; }
 .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:12px; }
 .modal-footer button { padding:10px 20px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; border:none; }
 .modal-footer .btn-cancel { background:var(--bg); color:var(--text); }
 .modal-footer .btn-save { background:var(--primary); color:#fff; }
-
-/* Section */
 .section { display:none; }
 .section.active { display:block; }
 .section-title { font-size:24px; font-weight:700; margin-bottom:20px; }
-
-/* Invoice/Receipt Preview */
-.pdf-preview { background:#fff; border:1px solid var(--border); border-radius:8px; padding:30px; max-width:600px; margin:20px auto; }
-
-/* Toast */
 .toast { position:fixed; bottom:24px; right:24px; padding:14px 24px; border-radius:10px; color:#fff; font-weight:600; font-size:14px; z-index:300; transform:translateY(100px); opacity:0; transition:.3s; }
 .toast.show { transform:translateY(0); opacity:1; }
 .toast.success { background:var(--success); }
 .toast.error { background:var(--danger); }
-
-/* Mobile */
+.prompt-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:250; align-items:center; justify-content:center; padding:20px; }
+.prompt-overlay.active { display:flex; }
+.prompt-box { background:var(--card); border-radius:16px; padding:32px; max-width:400px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.prompt-box h3 { font-size:18px; margin-bottom:12px; }
+.prompt-box p { color:var(--text-light); margin-bottom:24px; }
+.prompt-buttons { display:flex; gap:12px; justify-content:center; }
+.prompt-buttons button { padding:10px 24px; border-radius:8px; font-weight:600; cursor:pointer; border:none; }
+.prompt-buttons .btn-yes { background:var(--primary); color:#fff; }
+.prompt-buttons .btn-no { background:var(--bg); color:var(--text); }
 @media (max-width:768px) {
   .sidebar { transform:translateX(-100%); }
   .sidebar.open { transform:translateX(0); }
@@ -119,12 +102,13 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
   .data-table table { min-width:600px; }
   .quick-actions { overflow-x:auto; flex-wrap:nowrap; padding-bottom:8px; }
   .modal { max-height:95vh; }
+  .table-header { flex-direction:column; align-items:flex-start !important; }
+  .table-header .search { width:100% !important; }
 }
 </style>
 </head>
 <body>
 <div class="app">
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="logo"><span>🏢</span> PMS</div>
     <nav>
@@ -151,17 +135,13 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
       <button class="logout" onclick="logout()">🚪 Sign Out</button>
     </div>
   </aside>
-
-  <!-- Main -->
   <div class="main">
     <div class="topbar">
       <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
       <h1 id="pageTitle">Dashboard</h1>
       <div class="date" id="dashDate">Loading date...</div>
     </div>
-
     <div class="content">
-      <!-- DASHBOARD -->
       <div class="section active" id="sec-dashboard">
         <div class="stats-grid">
           <div class="stat-card"><div class="label">Landlords</div><div class="value" id="statLandlords">0</div></div>
@@ -183,18 +163,14 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <button class="secondary" onclick="openModal('invoice')">+ Create Invoice</button>
         </div>
       </div>
-
-      <!-- LANDLORDS -->
       <div class="section" id="sec-landlords">
         <div class="section-title">Landlords</div>
         <div class="quick-actions"><button onclick="openModal('landlord')">+ Add Landlord</button></div>
         <div class="data-table">
           <div class="table-header"><h3>All Landlords</h3><input class="search" placeholder="Search..." onkeyup="filterTable('landlordsTable',this.value)"></div>
-          <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Commission</th><th>Status</th><th>Actions</th></tr></thead><tbody id="landlordsTable"><tr><td colspan="7" class="empty-state"><div class="icon">📋</div><h3>No landlords yet</h3><p>Add your first landlord to get started</p></td></tr></tbody></table>
+          <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Commission</th><th>Status</th><th>Actions</th></tr></thead><tbody id="landlordsTable"><tr><td colspan="7" class="empty-state"><div class="icon">📋</div><h3>No landlords yet</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- PROPERTIES -->
       <div class="section" id="sec-properties">
         <div class="section-title">Properties</div>
         <div class="quick-actions"><button onclick="openModal('property')">+ Add Property</button></div>
@@ -203,8 +179,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Name</th><th>Landlord</th><th>Address</th><th>Type</th><th>Units</th><th>Status</th><th>Actions</th></tr></thead><tbody id="propertiesTable"><tr><td colspan="8" class="empty-state"><div class="icon">🏘️</div><h3>No properties yet</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- UNITS -->
       <div class="section" id="sec-units">
         <div class="section-title">Units</div>
         <div class="quick-actions"><button onclick="openModal('unit')">+ Add Unit</button></div>
@@ -213,8 +187,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Property</th><th>Unit No</th><th>Type</th><th>Rent</th><th>Status</th><th>Actions</th></tr></thead><tbody id="unitsTable"><tr><td colspan="7" class="empty-state"><div class="icon">🚪</div><h3>No units yet</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- TENANTS -->
       <div class="section" id="sec-tenants">
         <div class="section-title">Tenants</div>
         <div class="quick-actions"><button onclick="openModal('tenant')">+ Add Tenant</button></div>
@@ -223,8 +195,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Unit</th><th>Rent</th><th>Lease End</th><th>Status</th><th>Actions</th></tr></thead><tbody id="tenantsTable"><tr><td colspan="8" class="empty-state"><div class="icon">👥</div><h3>No tenants yet</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- RENT -->
       <div class="section" id="sec-rent">
         <div class="section-title">Rent Collection</div>
         <div class="quick-actions"><button onclick="openModal('rent')">+ Record Payment</button></div>
@@ -233,17 +203,13 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount</th><th>Month</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead><tbody id="rentTable"><tr><td colspan="8" class="empty-state"><div class="icon">💰</div><h3>No payments recorded</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- ARREARS -->
       <div class="section" id="sec-arrears">
         <div class="section-title">Arrears</div>
         <div class="data-table">
           <div class="table-header"><h3>Tenants with Outstanding Rent</h3></div>
-          <table><thead><tr><th>Tenant</th><th>Unit</th><th>Monthly Rent</th><th>Months Due</th><th>Total Due</th><th>Actions</th></tr></thead><tbody id="arrearsTable"><tr><td colspan="6" class="empty-state"><div class="icon">✅</div><h3>No arrears</h3><p>All tenants are up to date</p></td></tr></tbody></table>
+          <table><thead><tr><th>Tenant</th><th>Unit</th><th>Monthly Rent</th><th>Months Due</th><th>Total Due</th><th>Actions</th></tr></thead><tbody id="arrearsTable"><tr><td colspan="6" class="empty-state"><div class="icon">✅</div><h3>No arrears</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- EXPENSES -->
       <div class="section" id="sec-expenses">
         <div class="section-title">Expenses</div>
         <div class="quick-actions"><button onclick="openModal('expense')">+ Add Expense</button></div>
@@ -252,8 +218,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Property</th><th>Category</th><th>Description</th><th>Amount</th><th>Date</th><th>Actions</th></tr></thead><tbody id="expensesTable"><tr><td colspan="7" class="empty-state"><div class="icon">📑</div><h3>No expenses recorded</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- INVOICES -->
       <div class="section" id="sec-invoices">
         <div class="section-title">Invoices</div>
         <div class="quick-actions"><button onclick="openModal('invoice')">+ Create Invoice</button></div>
@@ -262,8 +226,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Type</th><th>Entity</th><th>Description</th><th>Amount</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead><tbody id="invoicesTable"><tr><td colspan="8" class="empty-state"><div class="icon">📄</div><h3>No invoices yet</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- RECEIPTS -->
       <div class="section" id="sec-receipts">
         <div class="section-title">Receipts</div>
         <div class="data-table">
@@ -271,8 +233,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount</th><th>Period</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead><tbody id="receiptsTable"><tr><td colspan="8" class="empty-state"><div class="icon">🧾</div><h3>No receipts yet</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- USERS -->
       <div class="section" id="sec-users">
         <div class="section-title">Users</div>
         <div class="data-table">
@@ -280,8 +240,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
           <table><thead><tr><th>ID</th><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody id="usersTable"><tr><td colspan="6" class="empty-state"><div class="icon">🔐</div><h3>Loading users...</h3></td></tr></tbody></table>
         </div>
       </div>
-
-      <!-- SETTINGS -->
       <div class="section" id="sec-settings">
         <div class="section-title">Settings</div>
         <div class="data-table" style="max-width:600px;">
@@ -292,8 +250,6 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
     </div>
   </div>
 </div>
-
-<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <div class="modal-header"><h2 id="modalTitle">Add New</h2><button class="close" onclick="closeModal()">×</button></div>
@@ -301,16 +257,22 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
     <div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="btn-save" id="modalSave" onclick="saveForm()">Save</button></div>
   </div>
 </div>
-
+<div class="prompt-overlay" id="promptOverlay" onclick="if(event.target===this)closePrompt()">
+  <div class="prompt-box">
+    <h3 id="promptTitle">Question</h3>
+    <p id="promptMessage">Message</p>
+    <div class="prompt-buttons">
+      <button class="btn-yes" id="promptYes" onclick="">Yes</button>
+      <button class="btn-no" onclick="closePrompt()">No</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
-
 <script>
-// ── Session Data ──────────────────────────────────────────────────────
 const USER = <%- JSON.stringify(user) %>;
-let landlords=[], properties=[], units=[], tenants=[], rentData=[], expenses=[], invoices=[], receipts=[], settings={};
-let currentForm='';
+let landlords=[], properties=[], units=[], tenants=[], rentData=[], expenses=[], invoices=[], receipts=[], users=[], settings={};
+let currentForm='', editingId=null, dataLoaded=false;
 
-// ── Init ──────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('userName').textContent = USER.name || USER.username;
   document.getElementById('userRole').textContent = USER.role;
@@ -336,124 +298,96 @@ function showSection(id) {
   if(id==='arrears') loadArrears();
 }
 
-// ── Load Data ─────────────────────────────────────────────────────────
 async function loadAllData() {
   try {
     const stats = await fetch('/api/stats').then(r=>r.json());
-    document.getElementById('statLandlords').textContent = stats.landlords;
-    document.getElementById('statProperties').textContent = stats.properties;
-    document.getElementById('statUnits').textContent = stats.units;
-    document.getElementById('statTenants').textContent = stats.tenants;
-    document.getElementById('statOccupied').textContent = stats.occupied;
-    document.getElementById('statVacant').textContent = stats.vacant;
-    document.getElementById('statRent').textContent = stats.totalRent.toLocaleString();
-    document.getElementById('statExpenses').textContent = stats.totalExpenses.toLocaleString();
+    document.getElementById('statLandlords').textContent = stats.landlords || 0;
+    document.getElementById('statProperties').textContent = stats.properties || 0;
+    document.getElementById('statUnits').textContent = stats.units || 0;
+    document.getElementById('statTenants').textContent = stats.tenants || 0;
+    document.getElementById('statOccupied').textContent = stats.occupied || 0;
+    document.getElementById('statVacant').textContent = stats.vacant || 0;
+    document.getElementById('statRent').textContent = (stats.totalRent || 0).toLocaleString();
+    document.getElementById('statExpenses').textContent = (stats.totalExpenses || 0).toLocaleString();
   } catch(e) { console.error('Stats error',e); }
 
-  landlords = await fetch('/api/landlords').then(r=>r.json());
+  try { landlords = await fetch('/api/landlords').then(r=>r.json()); } catch(e) { landlords=[]; }
   renderLandlords();
-  properties = await fetch('/api/properties').then(r=>r.json());
+  try { properties = await fetch('/api/properties').then(r=>r.json()); } catch(e) { properties=[]; }
   renderProperties();
-  units = await fetch('/api/units').then(r=>r.json());
+  try { units = await fetch('/api/units').then(r=>r.json()); } catch(e) { units=[]; }
   renderUnits();
-  tenants = await fetch('/api/tenants').then(r=>r.json());
+  try { tenants = await fetch('/api/tenants').then(r=>r.json()); } catch(e) { tenants=[]; }
   renderTenants();
-  rentData = await fetch('/api/rent').then(r=>r.json());
+  try { rentData = await fetch('/api/rent').then(r=>r.json()); } catch(e) { rentData=[]; }
   renderRent();
-  expenses = await fetch('/api/expenses').then(r=>r.json());
+  try { expenses = await fetch('/api/expenses').then(r=>r.json()); } catch(e) { expenses=[]; }
   renderExpenses();
-  invoices = await fetch('/api/invoices').then(r=>r.json());
+  try { invoices = await fetch('/api/invoices').then(r=>r.json()); } catch(e) { invoices=[]; }
   renderInvoices();
-  receipts = await fetch('/api/receipts').then(r=>r.json());
+  try { receipts = await fetch('/api/receipts').then(r=>r.json()); } catch(e) { receipts=[]; }
   renderReceipts();
-  settings = await fetch('/api/settings').then(r=>r.json());
+  try { users = await fetch('/api/users').then(r=>r.json()); } catch(e) { users=[]; }
+  renderUsers();
+  try { settings = await fetch('/api/settings').then(r=>r.json()); } catch(e) { settings={}; }
   renderSettings();
+
+  dataLoaded = true;
+  console.log('Data loaded. LL:', landlords.length, 'PR:', properties.length, 'UN:', units.length, 'TN:', tenants.length);
 }
 
-// ── Render Functions ──────────────────────────────────────────────────
 function renderLandlords() {
   const tbody = document.getElementById('landlordsTable');
-  if(!landlords.length){ tbody.innerHTML='<tr><td colspan="7" class="empty-state"><div class="icon">📋</div><h3>No landlords yet</h3><p>Add your first landlord to get started</p></td></tr>'; return; }
-  tbody.innerHTML = landlords.map(l=>`
-    <tr><td>${l.ID}</td><td>${l.Name}</td><td>${l.Phone||''}</td><td>${l.Email||''}</td>
-    <td>${l['Commission Rate']||'10'}%</td><td><span class="badge ${(l.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${l.Status||'Active'}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editLandlord('${l.ID}')">Edit</button><button class="btn-delete" onclick="deleteLandlord('${l.ID}')">Delete</button></td></tr>`).join('');
+  if(!landlords || !landlords.length){ tbody.innerHTML='<tr><td colspan="7" class="empty-state"><div class="icon">📋</div><h3>No landlords yet</h3></td></tr>'; return; }
+  tbody.innerHTML = landlords.map(l=>`<tr><td>${l.ID||''}</td><td>${l.Name||''}</td><td>${l.Phone||''}</td><td>${l.Email||''}</td><td>${l['Commission Rate']||l.Commission||'10'}%</td><td><span class="badge ${(l.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${l.Status||'Active'}</span></td><td class="actions"><button class="btn-edit" onclick="editLandlord('${l.ID||''}')">Edit</button><button class="btn-delete" onclick="deleteLandlord('${l.ID||''}')">Delete</button></td></tr>`).join('');
 }
 
 function renderProperties() {
   const tbody = document.getElementById('propertiesTable');
-  if(!properties.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">🏘️</div><h3>No properties yet</h3></td></tr>'; return; }
-  tbody.innerHTML = properties.map(p=>{
-    const ll = landlords.find(l=>l.ID===p['Landlord ID'])||{};
-    return `<tr><td>${p.ID}</td><td>${p.Name}</td><td>${ll.Name||p['Landlord ID']||''}</td><td>${p.Address||''}</td>
-    <td>${p.Type||''}</td><td>${p['Total Units']||'0'}</td><td><span class="badge ${(p.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${p.Status||'Active'}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editProperty('${p.ID}')">Edit</button></td></tr>`;
-  }).join('');
+  if(!properties || !properties.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">🏘️</div><h3>No properties yet</h3></td></tr>'; return; }
+  tbody.innerHTML = properties.map(p=>{ const ll=landlords.find(l=>l.ID===p['Landlord ID'])||{}; return `<tr><td>${p.ID||''}</td><td>${p.Name||''}</td><td>${ll.Name||p['Landlord ID']||''}</td><td>${p.Address||''}</td><td>${p.Type||''}</td><td>${p['Total Units']||'0'}</td><td><span class="badge ${(p.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${p.Status||'Active'}</span></td><td class="actions"><button class="btn-edit" onclick="editProperty('${p.ID||''}')">Edit</button></td></tr>`; }).join('');
 }
 
 function renderUnits() {
   const tbody = document.getElementById('unitsTable');
-  if(!units.length){ tbody.innerHTML='<tr><td colspan="7" class="empty-state"><div class="icon">🚪</div><h3>No units yet</h3></td></tr>'; return; }
-  tbody.innerHTML = units.map(u=>{
-    const prop = properties.find(p=>p.ID===u['Property ID'])||{};
-    return `<tr><td>${u.ID}</td><td>${prop.Name||u['Property ID']||''}</td><td>${u['Unit Number']||''}</td>
-    <td>${u.Type||''}</td><td>${u.Rent||'0'}</td><td><span class="badge ${(u.Status||'Vacant').toLowerCase()==='occupied'?'success':'warning'}">${u.Status||'Vacant'}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editUnit('${u.ID}')">Edit</button></td></tr>`;
-  }).join('');
+  if(!units || !units.length){ tbody.innerHTML='<tr><td colspan="7" class="empty-state"><div class="icon">🚪</div><h3>No units yet</h3></td></tr>'; return; }
+  tbody.innerHTML = units.map(u=>{ const prop=properties.find(p=>p.ID===u['Property ID'])||{}; return `<tr><td>${u.ID||''}</td><td>${prop.Name||u['Property ID']||''}</td><td>${u['Unit Number']||''}</td><td>${u.Type||''}</td><td>${u.Rent||'0'}</td><td><span class="badge ${(u.Status||'Vacant').toLowerCase()==='occupied'?'success':'warning'}">${u.Status||'Vacant'}</span></td><td class="actions"><button class="btn-edit" onclick="editUnit('${u.ID||''}')">Edit</button></td></tr>`; }).join('');
 }
 
 function renderTenants() {
   const tbody = document.getElementById('tenantsTable');
-  if(!tenants.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">👥</div><h3>No tenants yet</h3></td></tr>'; return; }
-  tbody.innerHTML = tenants.map(t=>{
-    const unit = units.find(u=>u.ID===t['Unit ID'])||{};
-    return `<tr><td>${t.ID}</td><td>${t.Name}</td><td>${t.Phone||''}</td><td>${unit['Unit Number']||t['Unit ID']||''}</td>
-    <td>${t['Rent Amount']||'0'}</td><td>${t['Lease End']||''}</td><td><span class="badge ${(t.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${t.Status||'Active'}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editTenant('${t.ID}')">Edit</button></td></tr>`;
-  }).join('');
+  if(!tenants || !tenants.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">👥</div><h3>No tenants yet</h3></td></tr>'; return; }
+  tbody.innerHTML = tenants.map(t=>{ const unit=units.find(u=>u.ID===t['Unit ID'])||{}; return `<tr><td>${t.ID||''}</td><td>${t.Name||''}</td><td>${t.Phone||''}</td><td>${unit['Unit Number']||t['Unit ID']||''}</td><td>${t['Rent Amount']||'0'}</td><td>${t['Lease End']||''}</td><td><span class="badge ${(t.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${t.Status||'Active'}</span></td><td class="actions"><button class="btn-edit" onclick="editTenant('${t.ID||''}')">Edit</button></td></tr>`; }).join('');
 }
 
 function renderRent() {
   const tbody = document.getElementById('rentTable');
-  if(!rentData.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">💰</div><h3>No payments recorded</h3></td></tr>'; return; }
-  tbody.innerHTML = rentData.map(r=>{
-    const t = tenants.find(x=>x.ID===r['Tenant ID'])||{};
-    const u = units.find(x=>x.ID===r['Unit ID'])||{};
-    return `<tr><td>${r.ID}</td><td>${t.Name||r['Tenant ID']||''}</td><td>${u['Unit Number']||r['Unit ID']||''}</td>
-    <td>${r.Amount||'0'}</td><td>${r.Month||''} ${r.Year||''}</td><td>${r['Payment Method']||'Cash'}</td><td>${r.Date||''}</td>
-    <td class="actions"><button class="btn-view" onclick="generateReceipt('${r.ID}')">Receipt</button></td></tr>`;
-  }).join('');
+  if(!rentData || !rentData.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">💰</div><h3>No payments recorded</h3></td></tr>'; return; }
+  tbody.innerHTML = rentData.map(r=>{ const t=tenants.find(x=>x.ID===r['Tenant ID'])||{}; const u=units.find(x=>x.ID===r['Unit ID'])||{}; return `<tr><td>${r.ID||''}</td><td>${t.Name||r['Tenant ID']||''}</td><td>${u['Unit Number']||r['Unit ID']||''}</td><td>${r.Amount||'0'}</td><td>${r.Month||''} ${r.Year||''}</td><td>${r['Payment Method']||'Cash'}</td><td>${r.Date||''}</td><td class="actions"><button class="btn-receipt" onclick="quickReceipt('${r.ID||''}')">🧾 Receipt</button></td></tr>`; }).join('');
 }
 
 function renderExpenses() {
   const tbody = document.getElementById('expensesTable');
-  if(!expenses.length){ tbody.innerHTML='<tr><td colspan="7" class="empty-state"><div class="icon">📑</div><h3>No expenses recorded</h3></td></tr>'; return; }
-  tbody.innerHTML = expenses.map(e=>{
-    const prop = properties.find(p=>p.ID===e['Property ID'])||{};
-    return `<tr><td>${e.ID}</td><td>${prop.Name||e['Property ID']||''}</td><td>${e.Category||''}</td>
-    <td>${e.Description||''}</td><td>${e.Amount||'0'}</td><td>${e.Date||''}</td>
-    <td class="actions"><button class="btn-edit" onclick="editExpense('${e.ID}')">Edit</button></td></tr>`;
-  }).join('');
+  if(!expenses || !expenses.length){ tbody.innerHTML='<tr><td colspan="7" class="empty-state"><div class="icon">📑</div><h3>No expenses recorded</h3></td></tr>'; return; }
+  tbody.innerHTML = expenses.map(e=>{ const prop=properties.find(p=>p.ID===e['Property ID'])||{}; return `<tr><td>${e.ID||''}</td><td>${prop.Name||e['Property ID']||''}</td><td>${e.Category||''}</td><td>${e.Description||''}</td><td>${e.Amount||'0'}</td><td>${e.Date||''}</td><td class="actions"><button class="btn-edit" onclick="editExpense('${e.ID||''}')">Edit</button></td></tr>`; }).join('');
 }
 
 function renderInvoices() {
   const tbody = document.getElementById('invoicesTable');
-  if(!invoices.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">📄</div><h3>No invoices yet</h3></td></tr>'; return; }
-  tbody.innerHTML = invoices.map(inv=>`
-    <tr><td>${inv.ID}</td><td>${inv.Type||''}</td><td>${inv.EntityName||''}</td><td>${inv.Description||''}</td>
-    <td>${inv.Amount||'0'}</td><td>${inv.Month||''} ${inv.Year||''}</td>
-    <td><span class="badge ${(inv.Status||'Unpaid').toLowerCase()==='paid'?'success':'danger'}">${inv.Status||'Unpaid'}</span></td>
-    <td class="actions"><button class="btn-view" onclick="viewInvoice('${inv.ID}')">View</button>
-    ${inv.Status!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.ID}')">Pay</button>`:''}</td></tr>`).join('');
+  if(!invoices || !invoices.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">📄</div><h3>No invoices yet</h3></td></tr>'; return; }
+  tbody.innerHTML = invoices.map(inv=>`<tr><td>${inv.ID||''}</td><td>${inv.Type||''}</td><td>${inv.EntityName||''}</td><td>${inv.Description||''}</td><td>${inv.Amount||'0'}</td><td>${inv.Month||''} ${inv.Year||''}</td><td><span class="badge ${(inv.Status||'Unpaid').toLowerCase()==='paid'?'success':'danger'}">${inv.Status||'Unpaid'}</span></td><td class="actions"><button class="btn-view" onclick="viewInvoice('${inv.ID||''}')">View</button>${inv.Status!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.ID||''}')">Pay</button>`:''}</td></tr>`).join('');
 }
 
 function renderReceipts() {
   const tbody = document.getElementById('receiptsTable');
-  if(!receipts.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">🧾</div><h3>No receipts yet</h3></td></tr>'; return; }
-  tbody.innerHTML = receipts.map(r=>`
-    <tr><td>${r.ID}</td><td>${r.TenantName||''}</td><td>${r.UnitNumber||''}</td><td>${r.Amount||'0'}</td>
-    <td>${r.Month||''} ${r.Year||''}</td><td>${r.PaymentMethod||'Cash'}</td><td>${r.Date||''}</td>
-    <td class="actions"><button class="btn-view" onclick="viewReceipt('${r.ID}')">View</button></td></tr>`).join('');
+  if(!receipts || !receipts.length){ tbody.innerHTML='<tr><td colspan="8" class="empty-state"><div class="icon">🧾</div><h3>No receipts yet</h3></td></tr>'; return; }
+  tbody.innerHTML = receipts.map(r=>`<tr><td>${r.ID||''}</td><td>${r.TenantName||''}</td><td>${r.UnitNumber||''}</td><td>${r.Amount||'0'}</td><td>${r.Month||''} ${r.Year||''}</td><td>${r.PaymentMethod||'Cash'}</td><td>${r.Date||''}</td><td class="actions"><button class="btn-view" onclick="viewReceipt('${r.ID||''}')">View</button></td></tr>`).join('');
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('usersTable');
+  if(!users || !users.length){ tbody.innerHTML='<tr><td colspan="6" class="empty-state"><div class="icon">🔐</div><h3>No users found</h3></td></tr>'; return; }
+  tbody.innerHTML = users.map(u=>`<tr><td>${u.ID||u.UserID||''}</td><td>${u.Name||u['Full Name']||''}</td><td>${u.Username||u.sernam||''}</td><td>${u.Email||''}</td><td><span class="badge info">${u.Role||'User'}</span></td><td><span class="badge ${(u.Status||'Active').toLowerCase()==='active'?'success':'danger'}">${u.Status||'Active'}</span></td></tr>`).join('');
 }
 
 function renderSettings() {
@@ -462,25 +396,19 @@ function renderSettings() {
   div.innerHTML = Object.entries(settings).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);"><strong>${k}</strong><span>${v}</span></div>`).join('');
 }
 
-// ── Arrears Calculation ───────────────────────────────────────────────
 function loadArrears() {
   const tbody = document.getElementById('arrearsTable');
-  const activeTenants = tenants.filter(t=>t.Status==='Active');
+  const activeTenants = (tenants || []).filter(t=>t.Status==='Active');
   const arrears = [];
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-
   activeTenants.forEach(t=>{
-    const unit = units.find(u=>u.ID===t['Unit ID']);
+    const unit = (units || []).find(u=>u.ID===t['Unit ID']);
     const rentAmt = parseFloat(t['Rent Amount'])||0;
     if(!rentAmt) return;
     const leaseStart = t['Lease Start'] ? new Date(t['Lease Start']) : null;
     if(!leaseStart) return;
-
-    const tenantPayments = rentData.filter(r=>r['Tenant ID']===t.ID);
+    const tenantPayments = (rentData || []).filter(r=>r['Tenant ID']===t.ID);
     const paidMonths = new Set(tenantPayments.map(r=>`${r.Year}-${r.Month}`));
-
     let monthsDue = 0;
     let checkDate = new Date(leaseStart);
     checkDate.setMonth(checkDate.getMonth()+1);
@@ -489,175 +417,114 @@ function loadArrears() {
       if(!paidMonths.has(ym)) monthsDue++;
       checkDate.setMonth(checkDate.getMonth()+1);
     }
-
-    if(monthsDue > 0) {
-      arrears.push({ tenant:t, unit:unit, rent:rentAmt, months:monthsDue, total:rentAmt*monthsDue });
-    }
+    if(monthsDue > 0) arrears.push({ tenant:t, unit:unit, rent:rentAmt, months:monthsDue, total:rentAmt*monthsDue });
   });
-
   if(!arrears.length){ tbody.innerHTML='<tr><td colspan="6" class="empty-state"><div class="icon">✅</div><h3>No arrears</h3><p>All tenants are up to date</p></td></tr>'; return; }
-  tbody.innerHTML = arrears.map(a=>`
-    <tr><td>${a.tenant.Name}</td><td>${a.unit?a.unit['Unit Number']:'N/A'}</td><td>${a.rent}</td>
-    <td>${a.months}</td><td style="color:var(--danger);font-weight:700">${a.total.toLocaleString()}</td>
-    <td class="actions"><button class="btn-edit" onclick="openModal('rent','${a.tenant.ID}')">Record Payment</button></td></tr>`).join('');
+  tbody.innerHTML = arrears.map(a=>`<tr><td>${a.tenant.Name}</td><td>${a.unit?a.unit['Unit Number']:'N/A'}</td><td>${a.rent}</td><td>${a.months}</td><td style="color:var(--danger);font-weight:700">${a.total.toLocaleString()}</td><td class="actions"><button class="btn-edit" onclick="openModal('rent','${a.tenant.ID||''}')">Record Payment</button></td></tr>`).join('');
 }
 
-// ── Modal & Forms ─────────────────────────────────────────────────────
 function openModal(type, prefillId=null) {
-  currentForm = type;
-  const overlay = document.getElementById('modalOverlay');
+  currentForm = type; editingId = null;
+  document.getElementById('modalOverlay').classList.add('active');
   const body = document.getElementById('modalBody');
   const title = document.getElementById('modalTitle');
-  overlay.classList.add('active');
+
+  const activeLL = (landlords || []).filter(l=>l.Status==='Active' || !l.Status);
+  const activePR = (properties || []).filter(p=>p.Status==='Active' || !p.Status);
+  const vacantUN = (units || []).filter(u=>u.Status==='Vacant');
+  const activeTN = (tenants || []).filter(t=>t.Status==='Active' || !t.Status);
+
+  const llOpts = activeLL.length ? activeLL.map(l=>`<option value="${l.ID||''}">${l.Name||l.ID||''}</option>`).join('') : '<option value="">No landlords</option>';
+  const propOpts = activePR.length ? activePR.map(p=>`<option value="${p.ID||''}">${p.Name||p.ID||''}</option>`).join('') : '<option value="">No properties</option>';
+  const unitOpts = vacantUN.length ? vacantUN.map(u=>{ const prop=properties.find(p=>p.ID===u['Property ID'])||{}; return `<option value="${u.ID||''}">${u['Unit Number']||u.ID||''} (${prop.Name||u['Property ID']||''})</option>`; }).join('') : '<option value="">No vacant units</option>';
+  const tenantOpts = activeTN.length ? activeTN.map(t=>`<option value="${t.ID||''}" data-unit="${t['Unit ID']||''}">${t.Name||t.ID||''}</option>`).join('') : '<option value="">No active tenants</option>';
+  const monthOpts = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('');
+  const catOpts = ['Maintenance','Utilities','Insurance','Property Tax','Legal Fees','Marketing','Cleaning','Security','Repairs','Renovation','Landscaping','Management Fees','Commission','Other'].map(c=>`<option>${c}</option>`).join('');
 
   const forms = {
-    landlord: ()=>{
-      title.textContent = 'Add Landlord';
-      return `<div class="form-grid">
-        <div class="form-group full"><label>Name *</label><input id="f_name" required></div>
-        <div class="form-group"><label>Phone</label><input id="f_phone"></div>
-        <div class="form-group"><label>Email</label><input id="f_email" type="email"></div>
-        <div class="form-group full"><label>Address</label><input id="f_address"></div>
-        <div class="form-group"><label>Bank Name</label><input id="f_bank"></div>
-        <div class="form-group"><label>Bank Account</label><input id="f_account"></div>
-        <div class="form-group"><label>Commission %</label><input id="f_commission" type="number" value="10"></div>
-      </div>`;
-    },
-    property: ()=>{
-      title.textContent = 'Add Property';
-      const llOpts = landlords.filter(l=>l.Status==='Active').map(l=>`<option value="${l.ID}">${l.Name}</option>`).join('');
-      return `<div class="form-grid">
-        <div class="form-group full"><label>Property Name *</label><input id="f_name" required></div>
-        <div class="form-group full"><label>Landlord *</label><select id="f_landlord" required><option value="">Select...</option>${llOpts}</select></div>
-        <div class="form-group full"><label>Address</label><input id="f_address"></div>
-        <div class="form-group"><label>Type</label><select id="f_type"><option>Residential</option><option>Commercial</option><option>Mixed</option></select></div>
-      </div>`;
-    },
-    unit: ()=>{
-      title.textContent = 'Add Unit';
-      const propOpts = properties.filter(p=>p.Status==='Active').map(p=>`<option value="${p.ID}">${p.Name}</option>`).join('');
-      return `<div class="form-grid">
-        <div class="form-group full"><label>Property *</label><select id="f_property" required><option value="">Select...</option>${propOpts}</select></div>
-        <div class="form-group"><label>Unit Number *</label><input id="f_unitno" required></div>
-        <div class="form-group"><label>Type</label><select id="f_type"><option>Studio</option><option>1 Bedroom</option><option>2 Bedroom</option><option>3 Bedroom</option><option>4+ Bedroom</option><option>Shop</option><option>Office</option></select></div>
-        <div class="form-group"><label>Monthly Rent</label><input id="f_rent" type="number"></div>
-        <div class="form-group full"><label>Description</label><textarea id="f_desc"></textarea></div>
-      </div>`;
-    },
-    tenant: ()=>{
-      title.textContent = 'Add Tenant';
-      const unitOpts = units.filter(u=>u.Status==='Vacant').map(u=>`<option value="${u.ID}">${u['Unit Number']} (${properties.find(p=>p.ID===u['Property ID'])?.Name||''})</option>`).join('');
-      return `<div class="form-grid">
-        <div class="form-group full"><label>Full Name *</label><input id="f_name" required></div>
-        <div class="form-group"><label>Phone *</label><input id="f_phone" required></div>
-        <div class="form-group"><label>Email</label><input id="f_email" type="email"></div>
-        <div class="form-group"><label>ID/Passport</label><input id="f_idno"></div>
-        <div class="form-group full"><label>Unit *</label><select id="f_unit" required><option value="">Select vacant unit...</option>${unitOpts}</select></div>
-        <div class="form-group"><label>Lease Start</label><input id="f_start" type="date"></div>
-        <div class="form-group"><label>Lease End</label><input id="f_end" type="date"></div>
-        <div class="form-group"><label>Monthly Rent</label><input id="f_rent" type="number"></div>
-        <div class="form-group"><label>Deposit</label><input id="f_deposit" type="number"></div>
-      </div>`;
-    },
-    rent: ()=>{
-      title.textContent = 'Record Rent Payment';
-      const tntOpts = tenants.filter(t=>t.Status==='Active').map(t=>`<option value="${t.ID}" data-unit="${t['Unit ID']}">${t.Name}</option>`).join('');
-      return `<div class="form-grid">
-        <div class="form-group full"><label>Tenant *</label><select id="f_tenant" required onchange="document.getElementById('f_unit').value=this.selectedOptions[0].dataset.unit||''"><option value="">Select...</option>${tntOpts}</select></div>
-        <div class="form-group"><label>Unit ID</label><input id="f_unit" readonly style="background:#f8fafc"></div>
-        <div class="form-group"><label>Amount *</label><input id="f_amount" type="number" required></div>
-        <div class="form-group"><label>Month</label><select id="f_month">${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('')}</select></div>
-        <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${new Date().getFullYear()}"></div>
-        <div class="form-group"><label>Payment Method</label><select id="f_method"><option>Cash</option><option>Bank Transfer</option><option>Mobile Money</option><option>Cheque</option></select></div>
-        <div class="form-group full"><label>Reference</label><input id="f_ref" placeholder="Transaction ID / Cheque number"></div>
-      </div>`;
-    },
-    expense: ()=>{
-      title.textContent = 'Add Expense';
-      const propOpts = properties.map(p=>`<option value="${p.ID}">${p.Name}</option>`).join('');
-      return `<div class="form-grid">
-        <div class="form-group full"><label>Property</label><select id="f_property"><option value="">Select...</option>${propOpts}</select></div>
-        <div class="form-group"><label>Category *</label><select id="f_category" required><option>Maintenance</option><option>Utilities</option><option>Insurance</option><option>Tax</option><option>Legal</option><option>Marketing</option><option>Other</option></select></div>
-        <div class="form-group full"><label>Description *</label><input id="f_desc" required></div>
-        <div class="form-group"><label>Amount *</label><input id="f_amount" type="number" required></div>
-        <div class="form-group"><label>Date</label><input id="f_date" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
-      </div>`;
-    },
-    invoice: ()=>{
-      title.textContent = 'Create Invoice';
-      const llOpts = landlords.filter(l=>l.Status==='Active').map(l=>`<option value="${l.ID}">${l.Name} (Landlord)</option>`).join('');
-      const tntOpts = tenants.filter(t=>t.Status==='Active').map(t=>`<option value="${t.ID}">${t.Name} (Tenant)</option>`).join('');
-      return `<div class="form-grid">
-        <div class="form-group"><label>Type *</label><select id="f_type" required onchange="updateInvoiceEntity()"><option value="">Select...</option><option value="landlord">Landlord Management Fee</option><option value="tenant">Tenant Rent Invoice</option></select></div>
-        <div class="form-group full"><label>Entity *</label><select id="f_entity" required><option value="">Select type first...</option></select></div>
-        <div class="form-group full"><label>Description</label><input id="f_desc" placeholder="e.g. Management fee for June 2026"></div>
-        <div class="form-group"><label>Amount *</label><input id="f_amount" type="number" required></div>
-        <div class="form-group"><label>Month</label><select id="f_month">${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}">${m}</option>`).join('')}</select></div>
-        <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${new Date().getFullYear()}"></div>
-      </div>`;
-    }
+    landlord: ()=>{ title.textContent='Add Landlord'; return `<div class="form-grid"><div class="form-group full"><label>Name *</label><input id="f_name" required></div><div class="form-group"><label>Phone</label><input id="f_phone"></div><div class="form-group"><label>Email</label><input id="f_email" type="email"></div><div class="form-group full"><label>Address</label><input id="f_address"></div><div class="form-group"><label>Bank Name</label><input id="f_bank"></div><div class="form-group"><label>Bank Account</label><input id="f_account"></div><div class="form-group"><label>Commission %</label><input id="f_commission" type="number" value="10"></div></div>`; },
+    property: ()=>{ title.textContent='Add Property'; return `<div class="form-grid"><div class="form-group full"><label>Property Name *</label><input id="f_name" required></div><div class="form-group full"><label>Landlord *</label><select id="f_landlord" required><option value="">Select landlord...</option>${llOpts}</select></div><div class="form-group full"><label>Address</label><input id="f_address"></div><div class="form-group"><label>Type</label><select id="f_type"><option>Residential</option><option>Commercial</option><option>Mixed</option><option>Industrial</option></select></div></div>`; },
+    unit: ()=>{ title.textContent='Add Unit'; return `<div class="form-grid"><div class="form-group full"><label>Property *</label><select id="f_property" required><option value="">Select property...</option>${propOpts}</select></div><div class="form-group"><label>Unit Number *</label><input id="f_unitno" required placeholder="e.g. A1, 101, Shop 1"></div><div class="form-group"><label>Type</label><select id="f_type"><option>Studio</option><option>1 Bedroom</option><option>2 Bedroom</option><option>3 Bedroom</option><option>4+ Bedroom</option><option>Shop</option><option>Office</option><option>Warehouse</option></select></div><div class="form-group"><label>Monthly Rent</label><input id="f_rent" type="number" placeholder="0"></div><div class="form-group full"><label>Description</label><textarea id="f_desc" placeholder="Floor, features, etc."></textarea></div></div>`; },
+    tenant: ()=>{ title.textContent='Add Tenant'; return `<div class="form-grid"><div class="form-group full"><label>Full Name *</label><input id="f_name" required></div><div class="form-group"><label>Phone *</label><input id="f_phone" required></div><div class="form-group"><label>Email</label><input id="f_email" type="email"></div><div class="form-group"><label>ID/Passport</label><input id="f_idno"></div><div class="form-group full"><label>Unit *</label><select id="f_unit" required><option value="">Select vacant unit...</option>${unitOpts}</select></div><div class="form-group"><label>Lease Start</label><input id="f_start" type="date"></div><div class="form-group"><label>Lease End</label><input id="f_end" type="date"></div><div class="form-group"><label>Monthly Rent</label><input id="f_rent" type="number" placeholder="0"></div><div class="form-group"><label>Deposit</label><input id="f_deposit" type="number" placeholder="0"></div></div>`; },
+    rent: ()=>{ title.textContent='Record Rent Payment'; return `<div class="form-grid"><div class="form-group full"><label>Tenant *</label><select id="f_tenant" required onchange="autoFillUnit()"><option value="">Select tenant...</option>${tenantOpts}</select></div><div class="form-group"><label>Unit ID</label><input id="f_unit" readonly style="background:#f8fafc"></div><div class="form-group"><label>Amount *</label><input id="f_amount" type="number" required placeholder="0"></div><div class="form-group"><label>Month</label><select id="f_month">${monthOpts}</select></div><div class="form-group"><label>Year</label><input id="f_year" type="number" value="${new Date().getFullYear()}"></div><div class="form-group"><label>Payment Method</label><select id="f_method"><option>Cash</option><option>Bank Transfer</option><option>Mobile Money</option><option>Cheque</option><option>Card</option></select></div><div class="form-group full"><label>Reference</label><input id="f_ref" placeholder="Transaction ID / Cheque number"></div></div>`; },
+    expense: ()=>{ title.textContent='Add Expense'; return `<div class="form-grid"><div class="form-group full"><label>Property</label><select id="f_property"><option value="">Select property (optional)...</option>${propOpts}</select></div><div class="form-group"><label>Category *</label><select id="f_category" required>${catOpts}</select></div><div class="form-group full"><label>Description *</label><input id="f_desc" required placeholder="What was this expense for?"></div><div class="form-group"><label>Amount *</label><input id="f_amount" type="number" required placeholder="0"></div><div class="form-group"><label>Date</label><input id="f_date" type="date" value="${new Date().toISOString().split('T')[0]}"></div></div>`; },
+    invoice: ()=>{ title.textContent='Create Invoice'; return `<div class="form-grid"><div class="form-group full"><label>Invoice Type *</label><select id="f_invType" required onchange="updateInvoiceEntity()"><option value="">Select type...</option><option value="landlord">Landlord Management Fee</option><option value="tenant">Tenant Rent Invoice</option></select></div><div class="form-group full"><label>Bill To *</label><select id="f_entity" required disabled><option value="">Select type first...</option></select></div><div class="form-group full"><label>Description</label><input id="f_desc" placeholder="e.g. Management fee for June 2026"></div><div class="form-group"><label>Amount *</label><input id="f_amount" type="number" required placeholder="0"></div><div class="form-group"><label>Month</label><select id="f_month">${monthOpts}</select></div><div class="form-group"><label>Year</label><input id="f_year" type="number" value="${new Date().getFullYear()}"></div></div>`; }
   };
 
-  body.innerHTML = (forms[type] || (()=>''))();
+  body.innerHTML = (forms[type] || (()=>'<p>Unknown form</p>'))();
   if(prefillId && type==='rent') {
     const t = tenants.find(x=>x.ID===prefillId);
-    if(t){ document.getElementById('f_tenant').value=t.ID; document.getElementById('f_unit').value=t['Unit ID']||''; }
+    if(t){ document.getElementById('f_tenant').value=t.ID||''; document.getElementById('f_unit').value=t['Unit ID']||''; }
+  }
+}
+
+function autoFillUnit() {
+  const sel = document.getElementById('f_tenant');
+  if(!sel) return;
+  const unitId = sel.selectedOptions[0]?.dataset?.unit || '';
+  const unitInput = document.getElementById('f_unit');
+  if(unitInput) unitInput.value = unitId;
+  const t = tenants.find(x=>x.ID===sel.value);
+  if(t && t['Rent Amount']) {
+    const amtInput = document.getElementById('f_amount');
+    if(amtInput && !amtInput.value) amtInput.value = t['Rent Amount'];
   }
 }
 
 function updateInvoiceEntity() {
-  const type = document.getElementById('f_type').value;
-  const sel = document.getElementById('f_entity');
+  const typeSel = document.getElementById('f_invType');
+  const entitySel = document.getElementById('f_entity');
+  if(!typeSel || !entitySel) return;
+  const type = typeSel.value;
+  entitySel.disabled = false;
   if(type==='landlord') {
-    sel.innerHTML = '<option value="">Select landlord...</option>' + landlords.filter(l=>l.Status==='Active').map(l=>`<option value="${l.ID}">${l.Name}</option>`).join('');
+    const activeLL = landlords.filter(l=>l.Status==='Active' || !l.Status);
+    entitySel.innerHTML = '<option value="">Select landlord...</option>' + activeLL.map(l=>`<option value="${l.ID||''}">${l.Name||l.ID||''}</option>`).join('');
   } else if(type==='tenant') {
-    sel.innerHTML = '<option value="">Select tenant...</option>' + tenants.filter(t=>t.Status==='Active').map(t=>`<option value="${t.ID}">${t.Name}</option>`).join('');
+    const activeTnt = tenants.filter(t=>t.Status==='Active' || !t.Status);
+    entitySel.innerHTML = '<option value="">Select tenant...</option>' + activeTnt.map(t=>`<option value="${t.ID||''}">${t.Name||t.ID||''}</option>`).join('');
+  } else {
+    entitySel.disabled = true;
+    entitySel.innerHTML = '<option value="">Select type first...</option>';
   }
 }
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
-  currentForm = '';
+  currentForm = ''; editingId = null;
+}
+
+function showPrompt(title, message, onYes) {
+  document.getElementById('promptTitle').textContent = title;
+  document.getElementById('promptMessage').textContent = message;
+  document.getElementById('promptYes').onclick = function() { closePrompt(); onYes(); };
+  document.getElementById('promptOverlay').classList.add('active');
+}
+
+function closePrompt() {
+  document.getElementById('promptOverlay').classList.remove('active');
 }
 
 async function saveForm() {
   const btn = document.getElementById('modalSave');
   btn.textContent = 'Saving...'; btn.disabled = true;
-
   try {
     let payload={}, endpoint='';
     switch(currentForm) {
-      case 'landlord':
-        endpoint='/api/landlords';
-        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission')};
-        break;
-      case 'property':
-        endpoint='/api/properties';
-        payload={name:gv('f_name'),landlordId:gv('f_landlord'),address:gv('f_address'),type:gv('f_type')};
-        break;
-      case 'unit':
-        endpoint='/api/units';
-        payload={propertyId:gv('f_property'),unitNumber:gv('f_unitno'),type:gv('f_type'),rent:gv('f_rent'),description:gv('f_desc')};
-        break;
-      case 'tenant':
-        endpoint='/api/tenants';
-        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit')};
-        break;
-      case 'rent':
-        endpoint='/api/rent';
-        payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref')};
-        break;
-      case 'expense':
-        endpoint='/api/expenses';
-        payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')};
-        break;
-      case 'invoice':
-        endpoint='/api/invoices';
-        const entType = gv('f_type');
-        const ent = landlords.find(l=>l.ID===gv('f_entity')) || tenants.find(t=>t.ID===gv('f_entity')) || {};
-        payload={type:entType,entityId:gv('f_entity'),entityName:ent.Name||'Unknown',description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
-        break;
+      case 'landlord': endpoint='/api/landlords'; payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission')}; break;
+      case 'property': endpoint='/api/properties'; payload={name:gv('f_name'),landlordId:gv('f_landlord'),address:gv('f_address'),type:gv('f_type')}; break;
+      case 'unit': endpoint='/api/units'; payload={propertyId:gv('f_property'),unitNumber:gv('f_unitno'),type:gv('f_type'),rent:gv('f_rent'),description:gv('f_desc')}; break;
+      case 'tenant': endpoint='/api/tenants'; payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit')}; break;
+      case 'rent': endpoint='/api/rent'; payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref')}; break;
+      case 'expense': endpoint='/api/expenses'; payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')}; break;
+      case 'invoice': endpoint='/api/invoices'; payload={type:gv('f_invType'),entityId:gv('f_entity'),entityName:getEntityName(gv('f_invType'),gv('f_entity')),description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')}; break;
     }
+
+    if(currentForm==='property' && !payload.landlordId) { showToast('Please select a landlord','error'); btn.textContent='Save'; btn.disabled=false; return; }
+    if(currentForm==='unit' && !payload.propertyId) { showToast('Please select a property','error'); btn.textContent='Save'; btn.disabled=false; return; }
+    if(currentForm==='tenant' && !payload.unitId) { showToast('Please select a unit','error'); btn.textContent='Save'; btn.disabled=false; return; }
+    if(currentForm==='rent' && !payload.tenantId) { showToast('Please select a tenant','error'); btn.textContent='Save'; btn.disabled=false; return; }
+    if(currentForm==='invoice' && (!payload.type || !payload.entityId)) { showToast('Please select invoice type and entity','error'); btn.textContent='Save'; btn.disabled=false; return; }
 
     const res = await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data = await res.json();
@@ -665,35 +532,114 @@ async function saveForm() {
       showToast('Saved successfully!','success');
       closeModal();
       await loadAllData();
+      if(currentForm==='property') {
+        showPrompt('Add Units?', `Do you want to add units to "${payload.name}" now?`, function() {
+          openModal('unit');
+          setTimeout(()=>{ const propSel=document.getElementById('f_property'); if(propSel) propSel.value=data.id; }, 100);
+        });
+      }
       if(currentForm==='rent') {
-        // Auto-generate receipt
-        const rcpPayload = {rentId:data.id,tenantName:(tenants.find(t=>t.ID===payload.tenantId)||{}).Name||'',unitNumber:(units.find(u=>u.ID===payload.unitId)||{})['Unit Number']||'',amount:payload.amount,month:payload.month,year:payload.year,paymentMethod:payload.paymentMethod};
-        await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rcpPayload)});
-        showToast('Receipt generated!','success');
-        await loadAllData();
+        const t=tenants.find(x=>x.ID===payload.tenantId);
+        const u=units.find(x=>x.ID===payload.unitId);
+        const rcpPayload={rentId:data.id,tenantName:t?t.Name:'',unitNumber:u?u['Unit Number']:'',amount:payload.amount,month:payload.month,year:payload.year,paymentMethod:payload.paymentMethod};
+        const rcpRes=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rcpPayload)});
+        const rcpData=await rcpRes.json();
+        if(rcpData.success) {
+          showToast('Receipt generated! 🧾','success');
+          await loadAllData();
+          showPrompt('View Receipt?', 'Receipt generated. View it now?', function() { viewReceipt(rcpData.id); });
+        }
       }
     } else {
       showToast(data.error||'Failed to save','error');
     }
-  } catch(e) {
-    showToast('Error: '+e.message,'error');
-  }
+  } catch(e) { showToast('Error: '+e.message,'error'); }
   btn.textContent = 'Save'; btn.disabled = false;
 }
 
-function gv(id){ return document.getElementById(id)?.value||''; }
+function getEntityName(type, id) {
+  if(type==='landlord') { const l=landlords.find(x=>x.ID===id); return l?l.Name:''; }
+  else { const t=tenants.find(x=>x.ID===id); return t?t.Name:''; }
+}
 
-// ── Edit / Delete Helpers ─────────────────────────────────────────────
+function gv(id){ const el=document.getElementById(id); return el?el.value:''; }
+
+// ── Edit Functions ────────────────────────────────────────────────────
+function editLandlord(id) {
+  const l=landlords.find(x=>x.ID===id); if(!l) return;
+  openModal('landlord'); editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Landlord';
+  setTimeout(()=>{
+    document.getElementById('f_name').value=l.Name||'';
+    document.getElementById('f_phone').value=l.Phone||'';
+    document.getElementById('f_email').value=l.Email||'';
+    document.getElementById('f_address').value=l.Address||'';
+    document.getElementById('f_bank').value=l['Bank Name']||'';
+    document.getElementById('f_account').value=l['Bank Account']||'';
+    document.getElementById('f_commission').value=l['Commission Rate']||l.Commission||'10';
+  }, 50);
+}
+
+function editProperty(id) {
+  const p=properties.find(x=>x.ID===id); if(!p) return;
+  openModal('property'); editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Property';
+  setTimeout(()=>{
+    document.getElementById('f_name').value=p.Name||'';
+    document.getElementById('f_landlord').value=p['Landlord ID']||'';
+    document.getElementById('f_address').value=p.Address||'';
+    document.getElementById('f_type').value=p.Type||'Residential';
+  }, 50);
+}
+
+function editUnit(id) {
+  const u=units.find(x=>x.ID===id); if(!u) return;
+  openModal('unit'); editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Unit';
+  setTimeout(()=>{
+    document.getElementById('f_property').value=u['Property ID']||'';
+    document.getElementById('f_unitno').value=u['Unit Number']||'';
+    document.getElementById('f_type').value=u.Type||'Studio';
+    document.getElementById('f_rent').value=u.Rent||'';
+    document.getElementById('f_desc').value=u.Description||'';
+  }, 50);
+}
+
+function editTenant(id) {
+  const t=tenants.find(x=>x.ID===id); if(!t) return;
+  openModal('tenant'); editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Tenant';
+  setTimeout(()=>{
+    document.getElementById('f_name').value=t.Name||'';
+    document.getElementById('f_phone').value=t.Phone||'';
+    document.getElementById('f_email').value=t.Email||'';
+    document.getElementById('f_idno').value=t['ID Number']||t.idNumber||'';
+    document.getElementById('f_unit').value=t['Unit ID']||'';
+    document.getElementById('f_start').value=t['Lease Start']||'';
+    document.getElementById('f_end').value=t['Lease End']||'';
+    document.getElementById('f_rent').value=t['Rent Amount']||'';
+    document.getElementById('f_deposit').value=t.Deposit||'';
+  }, 50);
+}
+
+function editExpense(id) {
+  const e=expenses.find(x=>x.ID===id); if(!e) return;
+  openModal('expense'); editingId=id;
+  document.getElementById('modalTitle').textContent='Edit Expense';
+  setTimeout(()=>{
+    document.getElementById('f_property').value=e['Property ID']||'';
+    document.getElementById('f_category').value=e.Category||'Other';
+    document.getElementById('f_desc').value=e.Description||'';
+    document.getElementById('f_amount').value=e.Amount||'';
+    document.getElementById('f_date').value=e.Date||'';
+  }, 50);
+}
+
 async function deleteLandlord(id) {
   if(!confirm('Delete this landlord?')) return;
   await fetch('/api/landlords/'+id,{method:'DELETE'});
   showToast('Deleted','success'); loadAllData();
 }
-function editLandlord(id){ showToast('Edit coming soon','warning'); }
-function editProperty(id){ showToast('Edit coming soon','warning'); }
-function editUnit(id){ showToast('Edit coming soon','warning'); }
-function editTenant(id){ showToast('Edit coming soon','warning'); }
-function editExpense(id){ showToast('Edit coming soon','warning'); }
 
 // ── Invoice / Receipt Actions ─────────────────────────────────────────
 function viewInvoice(id){ window.open('/api/invoices/'+id+'/pdf','_blank'); }
@@ -705,33 +651,28 @@ async function payInvoice(id) {
   loadAllData();
 }
 
-async function generateReceipt(rentId) {
-  const r = rentData.find(x=>x.ID===rentId);
-  if(!r){ showToast('Rent record not found','error'); return; }
-  const t = tenants.find(x=>x.ID===r['Tenant ID'])||{};
-  const u = units.find(x=>x.ID===r['Unit ID'])||{};
-  const payload = {rentId,tenantName:t.Name||'',unitNumber:u['Unit Number']||'',amount:r.Amount,month:r.Month,year:r.Year,paymentMethod:r['Payment Method']||'Cash'};
-  const res = await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-  const data = await res.json();
+async function quickReceipt(rentId) {
+  const r=rentData.find(x=>x.ID===rentId); if(!r){ showToast('Rent record not found','error'); return; }
+  const t=tenants.find(x=>x.ID===r['Tenant ID'])||{};
+  const u=units.find(x=>x.ID===r['Unit ID'])||{};
+  const payload={rentId,tenantName:t.Name||'',unitNumber:u['Unit Number']||'',amount:r.Amount,month:r.Month,year:r.Year,paymentMethod:r['Payment Method']||'Cash'};
+  const res=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const data=await res.json();
   if(data.success){ showToast('Receipt generated!','success'); loadAllData(); viewReceipt(data.id); }
 }
 
-// ── Table Filter ──────────────────────────────────────────────────────
+// ── Table Filter ─────────────────────────────────────────────────────
 function filterTable(tbodyId, query) {
-  const tbody = document.getElementById(tbodyId);
-  const rows = tbody.querySelectorAll('tr');
-  const q = query.toLowerCase();
-  rows.forEach(row=>{
-    if(row.querySelector('.empty-state')) return;
-    row.style.display = row.textContent.toLowerCase().includes(q)?'':'none';
-  });
+  const tbody=document.getElementById(tbodyId);
+  const rows=tbody.querySelectorAll('tr');
+  const q=query.toLowerCase();
+  rows.forEach(row=>{ if(row.querySelector('.empty-state')) return; row.style.display=row.textContent.toLowerCase().includes(q)?'':'none'; });
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────
 function showToast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast '+type+' show';
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+type+' show';
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 </script>
