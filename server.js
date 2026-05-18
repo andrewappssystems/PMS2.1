@@ -61,12 +61,20 @@ function hashPassword(password, salt = null) {
 }
 
 function verifyPassword(password, storedHash) {
-  if (!storedHash || !storedHash.includes(':')) return false;
+  if (!storedHash || !storedHash.includes(':')) {
+    console.log('Invalid hash format:', storedHash);
+    return false;
+  }
   const parts = storedHash.split(':');
-  if (parts.length !== 2) return false;
+  if (parts.length !== 2) {
+    console.log('Hash does not have exactly 2 parts');
+    return false;
+  }
   const salt = parts[0];
   const expected = hashPassword(password, salt);
-  return expected === storedHash;
+  const match = expected === storedHash;
+  console.log('Hash comparison:', match ? 'MATCH' : 'NO MATCH');
+  return match;
 }
 
 // ── Auth Middleware ──────────────────────────────────────────────────
@@ -126,11 +134,37 @@ async function getNextId(sheetName, prefix) {
   const data = await getSheetData(sheetName);
   if (data.length === 0) return prefix + '-001';
   const nums = data.map(r => {
-    const m = (r.ID || '').match(/\d+/);
+    const m = (r.ID || r.UserID || '').match(/\d+/);
     return m ? parseInt(m[0]) : 0;
   });
   const max = Math.max(...nums, 0);
   return prefix + '-' + String(max + 1).padStart(3, '0');
+}
+
+// ── Helper: Get password field with fallback ─────────────────────────
+function getPassword(user) {
+  // Try different possible column names
+  return user['Password Hash'] || user.Password || user.password || user['Password'] || '';
+}
+
+function getUsername(user) {
+  return user.Username || user.username || user['User Name'] || user.sernam || '';
+}
+
+function getUserId(user) {
+  return user.ID || user.UserID || user['User ID'] || user.id || '';
+}
+
+function getUserName(user) {
+  return user.Name || user['Full Name'] || user['FullName'] || user.FullName || user.username || '';
+}
+
+function getUserRole(user) {
+  return user.Role || user.role || user['User Role'] || 'User';
+}
+
+function getUserEmail(user) {
+  return user.Email || user.email || user['Email Address'] || '';
 }
 
 // ── Routes ────────────────────────────────────────────────────────────
@@ -157,37 +191,37 @@ app.post('/login', async (req, res) => {
       return res.render('login', { error: 'No users configured.' });
     }
 
-    // DEBUG: Log all user fields to see column mapping
+    // DEBUG: Log first user structure
     const firstUser = users[0];
     console.log('First user keys:', Object.keys(firstUser));
-    console.log('First user data:', JSON.stringify(firstUser));
+    console.log('First user username field:', getUsername(firstUser));
+    console.log('First user password field:', getPassword(firstUser) ? 'PRESENT' : 'EMPTY');
 
-    const user = users.find(u => u.Username === username);
-    console.log('Found user:', user ? 'YES' : 'NO');
+    const user = users.find(u => getUsername(u) === username);
+    console.log('Found user:', user ? 'YES - ' + getUsername(user) : 'NO');
 
     if (!user) {
       return res.render('login', { error: 'Invalid username or password' });
     }
 
-    console.log('Password field value:', user.Password);
-    console.log('Password type:', typeof user.Password);
+    const storedHash = getPassword(user);
+    console.log('Password hash present:', storedHash ? 'YES (' + storedHash.substring(0, 20) + '...)' : 'NO');
 
-    // TEMPORARY BYPASS: If password is empty, accept ANY password
-    // and redirect to set-password page
-    if (!user.Password || user.Password.trim() === '') {
+    // If password is empty, allow bypass (temporary)
+    if (!storedHash || storedHash.trim() === '') {
       console.log('⚠️  User has no password hash. Using temporary bypass.');
       req.session.user = {
-        id: user.ID,
-        name: user.Name,
-        username: user.Username,
-        role: user.Role,
-        email: user.Email
+        id: getUserId(user),
+        name: getUserName(user),
+        username: getUsername(user),
+        role: getUserRole(user),
+        email: getUserEmail(user)
       };
       console.log('Session created (empty password bypass):', req.session.user);
       return res.redirect('/');
     }
 
-    const valid = verifyPassword(password, user.Password);
+    const valid = verifyPassword(password, storedHash);
     console.log('Password valid:', valid);
 
     if (!valid) {
@@ -195,11 +229,11 @@ app.post('/login', async (req, res) => {
     }
 
     req.session.user = {
-      id: user.ID,
-      name: user.Name,
-      username: user.Username,
-      role: user.Role,
-      email: user.Email
+      id: getUserId(user),
+      name: getUserName(user),
+      username: getUsername(user),
+      role: getUserRole(user),
+      email: getUserEmail(user)
     };
 
     console.log('Session created:', req.session.user);
