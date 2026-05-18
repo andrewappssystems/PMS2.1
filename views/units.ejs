@@ -1,141 +1,82 @@
-<div class="page-header">
-  <h1>Units</h1>
-  <button class="btn btn-primary" onclick="openModal('addModal')">➕ Add Unit</button>
-</div>
-
-<div class="section-card">
-  <% if (units.length > 0) { %>
-    <div class="table-responsive">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Unit #</th>
-            <th>Property</th>
-            <th>Type</th>
-            <th>Rent</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% units.forEach(u => {
-            const property = properties.find(p => p.PropertyID === u.PropertyID) || {};
-          %>
-            <tr>
-              <td><strong><%= u.UnitNumber %></strong></td>
-              <td><%= property.PropertyName || 'N/A' %></td>
-              <td><%= u.UnitType || 'Standard' %></td>
-              <td>$<%= parseFloat(u.RentAmount).toFixed(2) %></td>
-              <td><span class="badge <%= u.Status === 'Occupied' ? 'badge-success' : (u.Status === 'Vacant' ? 'badge-warning' : 'badge-danger') %>"><%= u.Status %></span></td>
-              <td class="actions">
-                <button class="btn-small" onclick="editUnit('<%= u.UnitID %>', '<%= u.PropertyID %>', '<%= u.UnitNumber %>', '<%= u.UnitType %>', '<%= u.RentAmount %>', '<%= u.Status %>')">✏️</button>
-                <form action="/units/<%= u.UnitID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this unit?')">
-                  <button type="submit" class="btn-small btn-danger">🗑️</button>
-                </form>
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> | PMS</title>
+  <style>
+    :root { --primary: #0f766e; --primary-dark: #0d9488; --accent: #14b8a6; --bg: #f1f5f9; --text-dark: #0f172a; --text-muted: #64748b; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg); color: var(--text-dark); }
+    .topbar { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 0 24px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 18px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+    .role-badge { background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+    .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-block; }
+    .sidebar { position: fixed; top: 60px; left: 0; bottom: 0; width: 260px; background: #022c22; overflow-y: auto; z-index: 90; padding-top: 16px; }
+    .nav-section { margin-bottom: 8px; }
+    .nav-label { font-size: 11px; font-weight: 700; color: #5eead4; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px 20px 8px; opacity: 0.6; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: #cbd5e1; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; border-left: 3px solid transparent; text-decoration: none; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+    .nav-item.active { background: rgba(20,184,166,0.15); color: #5eead4; border-left-color: var(--accent); }
+    .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+    .main { margin-left: 260px; margin-top: 60px; padding: 32px; min-height: calc(100vh - 60px); }
+    .page-header { margin-bottom: 32px; }
+    .page-title { font-size: 28px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+    .page-sub { font-size: 15px; color: var(--text-muted); }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+    .btn-primary { background: var(--primary); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .empty { text-align: center; padding: 60px 20px; color: #94a3b8; }
+    .empty h2 { font-size: 24px; margin-bottom: 10px; color: var(--text-dark); }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">🏢 <span>Property Management</span></div>
+    <div class="topbar-right">
+      <span>Hi, <%= user.name %></span>
+      <span class="role-badge"><%= user.role %></span>
+      <a href="/logout" class="btn-logout">Sign Out</a>
     </div>
+  </div>
 
-    <div class="mobile-cards">
-      <% units.forEach(u => {
-        const property = properties.find(p => p.PropertyID === u.PropertyID) || {};
-      %>
-        <div class="card">
-          <div class="card-header">
-            <h3>Unit <%= u.UnitNumber %></h3>
-            <span class="badge <%= u.Status === 'Occupied' ? 'badge-success' : (u.Status === 'Vacant' ? 'badge-warning' : 'badge-danger') %>"><%= u.Status %></span>
-          </div>
-          <p>🏢 <%= property.PropertyName || 'N/A' %></p>
-          <p>🏷️ <%= u.UnitType || 'Standard' %></p>
-          <p>💵 $<%= parseFloat(u.RentAmount).toFixed(2) %></p>
-          <div class="card-actions">
-            <button class="btn-small" onclick="editUnit('<%= u.UnitID %>', '<%= u.PropertyID %>', '<%= u.UnitNumber %>', '<%= u.UnitType %>', '<%= u.RentAmount %>', '<%= u.Status %>')">✏️ Edit</button>
-            <form action="/units/<%= u.UnitID %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete?')">
-              <button type="submit" class="btn-small btn-danger">🗑️</button>
-            </form>
-          </div>
-        </div>
-      <% }) %>
+  <div class="sidebar">
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <a href="/" class="nav-item <%= title === 'Dashboard' ? 'active' : '' %>"><span class="icon">📊</span> Dashboard</a>
     </div>
-  <% } else { %>
-    <p class="empty">No units found. Add your first unit.</p>
-  <% } %>
-</div>
-
-<div id="addModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('addModal')">&times;</span>
-    <h2>Add Unit</h2>
-    <form action="/units" method="POST">
-      <div class="form-group"><label>Property</label>
-        <select name="propertyId" required>
-          <option value="">Select Property</option>
-          <% properties.filter(p => p.Status === 'Active').forEach(p => { %>
-            <option value="<%= p.PropertyID %>"><%= p.PropertyName %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="form-group"><label>Unit Number</label><input type="text" name="unitNumber" required placeholder="e.g. 101, A1"></div>
-      <div class="form-group"><label>Unit Type</label>
-        <select name="unitType">
-          <option value="Standard">Standard</option>
-          <option value="Studio">Studio</option>
-          <option value="Penthouse">Penthouse</option>
-          <option value="Office">Office</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Monthly Rent ($)</label><input type="number" name="rentAmount" step="0.01" required></div>
-      <button type="submit" class="btn btn-primary">Save Unit</button>
-    </form>
+    <div class="nav-section">
+      <div class="nav-label">Management</div>
+      <a href="/landlords" class="nav-item <%= title === 'Landlords' ? 'active' : '' %>"><span class="icon">👤</span> Landlords</a>
+      <a href="/properties" class="nav-item <%= title === 'Properties' ? 'active' : '' %>"><span class="icon">🏘</span> Properties</a>
+      <a href="/units" class="nav-item <%= title === 'Units' ? 'active' : '' %>"><span class="icon">🚪</span> Units</a>
+      <a href="/tenants" class="nav-item <%= title === 'Tenants' ? 'active' : '' %>"><span class="icon">🧑</span> Tenants</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Finance</div>
+      <a href="/rent" class="nav-item <%= title === 'Rent Collection' ? 'active' : '' %>"><span class="icon">💵</span> Rent Collection</a>
+      <a href="/expenses" class="nav-item <%= title === 'Expenses' ? 'active' : '' %>"><span class="icon">💳</span> Expenses</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Analysis</div>
+      <a href="/arrears" class="nav-item <%= title === 'Arrears' ? 'active' : '' %>"><span class="icon">🔴</span> Arrears</a>
+    </div>
   </div>
-</div>
 
-<div id="editModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('editModal')">&times;</span>
-    <h2>Edit Unit</h2>
-    <form id="editForm" method="POST">
-      <input type="hidden" name="_method" value="PUT">
-      <div class="form-group"><label>Property</label>
-        <select name="propertyId" id="editProperty" required>
-          <% properties.filter(p => p.Status === 'Active').forEach(p => { %>
-            <option value="<%= p.PropertyID %>"><%= p.PropertyName %></option>
-          <% }) %>
-        </select>
+  <div class="main">
+    <div class="page-header">
+      <div class="page-title"><%= title %></div>
+      <div class="page-sub">Coming soon</div>
+    </div>
+    <div class="card">
+      <div class="empty">
+        <h2>🚧 <%= title %></h2>
+        <p>This module is being built. Check back soon!</p>
+        <br>
+        <a href="/" class="btn-primary">← Back to Dashboard</a>
       </div>
-      <div class="form-group"><label>Unit Number</label><input type="text" name="unitNumber" id="editNumber" required></div>
-      <div class="form-group"><label>Unit Type</label>
-        <select name="unitType" id="editType">
-          <option value="Standard">Standard</option>
-          <option value="Studio">Studio</option>
-          <option value="Penthouse">Penthouse</option>
-          <option value="Office">Office</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Monthly Rent ($)</label><input type="number" name="rentAmount" id="editRent" step="0.01" required></div>
-      <div class="form-group"><label>Status</label>
-        <select name="status" id="editStatus">
-          <option value="Vacant">Vacant</option>
-          <option value="Occupied">Occupied</option>
-          <option value="Maintenance">Maintenance</option>
-        </select>
-      </div>
-      <button type="submit" class="btn btn-primary">Update Unit</button>
-    </form>
+    </div>
   </div>
-</div>
-
-<script>
-function editUnit(id, propertyId, number, type, rent, status) {
-  document.getElementById('editForm').action = '/units/' + id;
-  document.getElementById('editProperty').value = propertyId;
-  document.getElementById('editNumber').value = number;
-  document.getElementById('editType').value = type || 'Standard';
-  document.getElementById('editRent').value = rent;
-  document.getElementById('editStatus').value = status || 'Vacant';
-  openModal('editModal');
-}
-</script>
+</body>
+</html>
