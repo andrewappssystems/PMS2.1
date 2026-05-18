@@ -37,7 +37,7 @@ function initSheets() {
 }
 initSheets();
 
-// ── Sheet Names (match your Apps Script) ────────────────────────────
+// ── Sheet Names ─────────────────────────────────────────────────────
 const SHEET_NAMES = {
   USERS: 'Users',
   LANDLORDS: 'Landlords',
@@ -61,6 +61,7 @@ function hashPassword(password, salt = null) {
 }
 
 function verifyPassword(password, storedHash) {
+  if (!storedHash || !storedHash.includes(':')) return false;
   const parts = storedHash.split(':');
   if (parts.length !== 2) return false;
   const salt = parts[0];
@@ -144,15 +145,28 @@ app.post('/login', async (req, res) => {
   console.log('Login attempt for:', username);
 
   try {
+    // Check if sheets is initialized
+    if (!sheets) {
+      console.error('Google Sheets not initialized');
+      return res.render('login', { error: 'Server configuration error. Please contact admin.' });
+    }
+
     const users = await getSheetData(SHEET_NAMES.USERS);
     console.log('Users sheet rows:', users.length);
 
+    if (users.length === 0) {
+      console.error('No users found in sheet');
+      return res.render('login', { error: 'No users configured. Please check spreadsheet.' });
+    }
+
     const user = users.find(u => u.Username === username);
-    console.log('Found user:', user ? 'YES' : 'NO');
+    console.log('Found user:', user ? 'YES - ' + user.Username : 'NO');
 
     if (!user) {
       return res.render('login', { error: 'Invalid username or password' });
     }
+
+    console.log('Stored password hash:', user.Password ? user.Password.substring(0, 15) + '...' : 'EMPTY');
 
     const valid = verifyPassword(password, user.Password);
     console.log('Password valid:', valid);
@@ -169,11 +183,11 @@ app.post('/login', async (req, res) => {
       email: user.Email
     };
 
-    console.log('Session created:', req.session.user);
+    console.log('Session created for:', user.Name, 'Role:', user.Role);
     res.redirect('/');
   } catch (e) {
-    console.error('Login error:', e);
-    res.render('login', { error: 'Server error. Please try again.' });
+    console.error('Login error:', e.message, e.stack);
+    res.render('login', { error: 'Server error: ' + e.message });
   }
 });
 
@@ -216,325 +230,371 @@ app.get('/api/stats', requireAuth, async (req, res) => {
       totalExpenses
     });
   } catch (e) {
+    console.error('Stats error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
 // ── API: Landlords ────────────────────────────────────────────────────
 app.get('/api/landlords', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.LANDLORDS);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.LANDLORDS);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/landlords', requireAuth, async (req, res) => {
-  const { name, phone, email, address, bankName, bankAccount, commissionRate } = req.body;
-  const id = await getNextId(SHEET_NAMES.LANDLORDS, 'LLD');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.LANDLORDS, [id, name, phone, email, address, bankName || '', bankAccount || '', commissionRate || '10', 'Active', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { name, phone, email, address, bankName, bankAccount, commissionRate } = req.body;
+    const id = await getNextId(SHEET_NAMES.LANDLORDS, 'LLD');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.LANDLORDS, [id, name, phone || '', email || '', address || '', bankName || '', bankAccount || '', commissionRate || '10', 'Active', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/landlords/:id', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.LANDLORDS);
-  const row = data.find(r => r.ID === req.params.id);
-  if (!row) return res.status(404).json({ error: 'Not found' });
-  const { name, phone, email, address, bankName, bankAccount, commissionRate, status } = req.body;
-  await updateRow(SHEET_NAMES.LANDLORDS, row._rowIndex, [req.params.id, name, phone, email, address, bankName || '', bankAccount || '', commissionRate || '10', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
-  res.json({ success: true });
+  try {
+    const data = await getSheetData(SHEET_NAMES.LANDLORDS);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const { name, phone, email, address, bankName, bankAccount, commissionRate, status } = req.body;
+    await updateRow(SHEET_NAMES.LANDLORDS, row._rowIndex, [req.params.id, name, phone || '', email || '', address || '', bankName || '', bankAccount || '', commissionRate || '10', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/api/landlords/:id', requireAuth, async (req, res) => {
-  // Soft delete: mark as Inactive
-  const data = await getSheetData(SHEET_NAMES.LANDLORDS);
-  const row = data.find(r => r.ID === req.params.id);
-  if (!row) return res.status(404).json({ error: 'Not found' });
-  const vals = Object.values(row).filter((_, i) => i < Object.keys(row).length - 1);
-  vals[8] = 'Inactive';
-  await updateRow(SHEET_NAMES.LANDLORDS, row._rowIndex, vals);
-  res.json({ success: true });
+  try {
+    const data = await getSheetData(SHEET_NAMES.LANDLORDS);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const vals = Object.values(row).filter((_, i) => i < Object.keys(row).length - 1);
+    vals[8] = 'Inactive';
+    await updateRow(SHEET_NAMES.LANDLORDS, row._rowIndex, vals);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Properties ────────────────────────────────────────────────────
 app.get('/api/properties', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.PROPERTIES);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.PROPERTIES);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/properties', requireAuth, async (req, res) => {
-  const { name, landlordId, address, type, units } = req.body;
-  const id = await getNextId(SHEET_NAMES.PROPERTIES, 'PRP');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.PROPERTIES, [id, name, landlordId, address, type, units || '0', '0', 'Active', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { name, landlordId, address, type } = req.body;
+    const id = await getNextId(SHEET_NAMES.PROPERTIES, 'PRP');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.PROPERTIES, [id, name, landlordId, address || '', type || 'Residential', '0', '0', 'Active', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/properties/:id', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.PROPERTIES);
-  const row = data.find(r => r.ID === req.params.id);
-  if (!row) return res.status(404).json({ error: 'Not found' });
-  const { name, landlordId, address, type, status } = req.body;
-  await updateRow(SHEET_NAMES.PROPERTIES, row._rowIndex, [req.params.id, name, landlordId, address, type, row['Total Units'] || '0', row['Occupied'] || '0', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
-  res.json({ success: true });
+  try {
+    const data = await getSheetData(SHEET_NAMES.PROPERTIES);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const { name, landlordId, address, type, status } = req.body;
+    await updateRow(SHEET_NAMES.PROPERTIES, row._rowIndex, [req.params.id, name, landlordId, address || '', type || 'Residential', row['Total Units'] || '0', row['Occupied'] || '0', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Units ────────────────────────────────────────────────────────
 app.get('/api/units', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.UNITS);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.UNITS);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/units', requireAuth, async (req, res) => {
-  const { propertyId, unitNumber, type, rent, description } = req.body;
-  const id = await getNextId(SHEET_NAMES.UNITS, 'UNT');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.UNITS, [id, propertyId, unitNumber, type, rent || '0', description || '', 'Vacant', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { propertyId, unitNumber, type, rent, description } = req.body;
+    const id = await getNextId(SHEET_NAMES.UNITS, 'UNT');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.UNITS, [id, propertyId, unitNumber, type || 'Studio', rent || '0', description || '', 'Vacant', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/units/:id', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.UNITS);
-  const row = data.find(r => r.ID === req.params.id);
-  if (!row) return res.status(404).json({ error: 'Not found' });
-  const { propertyId, unitNumber, type, rent, description, status } = req.body;
-  await updateRow(SHEET_NAMES.UNITS, row._rowIndex, [req.params.id, propertyId, unitNumber, type, rent || '0', description || '', status || 'Vacant', row['Date Added'] || '', row['Added By'] || '']);
-  res.json({ success: true });
+  try {
+    const data = await getSheetData(SHEET_NAMES.UNITS);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const { propertyId, unitNumber, type, rent, description, status } = req.body;
+    await updateRow(SHEET_NAMES.UNITS, row._rowIndex, [req.params.id, propertyId, unitNumber, type || 'Studio', rent || '0', description || '', status || 'Vacant', row['Date Added'] || '', row['Added By'] || '']);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Tenants ──────────────────────────────────────────────────────
 app.get('/api/tenants', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.TENANTS);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.TENANTS);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/tenants', requireAuth, async (req, res) => {
-  const { name, phone, email, idNumber, unitId, leaseStart, leaseEnd, rentAmount, deposit } = req.body;
-  const id = await getNextId(SHEET_NAMES.TENANTS, 'TNT');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.TENANTS, [id, name, phone, email, idNumber || '', unitId, leaseStart, leaseEnd, rentAmount || '0', deposit || '0', 'Active', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { name, phone, email, idNumber, unitId, leaseStart, leaseEnd, rentAmount, deposit } = req.body;
+    const id = await getNextId(SHEET_NAMES.TENANTS, 'TNT');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.TENANTS, [id, name, phone || '', email || '', idNumber || '', unitId, leaseStart || '', leaseEnd || '', rentAmount || '0', deposit || '0', 'Active', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/tenants/:id', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.TENANTS);
-  const row = data.find(r => r.ID === req.params.id);
-  if (!row) return res.status(404).json({ error: 'Not found' });
-  const { name, phone, email, idNumber, unitId, leaseStart, leaseEnd, rentAmount, deposit, status } = req.body;
-  await updateRow(SHEET_NAMES.TENANTS, row._rowIndex, [req.params.id, name, phone, email, idNumber || '', unitId, leaseStart, leaseEnd, rentAmount || '0', deposit || '0', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
-  res.json({ success: true });
+  try {
+    const data = await getSheetData(SHEET_NAMES.TENANTS);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const { name, phone, email, idNumber, unitId, leaseStart, leaseEnd, rentAmount, deposit, status } = req.body;
+    await updateRow(SHEET_NAMES.TENANTS, row._rowIndex, [req.params.id, name, phone || '', email || '', idNumber || '', unitId, leaseStart || '', leaseEnd || '', rentAmount || '0', deposit || '0', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Rent Collection ───────────────────────────────────────────────
 app.get('/api/rent', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.RENT);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.RENT);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/rent', requireAuth, async (req, res) => {
-  const { tenantId, unitId, amount, month, year, paymentMethod, reference } = req.body;
-  const id = await getNextId(SHEET_NAMES.RENT, 'RNT');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.RENT, [id, tenantId, unitId, amount, month, year, paymentMethod || 'Cash', reference || '', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { tenantId, unitId, amount, month, year, paymentMethod, reference } = req.body;
+    const id = await getNextId(SHEET_NAMES.RENT, 'RNT');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.RENT, [id, tenantId, unitId, amount || '0', month || '', year || '', paymentMethod || 'Cash', reference || '', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Expenses ─────────────────────────────────────────────────────
 app.get('/api/expenses', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.EXPENSES);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.EXPENSES);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/expenses', requireAuth, async (req, res) => {
-  const { propertyId, category, description, amount, date } = req.body;
-  const id = await getNextId(SHEET_NAMES.EXPENSES, 'EXP');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.EXPENSES, [id, propertyId, category, description, amount, date, now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { propertyId, category, description, amount, date } = req.body;
+    const id = await getNextId(SHEET_NAMES.EXPENSES, 'EXP');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.EXPENSES, [id, propertyId || '', category || 'Other', description || '', amount || '0', date || now, now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Invoices ─────────────────────────────────────────────────────
 app.get('/api/invoices', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.INVOICES);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.INVOICES);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/invoices', requireAuth, async (req, res) => {
-  const { type, entityId, entityName, description, amount, month, year } = req.body;
-  const id = await getNextId(SHEET_NAMES.INVOICES, 'INV');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.INVOICES, [id, type, entityId, entityName, description, amount, month, year, 'Unpaid', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { type, entityId, entityName, description, amount, month, year } = req.body;
+    const id = await getNextId(SHEET_NAMES.INVOICES, 'INV');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.INVOICES, [id, type || 'landlord', entityId || '', entityName || '', description || '', amount || '0', month || '', year || '', 'Unpaid', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/invoices/:id/pay', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.INVOICES);
-  const row = data.find(r => r.ID === req.params.id);
-  if (!row) return res.status(404).json({ error: 'Not found' });
-  const vals = Object.values(row).filter((_, i) => i < Object.keys(row).length - 1);
-  vals[8] = 'Paid';
-  await updateRow(SHEET_NAMES.INVOICES, row._rowIndex, vals);
-  res.json({ success: true });
+  try {
+    const data = await getSheetData(SHEET_NAMES.INVOICES);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const vals = Object.values(row).filter((_, i) => i < Object.keys(row).length - 1);
+    vals[8] = 'Paid';
+    await updateRow(SHEET_NAMES.INVOICES, row._rowIndex, vals);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Receipts ────────────────────────────────────────────────────
 app.get('/api/receipts', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.RECEIPTS);
-  res.json(data);
+  try {
+    const data = await getSheetData(SHEET_NAMES.RECEIPTS);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.post('/api/receipts', requireAuth, async (req, res) => {
-  const { rentId, tenantName, unitNumber, amount, month, year, paymentMethod } = req.body;
-  const id = await getNextId(SHEET_NAMES.RECEIPTS, 'RCP');
-  const now = new Date().toISOString();
-  await appendRow(SHEET_NAMES.RECEIPTS, [id, rentId, tenantName, unitNumber, amount, month, year, paymentMethod || 'Cash', now, req.session.user.name]);
-  res.json({ success: true, id });
+  try {
+    const { rentId, tenantName, unitNumber, amount, month, year, paymentMethod } = req.body;
+    const id = await getNextId(SHEET_NAMES.RECEIPTS, 'RCP');
+    const now = new Date().toISOString();
+    await appendRow(SHEET_NAMES.RECEIPTS, [id, rentId || '', tenantName || '', unitNumber || '', amount || '0', month || '', year || '', paymentMethod || 'Cash', now, req.session.user.name]);
+    res.json({ success: true, id });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── API: Settings ─────────────────────────────────────────────────────
 app.get('/api/settings', requireAuth, async (req, res) => {
-  const data = await getSheetData(SHEET_NAMES.SETTINGS);
-  const settings = {};
-  data.forEach(s => { settings[s.Key] = s.Value; });
-  res.json(settings);
+  try {
+    const data = await getSheetData(SHEET_NAMES.SETTINGS);
+    const settings = {};
+    data.forEach(s => { if (s.Key) settings[s.Key] = s.Value; });
+    res.json(settings);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
-// ── PDF Generation (HTML-based, print-friendly) ───────────────────────
+// ── PDF Generation ────────────────────────────────────────────────────
 app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
-  const invoices = await getSheetData(SHEET_NAMES.INVOICES);
-  const inv = invoices.find(i => i.ID === req.params.id);
-  if (!inv) return res.status(404).send('Invoice not found');
+  try {
+    const invoices = await getSheetData(SHEET_NAMES.INVOICES);
+    const inv = invoices.find(i => i.ID === req.params.id);
+    if (!inv) return res.status(404).send('Invoice not found');
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Invoice ${inv.ID}</title>
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Invoice ${inv.ID}</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-  .header { text-align: center; border-bottom: 3px solid #0f766e; padding-bottom: 20px; margin-bottom: 30px; }
-  .header h1 { color: #0f766e; margin: 0; font-size: 32px; }
-  .header p { color: #666; margin: 5px 0; }
-  .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
-  .box { background: #f8fafc; padding: 20px; border-radius: 8px; }
-  .box h3 { margin: 0 0 10px 0; color: #0f766e; font-size: 14px; text-transform: uppercase; }
-  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-  th { background: #0f766e; color: white; padding: 12px; text-align: left; }
-  td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
-  .total { text-align: right; font-size: 24px; font-weight: bold; color: #0f766e; margin-top: 30px; }
-  .status { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; text-transform: uppercase; }
-  .status.paid { background: #dcfce7; color: #166534; }
-  .status.unpaid { background: #fee2e2; color: #991b1b; }
-  .footer { margin-top: 50px; text-align: center; color: #94a3b8; font-size: 12px; }
-  @media print { body { margin: 0; } .no-print { display: none; } }
-</style>
-</head>
-<body>
-  <div class="header">
-    <h1>INVOICE</h1>
-    <p>Property Management System</p>
-    <p>Invoice #: ${inv.ID}</p>
-  </div>
+body{font-family:Arial,sans-serif;margin:40px;color:#333}
+.header{text-align:center;border-bottom:3px solid #0f766e;padding-bottom:20px;margin-bottom:30px}
+.header h1{color:#0f766e;margin:0;font-size:32px}
+.header p{color:#666;margin:5px 0}
+.invoice-details{display:flex;justify-content:space-between;margin-bottom:30px}
+.box{background:#f8fafc;padding:20px;border-radius:8px}
+.box h3{margin:0 0 10px 0;color:#0f766e;font-size:14px;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;margin:20px 0}
+th{background:#0f766e;color:white;padding:12px;text-align:left}
+td{padding:12px;border-bottom:1px solid #e2e8f0}
+.total{text-align:right;font-size:24px;font-weight:bold;color:#0f766e;margin-top:30px}
+.status{display:inline-block;padding:6px 16px;border-radius:20px;font-weight:bold;font-size:12px;text-transform:uppercase}
+.status.paid{background:#dcfce7;color:#166534}
+.status.unpaid{background:#fee2e2;color:#991b1b}
+.footer{margin-top:50px;text-align:center;color:#94a3b8;font-size:12px}
+@media print{body{margin:0}.no-print{display:none}}
+</style></head><body>
+<div class="header"><h1>INVOICE</h1><p>Property Management System</p><p>Invoice #: ${inv.ID}</p></div>
+<div class="invoice-details">
+<div class="box"><h3>Bill To</h3><p><strong>${inv.EntityName || 'N/A'}</strong></p><p>ID: ${inv.EntityId || 'N/A'}</p></div>
+<div class="box"><h3>Invoice Details</h3><p><strong>Date:</strong> ${inv.Date || new Date().toLocaleDateString()}</p><p><strong>Period:</strong> ${inv.Month || ''} ${inv.Year || ''}</p><p><strong>Status:</strong> <span class="status ${(inv.Status || '').toLowerCase()}">${inv.Status || 'Unpaid'}</span></p></div>
+</div>
+<table><thead><tr><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+<tbody><tr><td>${inv.Description || 'Management Fee'}</td><td style="text-align:right">${inv.Amount || '0'}</td></tr></tbody></table>
+<div class="total">Total: ${inv.Amount || '0'}</div>
+<div class="footer"><p>Thank you for your business</p><p>Generated by Property Management System</p></div>
+<div class="no-print" style="text-align:center;margin-top:40px"><button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer">Print / Save as PDF</button></div>
+</body></html>`;
 
-  <div class="invoice-details">
-    <div class="box">
-      <h3>Bill To</h3>
-      <p><strong>${inv.EntityName || 'N/A'}</strong></p>
-      <p>ID: ${inv.EntityId || 'N/A'}</p>
-    </div>
-    <div class="box">
-      <h3>Invoice Details</h3>
-      <p><strong>Date:</strong> ${inv.Date || new Date().toLocaleDateString()}</p>
-      <p><strong>Period:</strong> ${inv.Month || ''} ${inv.Year || ''}</p>
-      <p><strong>Status:</strong> <span class="status ${(inv.Status || '').toLowerCase()}">${inv.Status || 'Unpaid'}</span></p>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr><th>Description</th><th style="text-align:right">Amount</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>${inv.Description || 'Management Fee'}</td><td style="text-align:right">${inv.Amount || '0'}</td></tr>
-    </tbody>
-  </table>
-
-  <div class="total">Total: ${inv.Amount || '0'}</div>
-
-  <div class="footer">
-    <p>Thank you for your business</p>
-    <p>Generated by Property Management System</p>
-  </div>
-
-  <div class="no-print" style="text-align:center; margin-top:40px;">
-    <button onclick="window.print()" style="padding:12px 32px; background:#0f766e; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Print / Save as PDF</button>
-  </div>
-</body>
-</html>`;
-
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (e) {
+    res.status(500).send('Error: ' + e.message);
+  }
 });
 
 app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
-  const receipts = await getSheetData(SHEET_NAMES.RECEIPTS);
-  const rcp = receipts.find(r => r.ID === req.params.id);
-  if (!rcp) return res.status(404).send('Receipt not found');
+  try {
+    const receipts = await getSheetData(SHEET_NAMES.RECEIPTS);
+    const rcp = receipts.find(r => r.ID === req.params.id);
+    if (!rcp) return res.status(404).send('Receipt not found');
 
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Receipt ${rcp.ID}</title>
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Receipt ${rcp.ID}</title>
 <style>
-  body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-  .receipt { max-width: 600px; margin: 0 auto; border: 2px solid #0f766e; border-radius: 12px; padding: 40px; }
-  .header { text-align: center; border-bottom: 2px dashed #0f766e; padding-bottom: 20px; margin-bottom: 30px; }
-  .header h1 { color: #0f766e; margin: 0; font-size: 28px; }
-  .header .stamp { display: inline-block; background: #0f766e; color: white; padding: 8px 24px; border-radius: 20px; font-weight: bold; margin-top: 10px; }
-  .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
-  .detail-row .label { color: #64748b; font-weight: 600; }
-  .detail-row .value { font-weight: bold; color: #0f172a; }
-  .amount-box { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0; }
-  .amount-box .label { color: #166534; font-size: 14px; text-transform: uppercase; }
-  .amount-box .value { color: #0f766e; font-size: 36px; font-weight: bold; }
-  .footer { text-align: center; margin-top: 30px; color: #94a3b8; font-size: 12px; }
-  @media print { body { margin: 0; } .no-print { display: none; } }
-</style>
-</head>
-<body>
-  <div class="receipt">
-    <div class="header">
-      <h1>RENT RECEIPT</h1>
-      <div class="stamp">PAID</div>
-      <p style="margin-top:10px; color:#666;">Receipt #: ${rcp.ID}</p>
-    </div>
+body{font-family:Arial,sans-serif;margin:40px;color:#333}
+.receipt{max-width:600px;margin:0 auto;border:2px solid #0f766e;border-radius:12px;padding:40px}
+.header{text-align:center;border-bottom:2px dashed #0f766e;padding-bottom:20px;margin-bottom:30px}
+.header h1{color:#0f766e;margin:0;font-size:28px}
+.stamp{display:inline-block;background:#0f766e;color:white;padding:8px 24px;border-radius:20px;font-weight:bold;margin-top:10px}
+.detail-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0}
+.detail-row .label{color:#64748b;font-weight:600}
+.detail-row .value{font-weight:bold;color:#0f172a}
+.amount-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;text-align:center;margin:30px 0}
+.amount-box .label{color:#166534;font-size:14px;text-transform:uppercase}
+.amount-box .value{color:#0f766e;font-size:36px;font-weight:bold}
+.footer{text-align:center;margin-top:30px;color:#94a3b8;font-size:12px}
+@media print{body{margin:0}.no-print{display:none}}
+</style></head><body>
+<div class="receipt">
+<div class="header"><h1>RENT RECEIPT</h1><div class="stamp">PAID</div><p style="margin-top:10px;color:#666">Receipt #: ${rcp.ID}</p></div>
+<div class="detail-row"><span class="label">Date</span><span class="value">${rcp.Date || new Date().toLocaleDateString()}</span></div>
+<div class="detail-row"><span class="label">Received From</span><span class="value">${rcp.TenantName || 'N/A'}</span></div>
+<div class="detail-row"><span class="label">Unit</span><span class="value">${rcp.UnitNumber || 'N/A'}</span></div>
+<div class="detail-row"><span class="label">Period</span><span class="value">${rcp.Month || ''} ${rcp.Year || ''}</span></div>
+<div class="detail-row"><span class="label">Payment Method</span><span class="value">${rcp.PaymentMethod || 'Cash'}</span></div>
+<div class="amount-box"><div class="label">Amount Received</div><div class="value">${rcp.Amount || '0'}</div></div>
+<div class="footer"><p>Thank you for your payment</p><p>Property Management System</p></div>
+<div class="no-print" style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer">Print / Save as PDF</button></div>
+</div></body></html>`;
 
-    <div class="detail-row"><span class="label">Date</span><span class="value">${rcp.Date || new Date().toLocaleDateString()}</span></div>
-    <div class="detail-row"><span class="label">Received From</span><span class="value">${rcp.TenantName || 'N/A'}</span></div>
-    <div class="detail-row"><span class="label">Unit</span><span class="value">${rcp.UnitNumber || 'N/A'}</span></div>
-    <div class="detail-row"><span class="label">Period</span><span class="value">${rcp.Month || ''} ${rcp.Year || ''}</span></div>
-    <div class="detail-row"><span class="label">Payment Method</span><span class="value">${rcp.PaymentMethod || 'Cash'}</span></div>
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (e) {
+    res.status(500).send('Error: ' + e.message);
+  }
+});
 
-    <div class="amount-box">
-      <div class="label">Amount Received</div>
-      <div class="value">${rcp.Amount || '0'}</div>
-    </div>
-
-    <div class="footer">
-      <p>Thank you for your payment</p>
-      <p>Property Management System</p>
-    </div>
-
-    <div class="no-print" style="text-align:center; margin-top:30px;">
-      <button onclick="window.print()" style="padding:12px 32px; background:#0f766e; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Print / Save as PDF</button>
-    </div>
-  </div>
-</body>
-</html>`;
-
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
+// ── Error Handler ────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.message, err.stack);
+  res.status(500).render('login', { error: 'Server error: ' + err.message });
 });
 
 // ── Start Server ──────────────────────────────────────────────────────
