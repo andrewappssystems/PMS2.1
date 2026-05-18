@@ -1,487 +1,545 @@
 const express = require('express');
-const path = require('path');
 const session = require('express-session');
 const { google } = require('googleapis');
+const path = require('path');
 const crypto = require('crypto');
-const PDFDocument = require('pdfkit');
-const moment = require('moment');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== GOOGLE SHEETS SETUP =====
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'default-secret-change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { maxAge: 24 * 60 * 60 * 1000 }
+}));
+
+// ── Google Sheets Setup ──────────────────────────────────────────────
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
-const SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT;
+let auth, sheets;
 
-let sheetsClient = null;
-let googleReady = false;
-
-async function getSheetsClient() {
-  if (sheetsClient) return sheetsClient;
-
-  if (!SERVICE_ACCOUNT_KEY || !SPREADSHEET_ID) {
-    console.log('⚠️ Google credentials not configured');
-    return null;
-  }
-
+function initSheets() {
   try {
-    const credentials = JSON.parse(SERVICE_ACCOUNT_KEY);
-    const auth = new google.auth.GoogleAuth({
-      credentials,
+    const keyJson = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
+    auth = new google.auth.GoogleAuth({
+      credentials: keyJson,
       scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
-    const authClient = await auth.getClient();
-    sheetsClient = google.sheets({ version: 'v4', auth: authClient });
-    googleReady = true;
-    console.log('✅ Google Sheets connected');
-    return sheetsClient;
-  } catch (err) {
-    console.error('❌ Google Auth Error:', err.message);
-    return null;
+    sheets = google.sheets({ version: 'v4', auth });
+    console.log('✅ Google Sheets API initialized');
+  } catch (e) {
+    console.error('❌ Failed to init Google Sheets:', e.message);
   }
 }
+initSheets();
 
-// Sheet names (matching your original config)
-const SHEETS = {
+// ── Sheet Names (match your Apps Script) ────────────────────────────
+const SHEET_NAMES = {
+  USERS: 'Users',
   LANDLORDS: 'Landlords',
   PROPERTIES: 'Properties',
   UNITS: 'Units',
   TENANTS: 'Tenants',
   RENT: 'Rent Collection',
   EXPENSES: 'Expenses',
-  INVOICES: 'Invoices',
-  USERS: 'Users',
   SETTINGS: 'Settings',
-  AUDITLOG: 'AuditLog'
+  INVOICES: 'Invoices',
+  RECEIPTS: 'Receipts'
 };
 
-// ===== MIDDLEWARE =====
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'pms-secret-key-change-this',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }
-}));
-
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// ===== PASSWORD HASHING (MATCHES APPS SCRIPT) =====
+// ── Password Hashing (matches Apps Script exactly) ────────────────────
 function hashPassword(password, salt = null) {
-  if (!salt) {
-    try { salt = crypto.randomUUID().substring(0, 8); }
-    catch (e) { salt = crypto.randomBytes(4).toString('hex').substring(0, 8); }
-  }
+  if (!salt) salt = crypto.randomUUID().substring(0, 8);
   const salted = password + salt;
-  const hashHex = crypto.createHash('sha256').update(salted).digest('hex');
+  const hash = crypto.createHash('sha256').update(salted).digest();
+  const hashHex = Array.from(hash).map(b => ('0' + (b & 0xFF).toString(16)).slice(-2)).join('');
   return `${salt}:${hashHex}`;
 }
 
 function verifyPassword(password, storedHash) {
-  if (!storedHash || !storedHash.includes(':')) return false;
-  const [salt] = storedHash.split(':');
-  return hashPassword(password, salt) === storedHash;
+  const parts = storedHash.split(':');
+  if (parts.length !== 2) return false;
+  const salt = parts[0];
+  const expected = hashPassword(password, salt);
+  return expected === storedHash;
 }
 
-// ===== SHEET HELPERS =====
-async function readSheet(sheetName) {
+// ── Auth Middleware ──────────────────────────────────────────────────
+function requireAuth(req, res, next) {
+  if (!req.session.user) return res.redirect('/login');
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.session.user || req.session.user.role !== 'Admin') {
+    return res.status(403).json({ error: 'Admin only' });
+  }
+  next();
+}
+
+// ── Sheet Helpers ────────────────────────────────────────────────────
+async function getSheetData(sheetName) {
   try {
-    const sheets = await getSheetsClient();
-    if (!sheets) return [];
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: sheetName
+      range: `${sheetName}!A1:Z1000`
     });
-    return res.data.values || [];
-  } catch (err) {
-    console.error('Error reading sheet', sheetName, ':', err.message);
+    const rows = res.data.values || [];
+    if (rows.length === 0) return [];
+    const headers = rows[0];
+    return rows.slice(1).map((row, i) => {
+      const obj = {};
+      headers.forEach((h, j) => obj[h] = row[j] || '');
+      obj._rowIndex = i + 2;
+      return obj;
+    });
+  } catch (e) {
+    console.error(`ERROR reading sheet ${sheetName}:`, e.message);
     return [];
   }
 }
 
-async function appendToSheet(sheetName, values) {
-  try {
-    const sheets = await getSheetsClient();
-    if (!sheets) return;
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: sheetName,
-      valueInputOption: 'USER_ENTERED',
-      insertDataOption: 'INSERT_ROWS',
-      resource: { values: [values] }
-    });
-  } catch (err) {
-    console.error('Error appending to sheet:', err.message);
-  }
+async function appendRow(sheetName, values) {
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${sheetName}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [values] }
+  });
 }
 
-async function updateSheetRow(sheetName, rowIndex, values) {
-  try {
-    const sheets = await getSheetsClient();
-    if (!sheets) return;
-    await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${sheetName}!A${rowIndex}`,
-      valueInputOption: 'USER_ENTERED',
-      resource: { values: [values] }
-    });
-  } catch (err) {
-    console.error('Error updating sheet:', err.message);
-  }
+async function updateRow(sheetName, rowIndex, values) {
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${sheetName}!A${rowIndex}`,
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [values] }
+  });
 }
 
-// ===== AUDIT LOG =====
-async function logAudit(req, action, target, details) {
-  const user = req.session || {};
-  const now = moment().format('YYYY-MM-DD HH:mm:ss');
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-  await appendToSheet(SHEETS.AUDITLOG, [
-    now, user.userId || 'SYSTEM', user.userName || 'Unknown', user.userRole || 'N/A',
-    action, target, details || '', ip
-  ]);
+async function getNextId(sheetName, prefix) {
+  const data = await getSheetData(sheetName);
+  if (data.length === 0) return prefix + '-001';
+  const nums = data.map(r => {
+    const m = (r.ID || '').match(/\d+/);
+    return m ? parseInt(m[0]) : 0;
+  });
+  const max = Math.max(...nums, 0);
+  return prefix + '-' + String(max + 1).padStart(3, '0');
 }
 
-// ===== AUTH MIDDLEWARE =====
-function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) return next();
-  res.redirect('/login');
-}
+// ── Routes ────────────────────────────────────────────────────────────
 
-function requireRole(roles) {
-  return (req, res, next) => {
-    if (req.session && roles.includes(req.session.userRole)) return next();
-    res.status(403).json({ success: false, message: 'Access denied' });
-  };
-}
-
-// ===== ROUTES: AUTH =====
+// Login Page
 app.get('/login', (req, res) => {
-  if (req.session.userId) return res.redirect('/');
-  res.render('login', { error: null, title: 'Login' });
+  res.render('login', { error: null });
 });
 
 app.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+  console.log('Login attempt for:', username);
+
   try {
-    const { username, password } = req.body;
-    console.log('Login attempt for:', username);
+    const users = await getSheetData(SHEET_NAMES.USERS);
+    console.log('Users sheet rows:', users.length);
 
-    const data = await readSheet(SHEETS.USERS);
-    console.log('Users sheet rows:', data.length);
+    const user = users.find(u => u.Username === username);
+    console.log('Found user:', user ? 'YES' : 'NO');
 
-    if (data.length < 2) {
-      return res.render('login', { error: 'No users found', title: 'Login' });
-    }
-
-    const headers = data[0];
-    const users = data.slice(1).map((row, idx) => {
-      const obj = { _rowIndex: idx + 2 };
-      headers.forEach((h, i) => obj[h] = row[i] || '');
-      return obj;
-    });
-
-    const user = users.find(u => u.Username === username && u.Status === 'Active');
     if (!user) {
-      return res.render('login', { error: 'Invalid username or password', title: 'Login' });
+      return res.render('login', { error: 'Invalid username or password' });
     }
 
-    // Check password hash
-    let valid = false;
-    if (user['Password Hash'] && user['Password Hash'].includes(':')) {
-      valid = verifyPassword(password, user['Password Hash']);
-    } else {
-      // Fallback for plain text passwords during transition
-      valid = password === user['Password Hash'];
-    }
+    const valid = verifyPassword(password, user.Password);
+    console.log('Password valid:', valid);
 
     if (!valid) {
-      return res.render('login', { error: 'Invalid username or password', title: 'Login' });
+      return res.render('login', { error: 'Invalid username or password' });
     }
 
-    req.session.userId = user.UserID;
-    req.session.userName = user['Full Name'];
-    req.session.userRole = user.Role;
+    req.session.user = {
+      id: user.ID,
+      name: user.Name,
+      username: user.Username,
+      role: user.Role,
+      email: user.Email
+    };
 
-    // Update last login
-    const now = moment().format('YYYY-MM-DD HH:mm:ss');
-    await updateSheetRow(SHEETS.USERS, user._rowIndex, [
-      user.UserID, user['Full Name'], user.Username, user['Password Hash'],
-      user.Role, user.Email, user.Phone, user.Status, now, user['Created Date']
-    ]);
-
-    await logAudit(req, 'LOGIN', `User:${username}`, 'Successful login');
+    console.log('Session created:', req.session.user);
     res.redirect('/');
-
-  } catch (err) {
-    console.error('Login error:', err);
-    res.render('login', { error: 'System error: ' + err.message, title: 'Login' });
+  } catch (e) {
+    console.error('Login error:', e);
+    res.render('login', { error: 'Server error. Please try again.' });
   }
 });
 
-app.get('/logout', async (req, res) => {
-  await logAudit(req, 'LOGOUT', `User:${req.session?.userName || 'unknown'}`, 'Logout');
+// Logout
+app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
 
-// ===== ROUTES: DASHBOARD =====
+// Dashboard
 app.get('/', requireAuth, async (req, res) => {
+  res.render('dashboard', { user: req.session.user });
+});
+
+// ── API: Stats ────────────────────────────────────────────────────────
+app.get('/api/stats', requireAuth, async (req, res) => {
   try {
-    const landlords = await readSheet(SHEETS.LANDLORDS);
-    const properties = await readSheet(SHEETS.PROPERTIES);
-    const units = await readSheet(SHEETS.UNITS);
-    const tenants = await readSheet(SHEETS.TENANTS);
-    const payments = await readSheet(SHEETS.RENT);
-    const expenses = await readSheet(SHEETS.EXPENSES);
+    const [landlords, properties, units, tenants, rent, expenses] = await Promise.all([
+      getSheetData(SHEET_NAMES.LANDLORDS),
+      getSheetData(SHEET_NAMES.PROPERTIES),
+      getSheetData(SHEET_NAMES.UNITS),
+      getSheetData(SHEET_NAMES.TENANTS),
+      getSheetData(SHEET_NAMES.RENT),
+      getSheetData(SHEET_NAMES.EXPENSES)
+    ]);
 
-    const stats = {
-      landlords: Math.max(0, landlords.length - 1),
-      properties: Math.max(0, properties.length - 1),
-      units: Math.max(0, units.length - 1),
-      tenants: Math.max(0, tenants.length - 1),
-      occupied: Math.max(0, tenants.length - 1),
-      occRate: units.length > 1 ? Math.round(((tenants.length - 1) / (units.length - 1)) * 100) || 0 : 0,
-      collected: payments.length > 1 ? payments.slice(1).reduce((s, r) => s + (parseFloat(r[3]) || 0), 0) : 0,
-      expenses: expenses.length > 1 ? expenses.slice(1).reduce((s, e) => s + (parseFloat(e[5]) || 0), 0) : 0
-    };
+    const totalRent = rent.reduce((s, r) => s + (parseFloat(r.Amount) || 0), 0);
+    const totalExpenses = expenses.reduce((s, e) => s + (parseFloat(e.Amount) || 0), 0);
+    const occupied = units.filter(u => u.Status === 'Occupied').length;
+    const vacant = units.filter(u => u.Status === 'Vacant').length;
 
-    res.render('dashboard', {
-      title: 'Dashboard',
-      user: {
-        name: req.session.userName,
-        role: req.session.userRole
-      },
-      stats: stats
+    res.json({
+      landlords: landlords.length,
+      properties: properties.length,
+      units: units.length,
+      tenants: tenants.length,
+      occupied,
+      vacant,
+      totalRent,
+      totalExpenses
     });
-  } catch (err) {
-    console.error('Dashboard error:', err);
-    res.render('dashboard', {
-      title: 'Dashboard',
-      user: { name: req.session.userName, role: req.session.userRole },
-      stats: { landlords: 0, properties: 0, units: 0, tenants: 0, occupied: 0, occRate: 0, collected: 0, expenses: 0 }
-    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-// ===== API: LANDLORDS =====
+// ── API: Landlords ────────────────────────────────────────────────────
 app.get('/api/landlords', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.LANDLORDS);
-    const landlords = data.slice(1).map(row => ({
-      id: row[0], name: row[1], phone: row[2], email: row[3],
-      paymentMethod: row[4], status: row[5], notes: row[6] || ''
-    }));
-    res.json({ success: true, data: landlords });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const data = await getSheetData(SHEET_NAMES.LANDLORDS);
+  res.json(data);
 });
 
 app.post('/api/landlords', requireAuth, async (req, res) => {
-  try {
-    const id = 'LL-' + Date.now().toString(36).toUpperCase();
-    const { name, phone, email, paymentMethod, status, notes } = req.body;
-    await appendToSheet(SHEETS.LANDLORDS, [id, name, phone, email, paymentMethod, status || 'Active', notes || '']);
-    await logAudit(req, 'CREATE', `Landlord:${id}`, `Created landlord ${name}`);
-    res.json({ success: true, id, message: 'Landlord added' });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const { name, phone, email, address, bankName, bankAccount, commissionRate } = req.body;
+  const id = await getNextId(SHEET_NAMES.LANDLORDS, 'LLD');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.LANDLORDS, [id, name, phone, email, address, bankName || '', bankAccount || '', commissionRate || '10', 'Active', now, req.session.user.name]);
+  res.json({ success: true, id });
 });
 
-// ===== API: PROPERTIES =====
+app.put('/api/landlords/:id', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.LANDLORDS);
+  const row = data.find(r => r.ID === req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const { name, phone, email, address, bankName, bankAccount, commissionRate, status } = req.body;
+  await updateRow(SHEET_NAMES.LANDLORDS, row._rowIndex, [req.params.id, name, phone, email, address, bankName || '', bankAccount || '', commissionRate || '10', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
+  res.json({ success: true });
+});
+
+app.delete('/api/landlords/:id', requireAuth, async (req, res) => {
+  // Soft delete: mark as Inactive
+  const data = await getSheetData(SHEET_NAMES.LANDLORDS);
+  const row = data.find(r => r.ID === req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const vals = Object.values(row).filter((_, i) => i < Object.keys(row).length - 1);
+  vals[8] = 'Inactive';
+  await updateRow(SHEET_NAMES.LANDLORDS, row._rowIndex, vals);
+  res.json({ success: true });
+});
+
+// ── API: Properties ────────────────────────────────────────────────────
 app.get('/api/properties', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.PROPERTIES);
-    const properties = data.slice(1).map(row => ({
-      id: row[0], name: row[1], type: row[2], landlordID: row[3],
-      address: row[4] || '', city: row[5] || '', status: row[6] || 'Active',
-      totalUnits: row[7] || 0, occupied: row[8] || 0
-    }));
-    res.json({ success: true, data: properties });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const data = await getSheetData(SHEET_NAMES.PROPERTIES);
+  res.json(data);
 });
 
 app.post('/api/properties', requireAuth, async (req, res) => {
-  try {
-    const id = 'PR-' + Date.now().toString(36).toUpperCase();
-    const { name, type, landlordID, address, city, status } = req.body;
-    await appendToSheet(SHEETS.PROPERTIES, [id, name, type, landlordID, address || '', city || '', status || 'Active', 0, 0]);
-    await logAudit(req, 'CREATE', `Property:${id}`, `Created property ${name}`);
-    res.json({ success: true, id, message: 'Property added' });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const { name, landlordId, address, type, units } = req.body;
+  const id = await getNextId(SHEET_NAMES.PROPERTIES, 'PRP');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.PROPERTIES, [id, name, landlordId, address, type, units || '0', '0', 'Active', now, req.session.user.name]);
+  res.json({ success: true, id });
 });
 
-// ===== API: UNITS =====
+app.put('/api/properties/:id', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.PROPERTIES);
+  const row = data.find(r => r.ID === req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const { name, landlordId, address, type, status } = req.body;
+  await updateRow(SHEET_NAMES.PROPERTIES, row._rowIndex, [req.params.id, name, landlordId, address, type, row['Total Units'] || '0', row['Occupied'] || '0', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
+  res.json({ success: true });
+});
+
+// ── API: Units ────────────────────────────────────────────────────────
 app.get('/api/units', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.UNITS);
-    const units = data.slice(1).map(row => ({
-      id: row[0], propertyID: row[1], unitNumber: row[2], type: row[3],
-      rent: row[4], status: row[5], tenantID: row[6] || '', tenantName: row[7] || ''
-    }));
-    res.json({ success: true, data: units });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const data = await getSheetData(SHEET_NAMES.UNITS);
+  res.json(data);
 });
 
-// ===== API: TENANTS =====
+app.post('/api/units', requireAuth, async (req, res) => {
+  const { propertyId, unitNumber, type, rent, description } = req.body;
+  const id = await getNextId(SHEET_NAMES.UNITS, 'UNT');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.UNITS, [id, propertyId, unitNumber, type, rent || '0', description || '', 'Vacant', now, req.session.user.name]);
+  res.json({ success: true, id });
+});
+
+app.put('/api/units/:id', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.UNITS);
+  const row = data.find(r => r.ID === req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const { propertyId, unitNumber, type, rent, description, status } = req.body;
+  await updateRow(SHEET_NAMES.UNITS, row._rowIndex, [req.params.id, propertyId, unitNumber, type, rent || '0', description || '', status || 'Vacant', row['Date Added'] || '', row['Added By'] || '']);
+  res.json({ success: true });
+});
+
+// ── API: Tenants ──────────────────────────────────────────────────────
 app.get('/api/tenants', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.TENANTS);
-    const tenants = data.slice(1).map(row => ({
-      id: row[0], unitID: row[1], name: row[2], phone: row[3],
-      email: row[4] || '', start: row[5], end: row[6],
-      emergency: row[7] || '', notes: row[8] || '',
-      rent: row[9] || 0, arrears: row[10] || 0
-    }));
-    res.json({ success: true, data: tenants });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const data = await getSheetData(SHEET_NAMES.TENANTS);
+  res.json(data);
 });
 
-// ===== API: EXPENSES =====
-app.get('/api/expenses', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.EXPENSES);
-    const expenses = data.slice(1).map(row => ({
-      id: row[0], date: row[1], propertyID: row[2], category: row[3],
-      description: row[4], amount: row[5], paidTo: row[6] || '',
-      paymentMethod: row[7] || '', reference: row[8] || '', notes: row[9] || ''
-    }));
-    res.json({ success: true, data: expenses });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+app.post('/api/tenants', requireAuth, async (req, res) => {
+  const { name, phone, email, idNumber, unitId, leaseStart, leaseEnd, rentAmount, deposit } = req.body;
+  const id = await getNextId(SHEET_NAMES.TENANTS, 'TNT');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.TENANTS, [id, name, phone, email, idNumber || '', unitId, leaseStart, leaseEnd, rentAmount || '0', deposit || '0', 'Active', now, req.session.user.name]);
+  res.json({ success: true, id });
 });
 
-// ===== API: RENT COLLECTION =====
+app.put('/api/tenants/:id', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.TENANTS);
+  const row = data.find(r => r.ID === req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const { name, phone, email, idNumber, unitId, leaseStart, leaseEnd, rentAmount, deposit, status } = req.body;
+  await updateRow(SHEET_NAMES.TENANTS, row._rowIndex, [req.params.id, name, phone, email, idNumber || '', unitId, leaseStart, leaseEnd, rentAmount || '0', deposit || '0', status || 'Active', row['Date Added'] || '', row['Added By'] || '']);
+  res.json({ success: true });
+});
+
+// ── API: Rent Collection ───────────────────────────────────────────────
 app.get('/api/rent', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.RENT);
-    const rent = data.slice(1).map(row => ({
-      id: row[0], date: row[1], tenantID: row[2], unitID: row[3],
-      amount: row[4], method: row[5] || 'Cash', period: row[6] || '',
-      receiptNo: row[7] || '', notes: row[8] || '', recordedBy: row[9] || ''
-    }));
-    res.json({ success: true, data: rent });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const data = await getSheetData(SHEET_NAMES.RENT);
+  res.json(data);
 });
 
 app.post('/api/rent', requireAuth, async (req, res) => {
-  try {
-    const id = 'PM-' + Date.now().toString(36).toUpperCase();
-    const receiptNo = 'RCP-' + Date.now();
-    const { tenantID, unitID, amount, date, method, period, notes } = req.body;
-    const recorder = req.session.userName || 'System';
-    await appendToSheet(SHEETS.RENT, [id, date || moment().format('YYYY-MM-DD'), tenantID, unitID, amount, method || 'Cash', period || moment().format('YYYY-MM'), receiptNo, notes || '', recorder]);
-    await logAudit(req, 'CREATE', `Payment:${id}`, `Recorded payment $${amount}`);
-    res.json({ success: true, id, receiptNo, message: 'Payment recorded' });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const { tenantId, unitId, amount, month, year, paymentMethod, reference } = req.body;
+  const id = await getNextId(SHEET_NAMES.RENT, 'RNT');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.RENT, [id, tenantId, unitId, amount, month, year, paymentMethod || 'Cash', reference || '', now, req.session.user.name]);
+  res.json({ success: true, id });
 });
 
-// ===== PDF RECEIPT =====
-app.get('/receipt/:paymentId', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.RENT);
-    const payment = data.slice(1).find(r => r[0] === req.params.paymentId);
-    if (!payment) return res.status(404).send('Payment not found');
-
-    const [tenants, units, properties] = await Promise.all([
-      readSheet(SHEETS.TENANTS), readSheet(SHEETS.UNITS), readSheet(SHEETS.PROPERTIES)
-    ]);
-
-    const tenant = tenants.slice(1).find(t => t[0] === payment[2]) || [];
-    const unit = units.slice(1).find(u => u[0] === payment[3]) || [];
-    const property = properties.slice(1).find(p => p[0] === (unit[1] || '')) || [];
-
-    const doc = new PDFDocument({ size: 'A4', margin: 50 });
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="Receipt-${payment[7] || 'RCP'}.pdf"`);
-    doc.pipe(res);
-
-    doc.fontSize(24).fillColor('#0f766e').text('OFFICIAL RECEIPT', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fontSize(10).fillColor('#666').text('Property Management System', { align: 'center' });
-    doc.moveDown(1);
-
-    doc.rect(50, doc.y, 500, 80).stroke('#0f766e');
-    doc.fontSize(12).fillColor('#000').text(`Receipt No: ${payment[7] || 'N/A'}`, 70, doc.y + 15);
-    doc.text(`Date: ${moment(payment[1]).format('MMMM Do YYYY')}`);
-    doc.text(`Payment Method: ${payment[5] || 'Cash'}`);
-    doc.moveDown(2);
-
-    doc.fontSize(14).fillColor('#0f766e').text('Received From:');
-    doc.fontSize(12).fillColor('#000').text(tenant[2] || 'N/A');
-    doc.text(`Property: ${property[1] || 'N/A'} - Unit ${unit[2] || 'N/A'}`);
-    doc.moveDown(1);
-
-    doc.rect(50, doc.y, 500, 60).fill('#f0fdfa').stroke('#ccfbf1');
-    doc.fillColor('#000').fontSize(16).text(`Amount Paid: $${parseFloat(payment[4]).toFixed(2)}`, 70, doc.y - 45);
-    doc.fontSize(11).text(`For Period: ${payment[6] || 'N/A'}`, 70, doc.y + 5);
-    doc.moveDown(2);
-
-    if (payment[8]) {
-      doc.fontSize(11).text(`Notes: ${payment[8]}`);
-      doc.moveDown(1);
-    }
-
-    doc.moveDown(2);
-    doc.fontSize(10).fillColor('#666').text('Thank you for your payment!', { align: 'center' });
-    doc.text(`Processed by: ${req.session.userName} on ${moment().format('YYYY-MM-DD HH:mm')}`, { align: 'center' });
-
-    doc.end();
-  } catch (err) {
-    res.status(500).send('Error generating receipt: ' + err.message);
-  }
+// ── API: Expenses ─────────────────────────────────────────────────────
+app.get('/api/expenses', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.EXPENSES);
+  res.json(data);
 });
 
-// ===== API: SETTINGS =====
+app.post('/api/expenses', requireAuth, async (req, res) => {
+  const { propertyId, category, description, amount, date } = req.body;
+  const id = await getNextId(SHEET_NAMES.EXPENSES, 'EXP');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.EXPENSES, [id, propertyId, category, description, amount, date, now, req.session.user.name]);
+  res.json({ success: true, id });
+});
+
+// ── API: Invoices ─────────────────────────────────────────────────────
+app.get('/api/invoices', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.INVOICES);
+  res.json(data);
+});
+
+app.post('/api/invoices', requireAuth, async (req, res) => {
+  const { type, entityId, entityName, description, amount, month, year } = req.body;
+  const id = await getNextId(SHEET_NAMES.INVOICES, 'INV');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.INVOICES, [id, type, entityId, entityName, description, amount, month, year, 'Unpaid', now, req.session.user.name]);
+  res.json({ success: true, id });
+});
+
+app.put('/api/invoices/:id/pay', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.INVOICES);
+  const row = data.find(r => r.ID === req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  const vals = Object.values(row).filter((_, i) => i < Object.keys(row).length - 1);
+  vals[8] = 'Paid';
+  await updateRow(SHEET_NAMES.INVOICES, row._rowIndex, vals);
+  res.json({ success: true });
+});
+
+// ── API: Receipts ────────────────────────────────────────────────────
+app.get('/api/receipts', requireAuth, async (req, res) => {
+  const data = await getSheetData(SHEET_NAMES.RECEIPTS);
+  res.json(data);
+});
+
+app.post('/api/receipts', requireAuth, async (req, res) => {
+  const { rentId, tenantName, unitNumber, amount, month, year, paymentMethod } = req.body;
+  const id = await getNextId(SHEET_NAMES.RECEIPTS, 'RCP');
+  const now = new Date().toISOString();
+  await appendRow(SHEET_NAMES.RECEIPTS, [id, rentId, tenantName, unitNumber, amount, month, year, paymentMethod || 'Cash', now, req.session.user.name]);
+  res.json({ success: true, id });
+});
+
+// ── API: Settings ─────────────────────────────────────────────────────
 app.get('/api/settings', requireAuth, async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.SETTINGS);
-    const settings = {};
-    data.slice(1).forEach(row => { settings[row[0]] = row[1]; });
-    res.json({ success: true, data: settings });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+  const data = await getSheetData(SHEET_NAMES.SETTINGS);
+  const settings = {};
+  data.forEach(s => { settings[s.Key] = s.Value; });
+  res.json(settings);
 });
 
-// ===== API: AUDIT LOG (Admin only) =====
-app.get('/api/audit-log', requireAuth, requireRole(['Admin', 'Manager']), async (req, res) => {
-  try {
-    const data = await readSheet(SHEETS.AUDITLOG);
-    const logs = data.slice(1).map(row => ({
-      timestamp: row[0], userId: row[1], userName: row[2], role: row[3],
-      action: row[4], target: row[5], details: row[6], ip: row[7]
-    })).reverse();
-    res.json({ success: true, data: logs });
-  } catch (err) {
-    res.json({ success: false, message: err.message });
-  }
+// ── PDF Generation (HTML-based, print-friendly) ───────────────────────
+app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
+  const invoices = await getSheetData(SHEET_NAMES.INVOICES);
+  const inv = invoices.find(i => i.ID === req.params.id);
+  if (!inv) return res.status(404).send('Invoice not found');
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Invoice ${inv.ID}</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+  .header { text-align: center; border-bottom: 3px solid #0f766e; padding-bottom: 20px; margin-bottom: 30px; }
+  .header h1 { color: #0f766e; margin: 0; font-size: 32px; }
+  .header p { color: #666; margin: 5px 0; }
+  .invoice-details { display: flex; justify-content: space-between; margin-bottom: 30px; }
+  .box { background: #f8fafc; padding: 20px; border-radius: 8px; }
+  .box h3 { margin: 0 0 10px 0; color: #0f766e; font-size: 14px; text-transform: uppercase; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  th { background: #0f766e; color: white; padding: 12px; text-align: left; }
+  td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+  .total { text-align: right; font-size: 24px; font-weight: bold; color: #0f766e; margin-top: 30px; }
+  .status { display: inline-block; padding: 6px 16px; border-radius: 20px; font-weight: bold; font-size: 12px; text-transform: uppercase; }
+  .status.paid { background: #dcfce7; color: #166534; }
+  .status.unpaid { background: #fee2e2; color: #991b1b; }
+  .footer { margin-top: 50px; text-align: center; color: #94a3b8; font-size: 12px; }
+  @media print { body { margin: 0; } .no-print { display: none; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>INVOICE</h1>
+    <p>Property Management System</p>
+    <p>Invoice #: ${inv.ID}</p>
+  </div>
+
+  <div class="invoice-details">
+    <div class="box">
+      <h3>Bill To</h3>
+      <p><strong>${inv.EntityName || 'N/A'}</strong></p>
+      <p>ID: ${inv.EntityId || 'N/A'}</p>
+    </div>
+    <div class="box">
+      <h3>Invoice Details</h3>
+      <p><strong>Date:</strong> ${inv.Date || new Date().toLocaleDateString()}</p>
+      <p><strong>Period:</strong> ${inv.Month || ''} ${inv.Year || ''}</p>
+      <p><strong>Status:</strong> <span class="status ${(inv.Status || '').toLowerCase()}">${inv.Status || 'Unpaid'}</span></p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Description</th><th style="text-align:right">Amount</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>${inv.Description || 'Management Fee'}</td><td style="text-align:right">${inv.Amount || '0'}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="total">Total: ${inv.Amount || '0'}</div>
+
+  <div class="footer">
+    <p>Thank you for your business</p>
+    <p>Generated by Property Management System</p>
+  </div>
+
+  <div class="no-print" style="text-align:center; margin-top:40px;">
+    <button onclick="window.print()" style="padding:12px 32px; background:#0f766e; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Print / Save as PDF</button>
+  </div>
+</body>
+</html>`;
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
 });
 
-// ===== ERROR HANDLER =====
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Server error');
+app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
+  const receipts = await getSheetData(SHEET_NAMES.RECEIPTS);
+  const rcp = receipts.find(r => r.ID === req.params.id);
+  if (!rcp) return res.status(404).send('Receipt not found');
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Receipt ${rcp.ID}</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
+  .receipt { max-width: 600px; margin: 0 auto; border: 2px solid #0f766e; border-radius: 12px; padding: 40px; }
+  .header { text-align: center; border-bottom: 2px dashed #0f766e; padding-bottom: 20px; margin-bottom: 30px; }
+  .header h1 { color: #0f766e; margin: 0; font-size: 28px; }
+  .header .stamp { display: inline-block; background: #0f766e; color: white; padding: 8px 24px; border-radius: 20px; font-weight: bold; margin-top: 10px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+  .detail-row .label { color: #64748b; font-weight: 600; }
+  .detail-row .value { font-weight: bold; color: #0f172a; }
+  .amount-box { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0; }
+  .amount-box .label { color: #166534; font-size: 14px; text-transform: uppercase; }
+  .amount-box .value { color: #0f766e; font-size: 36px; font-weight: bold; }
+  .footer { text-align: center; margin-top: 30px; color: #94a3b8; font-size: 12px; }
+  @media print { body { margin: 0; } .no-print { display: none; } }
+</style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="header">
+      <h1>RENT RECEIPT</h1>
+      <div class="stamp">PAID</div>
+      <p style="margin-top:10px; color:#666;">Receipt #: ${rcp.ID}</p>
+    </div>
+
+    <div class="detail-row"><span class="label">Date</span><span class="value">${rcp.Date || new Date().toLocaleDateString()}</span></div>
+    <div class="detail-row"><span class="label">Received From</span><span class="value">${rcp.TenantName || 'N/A'}</span></div>
+    <div class="detail-row"><span class="label">Unit</span><span class="value">${rcp.UnitNumber || 'N/A'}</span></div>
+    <div class="detail-row"><span class="label">Period</span><span class="value">${rcp.Month || ''} ${rcp.Year || ''}</span></div>
+    <div class="detail-row"><span class="label">Payment Method</span><span class="value">${rcp.PaymentMethod || 'Cash'}</span></div>
+
+    <div class="amount-box">
+      <div class="label">Amount Received</div>
+      <div class="value">${rcp.Amount || '0'}</div>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for your payment</p>
+      <p>Property Management System</p>
+    </div>
+
+    <div class="no-print" style="text-align:center; margin-top:30px;">
+      <button onclick="window.print()" style="padding:12px 32px; background:#0f766e; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Print / Save as PDF</button>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
 });
 
-// ===== START =====
+// ── Start Server ──────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`PMS Server running on port ${PORT}`);
-  console.log(`Google Sheets: ${googleReady ? '✅ Connected' : '⏳ Waiting for first request'}`);
+  console.log(`🚀 PMS Server running on port ${PORT}`);
+  console.log(`📊 Spreadsheet: ${SPREADSHEET_ID}`);
 });
