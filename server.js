@@ -440,6 +440,17 @@ app.post('/api/expenses', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+app.put('/api/expenses/:id', requireAuth, async (req, res) => {
+  try {
+    const data = await getSheetData(SHEET_NAMES.EXPENSES);
+    const row = data.find(r => r.ID === req.params.id);
+    if (!row) return res.status(404).json({ error: 'Not found' });
+    const { propertyId, category, description, amount, date } = req.body;
+    await updateRow(SHEET_NAMES.EXPENSES, row._rowIndex, [req.params.id, propertyId || '', category || 'Other', description || '', amount || '0', date || row.Date || '', row['Date Added'] || '', row['Added By'] || '']);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── API: Invoices ─────────────────────────────────────────────────────
 app.get('/api/invoices', requireAuth, async (req, res) => {
   try { const data = await getSheetData(SHEET_NAMES.INVOICES); res.json(data); }
@@ -482,6 +493,12 @@ app.post('/api/receipts', requireAuth, async (req, res) => {
     await appendRow(SHEET_NAMES.RECEIPTS, [id, rentId || '', tenantName || '', unitNumber || '', amount || '0', month || '', year || '', paymentMethod || 'Cash', now, req.session.user.name]);
     res.json({ success: true, id });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── API: Users ──────────────────────────────────────────────────────
+app.get('/api/users', requireAuth, async (req, res) => {
+  try { const data = await getSheetData(SHEET_NAMES.USERS); res.json(data); }
+  catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── API: Settings ─────────────────────────────────────────────────────
