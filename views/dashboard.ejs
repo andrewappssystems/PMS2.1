@@ -228,6 +228,7 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans
       </div>
       <div class="section" id="sec-receipts">
         <div class="section-title">Receipts</div>
+        <div class="quick-actions"><button onclick="showQuickReceiptDialog()">+ Generate Receipt</button></div>
         <div class="data-table">
           <div class="table-header"><h3>All Receipts</h3><input class="search" placeholder="Search..." onkeyup="filterTable('receiptsTable',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount</th><th>Period</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead><tbody id="receiptsTable"><tr><td colspan="8" class="empty-state"><div class="icon">🧾</div><h3>No receipts yet</h3></td></tr></tbody></table>
@@ -429,10 +430,10 @@ function openModal(type, prefillId=null) {
   const body = document.getElementById('modalBody');
   const title = document.getElementById('modalTitle');
 
-  const activeLL = (landlords || []).filter(l=>l.Status==='Active' || !l.Status);
-  const activePR = (properties || []).filter(p=>p.Status==='Active' || !p.Status);
-  const vacantUN = (units || []).filter(u=>u.Status==='Vacant');
-  const activeTN = (tenants || []).filter(t=>t.Status==='Active' || !t.Status);
+  const activeLL = (landlords || []).filter(l=>(l.Status||'Active').toLowerCase()==='active');
+  const activePR = (properties || []).filter(p=>(p.Status||'Active').toLowerCase()==='active');
+  const vacantUN = (units || []).filter(u=>u.Status && u.Status.toLowerCase()==='vacant');
+  const activeTN = (tenants || []).filter(t=>(t.Status||'Active').toLowerCase()==='active');
 
   const llOpts = activeLL.length ? activeLL.map(l=>`<option value="${l.ID||''}">${l.Name||l.ID||''}</option>`).join('') : '<option value="">No landlords</option>';
   const propOpts = activePR.length ? activePR.map(p=>`<option value="${p.ID||''}">${p.Name||p.ID||''}</option>`).join('') : '<option value="">No properties</option>';
@@ -478,10 +479,10 @@ function updateInvoiceEntity() {
   const type = typeSel.value;
   entitySel.disabled = false;
   if(type==='landlord') {
-    const activeLL = landlords.filter(l=>l.Status==='Active' || !l.Status);
+    const activeLL = landlords.filter(l=>(l.Status||'Active').toLowerCase()==='active');
     entitySel.innerHTML = '<option value="">Select landlord...</option>' + activeLL.map(l=>`<option value="${l.ID||''}">${l.Name||l.ID||''}</option>`).join('');
   } else if(type==='tenant') {
-    const activeTnt = tenants.filter(t=>t.Status==='Active' || !t.Status);
+    const activeTnt = tenants.filter(t=>(t.Status||'Active').toLowerCase()==='active');
     entitySel.innerHTML = '<option value="">Select tenant...</option>' + activeTnt.map(t=>`<option value="${t.ID||''}">${t.Name||t.ID||''}</option>`).join('');
   } else {
     entitySel.disabled = true;
@@ -491,6 +492,8 @@ function updateInvoiceEntity() {
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('modalSave').onclick = null;
+  document.getElementById('modalSave').textContent = 'Save';
   currentForm = ''; editingId = null;
 }
 
@@ -509,15 +512,47 @@ async function saveForm() {
   const btn = document.getElementById('modalSave');
   btn.textContent = 'Saving...'; btn.disabled = true;
   try {
-    let payload={}, endpoint='';
+    let payload={}, endpoint='', method='POST';
     switch(currentForm) {
-      case 'landlord': endpoint='/api/landlords'; payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission')}; break;
-      case 'property': endpoint='/api/properties'; payload={name:gv('f_name'),landlordId:gv('f_landlord'),address:gv('f_address'),type:gv('f_type')}; break;
-      case 'unit': endpoint='/api/units'; payload={propertyId:gv('f_property'),unitNumber:gv('f_unitno'),type:gv('f_type'),rent:gv('f_rent'),description:gv('f_desc')}; break;
-      case 'tenant': endpoint='/api/tenants'; payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit')}; break;
-      case 'rent': endpoint='/api/rent'; payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref')}; break;
-      case 'expense': endpoint='/api/expenses'; payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')}; break;
-      case 'invoice': endpoint='/api/invoices'; payload={type:gv('f_invType'),entityId:gv('f_entity'),entityName:getEntityName(gv('f_invType'),gv('f_entity')),description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')}; break;
+      case 'landlord':
+        if(editingId) { endpoint='/api/landlords/'+editingId; method='PUT'; } else endpoint='/api/landlords';
+        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission')};
+        break;
+      case 'property':
+        if(editingId) { endpoint='/api/properties/'+editingId; method='PUT'; } else endpoint='/api/properties';
+        payload={name:gv('f_name'),landlordId:gv('f_landlord'),address:gv('f_address'),type:gv('f_type')};
+        break;
+      case 'unit':
+        if(editingId) { endpoint='/api/units/'+editingId; method='PUT'; } else endpoint='/api/units';
+        payload={propertyId:gv('f_property'),unitNumber:gv('f_unitno'),type:gv('f_type'),rent:gv('f_rent'),description:gv('f_desc')};
+        break;
+      case 'tenant':
+        if(editingId) { endpoint='/api/tenants/'+editingId; method='PUT'; } else endpoint='/api/tenants';
+        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit')};
+        break;
+      case 'rent':
+        endpoint='/api/rent';
+        payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref')};
+        break;
+      case 'expense':
+        if(editingId) { endpoint='/api/expenses/'+editingId; method='PUT'; } else endpoint='/api/expenses';
+        payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')};
+        break;
+      case 'quickReceipt': {
+        const sel = document.getElementById('f_rentRecord');
+        if(!sel || !sel.value) { showToast('Please select a rent record','error'); btn.textContent='Save'; btn.disabled=false; return; }
+        const r=rentData.find(x=>x.ID===sel.value);
+        if(!r){ showToast('Rent record not found','error'); btn.textContent='Save'; btn.disabled=false; return; }
+        const t=tenants.find(x=>x.ID===r['Tenant ID'])||{};
+        const u=units.find(x=>x.ID===r['Unit ID'])||{};
+        endpoint='/api/receipts';
+        payload={rentId:r.ID,tenantName:t.Name||'',unitNumber:u['Unit Number']||'',amount:r.Amount,month:r.Month,year:r.Year,paymentMethod:r['Payment Method']||'Cash'};
+        break;
+      }
+      case 'invoice':
+        endpoint='/api/invoices';
+        payload={type:gv('f_invType'),entityId:gv('f_entity'),entityName:getEntityName(gv('f_invType'),gv('f_entity')),description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
+        break;
     }
 
     if(currentForm==='property' && !payload.landlordId) { showToast('Please select a landlord','error'); btn.textContent='Save'; btn.disabled=false; return; }
@@ -526,29 +561,37 @@ async function saveForm() {
     if(currentForm==='rent' && !payload.tenantId) { showToast('Please select a tenant','error'); btn.textContent='Save'; btn.disabled=false; return; }
     if(currentForm==='invoice' && (!payload.type || !payload.entityId)) { showToast('Please select invoice type and entity','error'); btn.textContent='Save'; btn.disabled=false; return; }
 
-    const res = await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await fetch(endpoint,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data = await res.json();
     if(data.success){
+      const savedForm = currentForm;
+      const savedPayload = Object.assign({}, payload);
+      const savedDataId = data.id;
       showToast('Saved successfully!','success');
       closeModal();
       await loadAllData();
-      if(currentForm==='property') {
-        showPrompt('Add Units?', `Do you want to add units to "${payload.name}" now?`, function() {
+      if(savedForm==='property' && !editingId) {
+        showPrompt('Add Units?', `Do you want to add units to "${savedPayload.name}" now?`, function() {
           openModal('unit');
-          setTimeout(()=>{ const propSel=document.getElementById('f_property'); if(propSel) propSel.value=data.id; }, 100);
+          setTimeout(()=>{ const propSel=document.getElementById('f_property'); if(propSel) propSel.value=savedDataId; }, 100);
         });
       }
-      if(currentForm==='rent') {
-        const t=tenants.find(x=>x.ID===payload.tenantId);
-        const u=units.find(x=>x.ID===payload.unitId);
-        const rcpPayload={rentId:data.id,tenantName:t?t.Name:'',unitNumber:u?u['Unit Number']:'',amount:payload.amount,month:payload.month,year:payload.year,paymentMethod:payload.paymentMethod};
+      if(savedForm==='rent') {
+        const t=tenants.find(x=>x.ID===savedPayload.tenantId);
+        const u=units.find(x=>x.ID===savedPayload.unitId);
+        const rcpPayload={rentId:savedDataId,tenantName:t?t.Name:'',unitNumber:u?u['Unit Number']:'',amount:savedPayload.amount,month:savedPayload.month,year:savedPayload.year,paymentMethod:savedPayload.paymentMethod};
         const rcpRes=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(rcpPayload)});
         const rcpData=await rcpRes.json();
         if(rcpData.success) {
-          showToast('Receipt generated! 🧾','success');
+          showToast('Receipt generated!','success');
           await loadAllData();
           showPrompt('View Receipt?', 'Receipt generated. View it now?', function() { viewReceipt(rcpData.id); });
         }
+      }
+      if(savedForm==='quickReceipt') {
+        showToast('Receipt generated!','success');
+        await loadAllData();
+        showPrompt('View Receipt?', 'Receipt generated. View it now?', function() { viewReceipt(savedDataId); });
       }
     } else {
       showToast(data.error||'Failed to save','error');
@@ -659,6 +702,36 @@ async function quickReceipt(rentId) {
   const res=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const data=await res.json();
   if(data.success){ showToast('Receipt generated!','success'); loadAllData(); viewReceipt(data.id); }
+}
+
+function showQuickReceiptDialog() {
+  const paidRent = (rentData || []).filter(r=>r.ID);
+  if(!paidRent.length){ showToast('No rent records found. Record a rent payment first.','error'); return; }
+  currentForm='quickReceipt'; editingId=null;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalTitle').textContent='Generate Receipt';
+  document.getElementById('modalBody').innerHTML = `<div class="form-grid">
+    <div class="form-group full"><label>Select Rent Record *</label><select id="f_rentRecord" required onchange="prefillReceiptFields()"><option value="">Choose a rent payment...</option>${paidRent.map(r=>{const t=tenants.find(x=>x.ID===r['Tenant ID'])||{}; return `<option value="${r.ID||''}" data-tenant="${t.Name||''}" data-unit="${(units.find(x=>x.ID===r['Unit ID'])||{})['Unit Number']||''}" data-amount="${r.Amount||'0'}" data-month="${r.Month||''}" data-year="${r.Year||''}" data-method="${r['Payment Method']||'Cash'}">${r.ID||''} - ${t.Name||r['Tenant ID']||''} - ${r.Amount||'0'}</option>`;}).join('')}</select></div>
+    <div class="form-group"><label>Tenant Name</label><input id="f_rcp_tenant" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>Unit Number</label><input id="f_rcp_unit" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>Amount</label><input id="f_rcp_amount" type="number" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>Month</label><input id="f_rcp_month" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>Year</label><input id="f_rcp_year" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>Payment Method</label><input id="f_rcp_method" readonly style="background:#f8fafc"></div>
+  </div>`;
+  document.getElementById('modalSave').textContent = 'Generate Receipt';
+}
+
+function prefillReceiptFields() {
+  const sel = document.getElementById('f_rentRecord');
+  if(!sel || !sel.value) return;
+  const opt = sel.selectedOptions[0];
+  document.getElementById('f_rcp_tenant').value = opt?.dataset?.tenant || '';
+  document.getElementById('f_rcp_unit').value = opt?.dataset?.unit || '';
+  document.getElementById('f_rcp_amount').value = opt?.dataset?.amount || '0';
+  document.getElementById('f_rcp_month').value = opt?.dataset?.month || '';
+  document.getElementById('f_rcp_year').value = opt?.dataset?.year || '';
+  document.getElementById('f_rcp_method').value = opt?.dataset?.method || 'Cash';
 }
 
 // ── Table Filter ─────────────────────────────────────────────────────
