@@ -800,6 +800,898 @@ app.post('/api/settings/logo', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+'use strict';
+// ── ID helpers with year prefix ───────────────────────────────────────────────
+async function getNextYearId(table, idColumn, prefix) {
+  const year = new Date().getFullYear();
+  const { rows } = await pool.query(
+    `SELECT ${idColumn} FROM ${table}
+     WHERE ${idColumn} LIKE $1
+     ORDER BY id DESC LIMIT 1`,
+    [`${prefix}-${year}-%`]
+  );
+  if (!rows.length) return `${prefix}-${year}-001`;
+  const last = rows[0][idColumn] || '';
+  const match = last.match(/(\d+)$/);
+  const next  = match ? parseInt(match[1]) + 1 : 1;
+  return `${prefix}-${year}-${String(next).padStart(3,'0')}`;
+}
+
+// ── Archive helper ────────────────────────────────────────────────────────────
+async function archiveRecord(entityType, entityId, entityLabel, data, deletedBy) {
+  await pool.query(
+    `INSERT INTO archive (entity_type, entity_id, entity_label, data, deleted_by)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [entityType, entityId, entityLabel, JSON.stringify(data), deletedBy]
+  );
+}
+
+// ── Tenant balance helper ─────────────────────────────────────────────────────
+async function getTenantBalance(tenantId) {
+  const { rows } = await pool.query(
+    `SELECT carried_balance FROM rent_balances WHERE tenant_id=$1`, [tenantId]
+  );
+  return rows.length ? parseFloat(rows[0].carried_balance) : 0;
+}
+async function setTenantBalance(tenantId, balance) {
+  await pool.query(
+    `INSERT INTO rent_balances (tenant_id, carried_balance, last_updated)
+     VALUES ($1,$2,NOW())
+     ON CONFLICT (tenant_id) DO UPDATE
+     SET carried_balance=EXCLUDED.carried_balance, last_updated=NOW()`,
+    [tenantId, balance]
+  );
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TENANTS — override POST and PUT with new fields
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Hard-delete tenant → archive → free unit
+app.delete('/api/tenants/:id', requireAuth, async (req, res) => {
+  if (!sheetsReady(res)) return;
+  try {
+    const { rows } = await pool.query(`SELECT * FROM tenants WHERE tenant_id=$1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Tenant not found' });
+    const tenant = rows[0];
+    // Archive
+    await archiveRecord('tenant', tenant.tenant_id,
+      `${tenant.name} (${tenant.tenant_id})`, tenant, actor(req));
+    // Free unit
+    if (tenant.unit_id) {
+      await pool.query(`UPDATE units SET status='Vacant' WHERE unit_id=$1`, [tenant.unit_id]);
+    }
+    // Hard delete
+    await pool.query(`DELETE FROM tenants WHERE tenant_id=$1`, [req.params.id]);
+    await pool.query(`DELETE FROM rent_balances WHERE tenant_id=$1`, [req.params.id]);
+    clearCache('tenants','units','properties','stats');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[DELETE /api/tenants]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Hard-delete landlord → archive
+app.delete('/api/landlords/:id', requireAuth, async (req, res) => {
+  if (!sheetsReady(res)) return;
+  try {
+    const { rows } = await pool.query(`SELECT * FROM landlords WHERE landlord_id=$1`, [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: 'Landlord not found' });
+    await archiveRecord('landlord', rows[0].landlord_id,
+      rows[0].name, rows[0], actor(req));
+    await pool.query(`DELETE FROM landlords WHERE landlord_id=$1`, [req.params.id]);
+    clearCache('landlords','stats');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Tenant balance endpoint ───────────────────────────────────────────────────
+app.get('/api/tenants/:id/balance', requireAuth, async (req, res) => {
+  try {
+    const balance = await getTenantBalance(req.params.id);
+    res.json({ balance });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// RENT — override POST with partial payment + balance logic
+// ═════════════════════════════════════════════════════════════════════════════
+app.post('/api/rent/v2', requireAuth, async (req, res) => {
+  const err = validate([['tenantId','Tenant'],['amount','Amount']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const {
+      tenantId, unitId='', amount, month='', year='',
+      paymentMethod='Cash', reference='',
+      paymentType='Full', expectedAmount=''
+    } = req.body;
+
+    const paid     = parseFloat(amount);
+    const expected = parseFloat(expectedAmount) || paid;
+    const prevBal  = await getTenantBalance(tenantId);
+    // Total owed = expected this month + any previous balance
+    const totalOwed = expected + prevBal;
+    const newBal    = totalOwed - paid;
+    const finalBal  = newBal > 0 ? newBal : 0;
+    const isPartial = paymentType === 'Partial' || paid < totalOwed;
+
+    const id = await getNextId('rent_collection', 'rent_id', 'RNT');
+    await pool.query(
+      `INSERT INTO rent_collection
+       (rent_id,tenant_id,unit_id,amount,month,year,payment_method,reference,
+        payment_type,balance_before,balance_after,expected_amount,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [id, tenantId, unitId||null, paid, month,
+       year ? parseInt(year) : null,
+       paymentMethod, reference.trim(),
+       isPartial ? 'Partial' : 'Full',
+       prevBal, finalBal, expected, actor(req)]
+    );
+    // Update running balance
+    await setTenantBalance(tenantId, finalBal);
+
+    clearCachePrefix('rent_'); clearCache('stats');
+    res.json({ success: true, id, balanceBefore: prevBal, balanceAfter: finalBal, isPartial });
+  } catch (e) {
+    console.error('[POST /api/rent/v2]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Rent due status endpoint (for dashboard alert) ────────────────────────────
+app.get('/api/rent/due-status', requireAuth, async (req, res) => {
+  try {
+    const now        = new Date();
+    const dayOfMonth = now.getDate();
+    const thisMonth  = String(now.getMonth() + 1).padStart(2,'0');
+    const thisYear   = now.getFullYear();
+
+    const { rows: activeTenants } = await pool.query(
+      `SELECT t.tenant_id, t.name, t.rent_amount,
+              u.unit_number, p.name AS property_name,
+              rb.carried_balance
+       FROM tenants t
+       LEFT JOIN units u ON u.unit_id = t.unit_id
+       LEFT JOIN properties p ON p.property_id = u.property_id
+       LEFT JOIN rent_balances rb ON rb.tenant_id = t.tenant_id
+       WHERE LOWER(t.status)='active' AND t.rent_amount > 0`
+    );
+
+    const paid = new Set();
+    const { rows: payments } = await pool.query(
+      `SELECT tenant_id FROM rent_collection
+       WHERE month=$1 AND year=$2`, [thisMonth, thisYear]
+    );
+    payments.forEach(p => paid.add(p.tenant_id));
+
+    const unpaid = activeTenants.filter(t => !paid.has(t.tenant_id));
+    const overdue = dayOfMonth > 1 ? unpaid : [];
+
+    res.json({
+      dayOfMonth,
+      dueToday:   dayOfMonth === 1,
+      totalUnpaid: unpaid.length,
+      overdueCount: overdue.length,
+      unpaidTenants: unpaid.map(t => ({
+        id:           t.tenant_id,
+        name:         t.name,
+        unit:         t.unit_number,
+        property:     t.property_name,
+        rent:         parseFloat(t.rent_amount),
+        carriedBalance: parseFloat(t.carried_balance || 0)
+      }))
+    });
+  } catch (e) {
+    console.error('[/api/rent/due-status]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── WhatsApp message generator ────────────────────────────────────────────────
+app.post('/api/rent/whatsapp-message', requireAuth, async (req, res) => {
+  try {
+    const { receiptId } = req.body;
+    const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
+    const cfg = {}; sRows.forEach(r => { cfg[r.key] = r.value; });
+    const company = cfg.company_name || 'Property Management';
+
+    let msg = '';
+    if (receiptId) {
+      const { rows } = await pool.query(
+        `SELECT r.*, rc.balance_after, rc.balance_before, rc.payment_type, rc.expected_amount
+         FROM receipts r
+         LEFT JOIN rent_collection rc ON rc.rent_id = r.rent_id
+         WHERE r.receipt_id = $1`, [receiptId]
+      );
+      if (!rows.length) return res.status(404).json({ error: 'Receipt not found' });
+      const r = rows[0];
+      const balAfter = parseFloat(r.balance_after || 0);
+      const currency = cfg.currency || 'UGX';
+      msg = `*${company}*\n\n`;
+      msg += `✅ *Rent Payment Received*\n`;
+      msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+      msg += `Dear ${r.tenant_name},\n\n`;
+      msg += `We confirm receipt of your rent payment:\n\n`;
+      msg += `📋 Receipt No: *${r.receipt_id}*\n`;
+      msg += `🏠 Unit: *${r.unit_number}*\n`;
+      msg += `📅 Period: *${r.month} ${r.year}*\n`;
+      msg += `💰 Amount Paid: *${currency} ${Number(r.amount).toLocaleString()}*\n`;
+      msg += `💳 Method: *${r.payment_method}*\n`;
+      msg += `📆 Date: *${new Date(r.created_at).toLocaleDateString('en-GB')}*\n`;
+      if (balAfter > 0) {
+        msg += `\n⚠️ *Outstanding Balance: ${currency} ${balAfter.toLocaleString()}*\n`;
+        msg += `Please settle this balance as soon as possible.\n`;
+      } else {
+        msg += `\n✅ Your account is fully up to date.\n`;
+      }
+      msg += `\nThank you for your payment.\n_${company}_`;
+    }
+    res.json({ success: true, message: msg });
+  } catch (e) {
+    console.error('[whatsapp-message]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// RECEIPTS — year-reset numbering
+// ═════════════════════════════════════════════════════════════════════════════
+app.post('/api/receipts/v2', requireAuth, async (req, res) => {
+  const err = validate([['tenantName','Tenant name'],['amount','Amount']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const {
+      rentId='', tenantName, unitNumber='', amount,
+      month='', year='', paymentMethod='Cash',
+      paymentType='Full', balanceCarried=0, expectedAmount=0
+    } = req.body;
+    const id = await getNextYearId('receipts', 'receipt_id', 'RCP');
+    await pool.query(
+      `INSERT INTO receipts
+       (receipt_id,rent_id,tenant_name,unit_number,amount,month,year,
+        payment_method,payment_type,balance_carried,expected_amount,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [id, rentId||null, tenantName.trim(), unitNumber.trim(),
+       parseFloat(amount), month,
+       year ? parseInt(year) : null,
+       paymentMethod,
+       paymentType,
+       parseFloat(balanceCarried)||0,
+       parseFloat(expectedAmount)||0,
+       actor(req)]
+    );
+    clearCachePrefix('receipts_');
+    res.json({ success: true, id });
+  } catch (e) {
+    console.error('[POST /api/receipts/v2]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// INVOICES — year-reset numbering + bulk creation
+// ═════════════════════════════════════════════════════════════════════════════
+app.post('/api/invoices/v2', requireAuth, async (req, res) => {
+  const err = validate([['type','Invoice type'],['entityId','Entity'],['amount','Amount']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { type, entityId, entityName='', description='', amount, month='', year='' } = req.body;
+    const id = await getNextYearId('invoices', 'invoice_id', 'INV');
+    await pool.query(
+      `INSERT INTO invoices
+       (invoice_id,type,entity_id,entity_name,description,amount,month,year,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Unpaid',$9)`,
+      [id, type, entityId, entityName.trim(), description.trim(),
+       parseFloat(amount), month,
+       year ? parseInt(year) : null, actor(req)]
+    );
+    clearCachePrefix('invoices_');
+    res.json({ success: true, id });
+  } catch (e) {
+    console.error('[POST /api/invoices/v2]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Bulk invoice creation — creates one invoice per landlord (management fees)
+app.post('/api/invoices/bulk', requireAuth, async (req, res) => {
+  const err = validate([['month','Month'],['year','Year']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { month, year, description='', overrideAmount='' } = req.body;
+    const { rows: landlordList } = await pool.query(
+      `SELECT l.landlord_id, l.name, l.commission_rate,
+              COALESCE(SUM(rc.amount),0) AS total_collected
+       FROM landlords l
+       LEFT JOIN properties p ON p.landlord_id = l.landlord_id
+       LEFT JOIN units u ON u.property_id = p.property_id
+       LEFT JOIN rent_collection rc
+         ON rc.unit_id = u.unit_id
+         AND rc.month = $1 AND rc.year = $2
+       WHERE LOWER(l.status)='active'
+       GROUP BY l.landlord_id, l.name, l.commission_rate`,
+      [month, parseInt(year)]
+    );
+    const created = [];
+    for (const l of landlordList) {
+      const collected = parseFloat(l.total_collected) || 0;
+      const fee = overrideAmount
+        ? parseFloat(overrideAmount)
+        : Math.round(collected * (parseFloat(l.commission_rate) / 100));
+      if (fee <= 0) continue;
+      const id = await getNextYearId('invoices', 'invoice_id', 'INV');
+      await pool.query(
+        `INSERT INTO invoices
+         (invoice_id,type,entity_id,entity_name,description,amount,month,year,status,created_by)
+         VALUES ($1,'landlord',$2,$3,$4,$5,$6,$7,'Unpaid',$8)`,
+        [id, l.landlord_id, l.name,
+         description || `Management fee — ${month} ${year}`,
+         fee, month, parseInt(year), actor(req)]
+      );
+      created.push({ id, landlord: l.name, amount: fee });
+    }
+    clearCachePrefix('invoices_');
+    res.json({ success: true, count: created.length, invoices: created });
+  } catch (e) {
+    console.error('[POST /api/invoices/bulk]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// RENT INCREASE
+// ═════════════════════════════════════════════════════════════════════════════
+app.post('/api/rent-increase', requireAuth, async (req, res) => {
+  const err = validate([['unitId','Unit'],['newRent','New rent'],['effectiveDate','Effective date']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { unitId, newRent, effectiveDate, notes='' } = req.body;
+    // Get current unit rent
+    const { rows: unitRows } = await pool.query(
+      `SELECT unit_id, rent FROM units WHERE unit_id=$1`, [unitId]
+    );
+    if (!unitRows.length) return res.status(404).json({ error: 'Unit not found' });
+    const oldRent = parseFloat(unitRows[0].rent);
+    const nr      = parseFloat(newRent);
+
+    // Get active tenant on this unit
+    const { rows: tenantRows } = await pool.query(
+      `SELECT tenant_id FROM tenants WHERE unit_id=$1 AND LOWER(status)='active'`, [unitId]
+    );
+    const tenantId = tenantRows.length ? tenantRows[0].tenant_id : null;
+
+    // Record history
+    const hid = await getNextId('rent_increase_history', 'increase_id', 'RNI');
+    await pool.query(
+      `INSERT INTO rent_increase_history
+       (increase_id,unit_id,tenant_id,old_rent,new_rent,effective_date,notes,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [hid, unitId, tenantId, oldRent, nr, effectiveDate, notes.trim(), actor(req)]
+    );
+
+    // If effective date is today or past — apply immediately
+    const effDate = new Date(effectiveDate);
+    const today   = new Date();
+    today.setHours(0,0,0,0);
+    if (effDate <= today) {
+      await pool.query(`UPDATE units SET rent=$1 WHERE unit_id=$2`, [nr, unitId]);
+      if (tenantId) {
+        await pool.query(`UPDATE tenants SET rent_amount=$1 WHERE tenant_id=$2`, [nr, tenantId]);
+      }
+      clearCache('units','tenants','properties','stats');
+    }
+
+    res.json({ success: true, id: hid, applied: effDate <= today });
+  } catch (e) {
+    console.error('[POST /api/rent-increase]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/rent-increase/history', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT h.increase_id, h.unit_id, u.unit_number,
+             p.name AS property_name,
+             h.tenant_id, t.name AS tenant_name,
+             h.old_rent, h.new_rent, h.effective_date, h.notes,
+             TO_CHAR(h.created_at,'YYYY-MM-DD') AS created_at, h.created_by
+      FROM rent_increase_history h
+      LEFT JOIN units u ON u.unit_id = h.unit_id
+      LEFT JOIN properties p ON p.property_id = u.property_id
+      LEFT JOIN tenants t ON t.tenant_id = h.tenant_id
+      ORDER BY h.id DESC LIMIT 100`
+    );
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// ARCHIVE — search deleted records
+// ═════════════════════════════════════════════════════════════════════════════
+app.get('/api/archive', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { type='', search='' } = req.query;
+    let query = `SELECT id, entity_type, entity_id, entity_label,
+                        TO_CHAR(deleted_at,'YYYY-MM-DD HH24:MI') AS deleted_at,
+                        deleted_by
+                 FROM archive WHERE 1=1`;
+    const params = [];
+    if (type) { params.push(type); query += ` AND entity_type=$${params.length}`; }
+    if (search) {
+      params.push(`%${search.toLowerCase()}%`);
+      query += ` AND LOWER(entity_label) LIKE $${params.length}`;
+    }
+    query += ' ORDER BY id DESC LIMIT 200';
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// REPORTS
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── Portfolio summary report ──────────────────────────────────────────────────
+app.get('/api/reports/portfolio', requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from and to dates required' });
+  try {
+    const [props, unitStats, rentStats, expStats, arrStats] = await Promise.all([
+      pool.query(`SELECT COUNT(*) FROM properties WHERE LOWER(status)='active'`),
+      pool.query(`SELECT
+        COUNT(*) FILTER (WHERE LOWER(status)='occupied') AS occupied,
+        COUNT(*) FILTER (WHERE LOWER(status)='vacant')   AS vacant,
+        COUNT(*)                                          AS total
+        FROM units`),
+      pool.query(
+        `SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count
+         FROM rent_collection
+         WHERE created_at BETWEEN $1 AND $2`, [from, to + ' 23:59:59']
+      ),
+      pool.query(
+        `SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count
+         FROM expenses
+         WHERE created_at BETWEEN $1 AND $2`, [from, to + ' 23:59:59']
+      ),
+      pool.query(
+        `SELECT COUNT(DISTINCT t.tenant_id) AS tenants_in_arrears,
+                COALESCE(SUM(rb.carried_balance),0) AS total_arrears
+         FROM rent_balances rb
+         JOIN tenants t ON t.tenant_id = rb.tenant_id
+         WHERE rb.carried_balance > 0 AND LOWER(t.status)='active'`
+      )
+    ]);
+    const us = unitStats.rows[0];
+    const rs = rentStats.rows[0];
+    const es = expStats.rows[0];
+    const ar = arrStats.rows[0];
+    res.json({
+      period:           { from, to },
+      properties:       Number(props.rows[0].count),
+      units:            { total: Number(us.total), occupied: Number(us.occupied), vacant: Number(us.vacant) },
+      occupancyRate:    us.total > 0 ? Math.round((us.occupied / us.total) * 100) : 0,
+      rentCollected:    Number(rs.total),
+      rentTransactions: Number(rs.count),
+      expenses:         Number(es.total),
+      netIncome:        Number(rs.total) - Number(es.total),
+      tenantsInArrears: Number(ar.tenants_in_arrears),
+      totalArrears:     Number(ar.total_arrears)
+    });
+  } catch (e) {
+    console.error('[/api/reports/portfolio]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Landlord report ───────────────────────────────────────────────────────────
+app.get('/api/reports/landlord/:landlordId', requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).json({ error: 'from and to dates required' });
+  try {
+    const { rows: llRows } = await pool.query(
+      `SELECT * FROM landlords WHERE landlord_id=$1`, [req.params.landlordId]
+    );
+    if (!llRows.length) return res.status(404).json({ error: 'Landlord not found' });
+    const landlord = llRows[0];
+
+    // Properties
+    const { rows: propRows } = await pool.query(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM units u WHERE u.property_id=p.property_id) AS total_units,
+        (SELECT COUNT(*) FROM units u WHERE u.property_id=p.property_id AND LOWER(u.status)='occupied') AS occupied_units,
+        (SELECT COUNT(*) FROM units u WHERE u.property_id=p.property_id AND LOWER(u.status)='vacant') AS vacant_units
+       FROM properties p WHERE p.landlord_id=$1`,
+      [req.params.landlordId]
+    );
+
+    // Rent collected per property
+    const { rows: rentRows } = await pool.query(
+      `SELECT p.property_id, p.name AS property_name,
+              COALESCE(SUM(rc.amount),0) AS collected,
+              COUNT(rc.rent_id) AS payment_count
+       FROM properties p
+       LEFT JOIN units u ON u.property_id = p.property_id
+       LEFT JOIN rent_collection rc
+         ON rc.unit_id = u.unit_id
+         AND rc.created_at BETWEEN $2 AND $3
+       WHERE p.landlord_id = $1
+       GROUP BY p.property_id, p.name`,
+      [req.params.landlordId, from, to + ' 23:59:59']
+    );
+
+    // Expenses per property
+    const { rows: expRows } = await pool.query(
+      `SELECT p.property_id, p.name AS property_name,
+              COALESCE(SUM(e.amount),0) AS total_expenses
+       FROM properties p
+       LEFT JOIN expenses e
+         ON e.property_id = p.property_id
+         AND e.created_at BETWEEN $2 AND $3
+       WHERE p.landlord_id = $1
+       GROUP BY p.property_id, p.name`,
+      [req.params.landlordId, from, to + ' 23:59:59']
+    );
+
+    // Arrears per tenant under this landlord
+    const { rows: arrearsRows } = await pool.query(
+      `SELECT t.tenant_id, t.name AS tenant_name,
+              u.unit_number, p.name AS property_name,
+              t.rent_amount,
+              COALESCE(rb.carried_balance,0) AS balance
+       FROM tenants t
+       JOIN units u ON u.unit_id = t.unit_id
+       JOIN properties p ON p.property_id = u.property_id
+       LEFT JOIN rent_balances rb ON rb.tenant_id = t.tenant_id
+       WHERE p.landlord_id=$1 AND LOWER(t.status)='active' AND COALESCE(rb.carried_balance,0)>0`,
+      [req.params.landlordId]
+    );
+
+    // Rent payments detail
+    const { rows: paymentDetails } = await pool.query(
+      `SELECT rc.rent_id, t.name AS tenant_name,
+              u.unit_number, p.name AS property_name,
+              rc.amount, rc.month, rc.year,
+              rc.payment_method, rc.payment_type,
+              rc.balance_after,
+              TO_CHAR(rc.created_at,'YYYY-MM-DD') AS date
+       FROM rent_collection rc
+       JOIN units u ON u.unit_id = rc.unit_id
+       JOIN properties p ON p.property_id = u.property_id
+       LEFT JOIN tenants t ON t.tenant_id = rc.tenant_id
+       WHERE p.landlord_id=$1
+         AND rc.created_at BETWEEN $2 AND $3
+       ORDER BY rc.created_at DESC`,
+      [req.params.landlordId, from, to + ' 23:59:59']
+    );
+
+    // Totals
+    const totalCollected = rentRows.reduce((s,r)=>s+parseFloat(r.collected||0),0);
+    const totalExpenses  = expRows.reduce((s,r)=>s+parseFloat(r.total_expenses||0),0);
+    const managementFee  = totalCollected * (parseFloat(landlord.commission_rate||10)/100);
+    const netPayable     = totalCollected - managementFee - totalExpenses;
+
+    // Get settings for company branding
+    const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
+    const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
+
+    res.json({
+      landlord, period: { from, to },
+      properties: propRows,
+      rentByProperty: rentRows,
+      expensesByProperty: expRows,
+      arrearsDetail: arrearsRows,
+      paymentDetails,
+      summary: {
+        totalCollected, totalExpenses, managementFee,
+        managementFeeRate: parseFloat(landlord.commission_rate||10),
+        netPayable,
+        totalArrears: arrearsRows.reduce((s,r)=>s+parseFloat(r.balance||0),0)
+      },
+      company: cfg
+    });
+  } catch (e) {
+    console.error('[/api/reports/landlord]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Landlord report HTML (printable) ─────────────────────────────────────────
+app.get('/api/reports/landlord/:landlordId/pdf', requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).send('Date range required');
+  try {
+    const reportRes = await fetch(
+      `http://localhost:${process.env.PORT||3000}/api/reports/landlord/${req.params.landlordId}?from=${from}&to=${to}`,
+      { headers: { cookie: req.headers.cookie || '' } }
+    );
+    const d = await reportRes.json();
+    if (d.error) return res.status(404).send(d.error);
+    const { landlord: ll, summary: s, properties: props, paymentDetails, arrearsDetail, company } = d;
+    const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
+    const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const logoHtml = company.company_logo
+      ? `<img src="${company.company_logo}" style="height:56px;object-fit:contain">`
+      : `<div style="font-size:32px">🏢</div>`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Landlord Report — ${ll.name}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px;padding:0}
+  .page{max-width:900px;margin:0 auto;padding:32px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:24px}
+  .company h1{color:#0f766e;font-size:22px;margin-bottom:4px}
+  .company p{color:#64748b;font-size:12px}
+  .report-title{text-align:right}
+  .report-title h2{font-size:20px;color:#0f172a}
+  .report-title p{color:#64748b;font-size:12px;margin-top:4px}
+  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  .sum-card{background:#f8fafc;border-radius:8px;padding:14px;border-left:3px solid #0f766e}
+  .sum-card.red{border-color:#ef4444}
+  .sum-card.green{border-color:#22c55e}
+  .sum-card .lbl{font-size:11px;color:#64748b;text-transform:uppercase;font-weight:600;letter-spacing:.4px}
+  .sum-card .val{font-size:17px;font-weight:700;margin-top:4px;color:#0f172a}
+  .sum-card.green .val{color:#16a34a}
+  .sum-card.red .val{color:#dc2626}
+  h3{font-size:14px;font-weight:700;margin:20px 0 10px;color:#0f766e;text-transform:uppercase;letter-spacing:.4px}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px}
+  th{background:#0f766e;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+  td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}
+  tr:hover{background:#f8fafc}
+  .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase}
+  .badge.green{background:#dcfce7;color:#166534}
+  .badge.red{background:#fee2e2;color:#991b1b}
+  .badge.yellow{background:#fef3c7;color:#92400e}
+  .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
+  .landlord-info{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:24px}
+  .landlord-info h2{font-size:16px;color:#0f766e;margin-bottom:8px}
+  .landlord-info .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .landlord-info .item .lbl{font-size:11px;color:#64748b;font-weight:600}
+  .landlord-info .item .val{font-size:13px;font-weight:600;margin-top:2px}
+  .right{text-align:right}
+  @media print{.no-print{display:none!important}body{font-size:12px}.page{padding:20px}}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div class="company" style="display:flex;align-items:center;gap:12px">
+      ${logoHtml}
+      <div>
+        <h1>${company.company_name||'Property Management'}</h1>
+        <p>${company.company_address||''}</p>
+        <p>${company.company_phone||''} &nbsp;|&nbsp; ${company.company_email||''}</p>
+      </div>
+    </div>
+    <div class="report-title">
+      <h2>Landlord Report</h2>
+      <p><strong>Period:</strong> ${fromFmt} — ${toFmt}</p>
+      <p>Generated: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p>
+    </div>
+  </div>
+
+  <div class="landlord-info">
+    <h2>${ll.name}</h2>
+    <div class="grid">
+      <div class="item"><div class="lbl">Phone</div><div class="val">${ll.phone||'—'}</div></div>
+      <div class="item"><div class="lbl">Email</div><div class="val">${ll.email||'—'}</div></div>
+      <div class="item"><div class="lbl">Commission Rate</div><div class="val">${ll.commission_rate}%</div></div>
+      <div class="item"><div class="lbl">Bank</div><div class="val">${ll.bank_name||'—'}</div></div>
+      <div class="item"><div class="lbl">Account No.</div><div class="val">${ll.bank_account||'—'}</div></div>
+      <div class="item"><div class="lbl">Properties</div><div class="val">${props.length}</div></div>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="sum-card"><div class="lbl">Total Collected</div><div class="val">${fmt(s.totalCollected)}</div></div>
+    <div class="sum-card red"><div class="lbl">Management Fee (${s.managementFeeRate}%)</div><div class="val">${fmt(s.managementFee)}</div></div>
+    <div class="sum-card red"><div class="lbl">Expenses</div><div class="val">${fmt(s.totalExpenses)}</div></div>
+    <div class="sum-card green"><div class="lbl">Net Payable to Landlord</div><div class="val">${fmt(s.netPayable)}</div></div>
+  </div>
+
+  <h3>Properties Overview</h3>
+  <table>
+    <thead><tr><th>Property</th><th>Total Units</th><th>Occupied</th><th>Vacant</th><th class="right">Rent Collected</th><th class="right">Expenses</th><th class="right">Net</th></tr></thead>
+    <tbody>
+    ${props.map(p=>{
+      const rc = d.rentByProperty.find(r=>r.property_id===p.property_id)||{};
+      const ec = d.expensesByProperty.find(e=>e.property_id===p.property_id)||{};
+      const col = parseFloat(rc.collected||0);
+      const exp = parseFloat(ec.total_expenses||0);
+      const occ = Number(p.occupied_units), vac = Number(p.vacant_units), tot = Number(p.total_units);
+      const occRate = tot > 0 ? Math.round((occ/tot)*100) : 0;
+      return `<tr>
+        <td><strong>${p.name}</strong><br><small style="color:#64748b">${p.address||''}</small></td>
+        <td>${tot}</td>
+        <td>${occ} <span class="badge green">${occRate}%</span></td>
+        <td>${vac > 0 ? `<span class="badge yellow">${vac}</span>` : '0'}</td>
+        <td class="right"><strong>${fmt(col)}</strong></td>
+        <td class="right">${fmt(exp)}</td>
+        <td class="right"><strong>${fmt(col-exp)}</strong></td>
+      </tr>`;
+    }).join('')}
+    <tr style="background:#f0fdf4;font-weight:700">
+      <td>TOTAL</td><td>—</td><td>—</td><td>—</td>
+      <td class="right">${fmt(s.totalCollected)}</td>
+      <td class="right">${fmt(s.totalExpenses)}</td>
+      <td class="right">${fmt(s.totalCollected-s.totalExpenses)}</td>
+    </tr>
+    </tbody>
+  </table>
+
+  ${paymentDetails.length ? `
+  <h3>Payment Details (${paymentDetails.length} payments)</h3>
+  <table>
+    <thead><tr><th>Date</th><th>Tenant</th><th>Unit</th><th>Property</th><th>Month</th><th>Method</th><th>Type</th><th class="right">Amount</th></tr></thead>
+    <tbody>
+    ${paymentDetails.map(p=>`<tr>
+      <td>${p.date}</td><td>${p.tenant_name||'—'}</td><td>${p.unit_number||'—'}</td>
+      <td>${p.property_name}</td><td>${p.month} ${p.year}</td>
+      <td>${p.payment_method}</td>
+      <td><span class="badge ${p.payment_type==='Full'?'green':'yellow'}">${p.payment_type}</span></td>
+      <td class="right"><strong>${fmt(p.amount)}</strong></td>
+    </tr>`).join('')}
+    </tbody>
+  </table>` : '<p style="color:#64748b;margin-bottom:16px">No payments recorded in this period.</p>'}
+
+  ${arrearsDetail.length ? `
+  <h3>Arrears as of Today</h3>
+  <table>
+    <thead><tr><th>Tenant</th><th>Unit</th><th>Property</th><th class="right">Monthly Rent</th><th class="right">Outstanding Balance</th></tr></thead>
+    <tbody>
+    ${arrearsDetail.map(a=>`<tr>
+      <td>${a.tenant_name}</td><td>${a.unit_number}</td><td>${a.property_name}</td>
+      <td class="right">${fmt(a.rent_amount)}</td>
+      <td class="right"><strong style="color:#dc2626">${fmt(a.balance)}</strong></td>
+    </tr>`).join('')}
+    <tr style="font-weight:700">
+      <td colspan="4">Total Outstanding</td>
+      <td class="right" style="color:#dc2626">${fmt(s.totalArrears)}</td>
+    </tr>
+    </tbody>
+  </table>` : '<p style="color:#16a34a;margin-bottom:16px">✅ No arrears for this landlord\'s properties.</p>'}
+
+  <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;margin:24px 0">
+    <h3 style="margin-top:0;color:#166534">Disbursement Summary</h3>
+    <table style="margin:0">
+      <tr><td>Total Rent Collected</td><td class="right"><strong>${fmt(s.totalCollected)}</strong></td></tr>
+      <tr><td>Less: Management Fee (${s.managementFeeRate}%)</td><td class="right" style="color:#dc2626">- ${fmt(s.managementFee)}</td></tr>
+      <tr><td>Less: Expenses</td><td class="right" style="color:#dc2626">- ${fmt(s.totalExpenses)}</td></tr>
+      <tr style="font-size:15px;font-weight:700;border-top:2px solid #22c55e">
+        <td style="padding-top:10px">NET PAYABLE TO ${(ll.name||'').toUpperCase()}</td>
+        <td class="right" style="padding-top:10px;color:#16a34a">${fmt(s.netPayable)}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>${company.company_name||'Property Management'} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB')} &nbsp;|&nbsp; Confidential</p>
+  </div>
+</div>
+<div class="no-print" style="text-align:center;padding:24px">
+  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+</div>
+</body></html>`;
+    res.setHeader('Content-Type','text/html');
+    res.send(html);
+  } catch (e) {
+    console.error('[landlord pdf]', e.message);
+    res.status(500).send('Error generating report: ' + e.message);
+  }
+});
+
+// ── Tenant statement ──────────────────────────────────────────────────────────
+app.get('/api/reports/tenant/:tenantId/pdf', requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).send('Date range required');
+  try {
+    const { rows: tRows } = await pool.query(`
+      SELECT t.*, u.unit_number, p.name AS property_name
+      FROM tenants t
+      LEFT JOIN units u ON u.unit_id = t.unit_id
+      LEFT JOIN properties p ON p.property_id = u.property_id
+      WHERE t.tenant_id=$1`, [req.params.tenantId]);
+    if (!tRows.length) return res.status(404).send('Tenant not found');
+    const t = tRows[0];
+    const { rows: payments } = await pool.query(`
+      SELECT rc.*, TO_CHAR(rc.created_at,'YYYY-MM-DD') AS date
+      FROM rent_collection rc
+      WHERE rc.tenant_id=$1 AND rc.created_at BETWEEN $2 AND $3
+      ORDER BY rc.created_at ASC`,
+      [req.params.tenantId, from, to + ' 23:59:59']);
+    const balance = await getTenantBalance(req.params.tenantId);
+    const totalPaid = payments.reduce((s,p)=>s+parseFloat(p.amount||0),0);
+    const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
+    const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
+    const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
+    const logoHtml = cfg.company_logo
+      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
+      : `<div style="font-size:28px">🏢</div>`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Tenant Statement — ${t.name}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
+  .page{max-width:800px;margin:0 auto;padding:32px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:24px}
+  .company h1{color:#0f766e;font-size:20px;margin-bottom:4px}
+  .company p{color:#64748b;font-size:11px}
+  .tenant-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .item .lbl{font-size:11px;color:#64748b;font-weight:600}
+  .item .val{font-size:13px;font-weight:600;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px}
+  th{background:#0f766e;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase}
+  td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}
+  .right{text-align:right}
+  .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase}
+  .badge.green{background:#dcfce7;color:#166534}
+  .badge.yellow{background:#fef3c7;color:#92400e}
+  .balance-box{background:#fff7ed;border:2px solid #f59e0b;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .footer{margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
+  @media print{.no-print{display:none!important}body{font-size:11px}}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div class="company" style="display:flex;align-items:center;gap:10px">
+      ${logoHtml}
+      <div><h1>${cfg.company_name||'Property Management'}</h1>
+      <p>${cfg.company_address||''} | ${cfg.company_phone||''}</p></div>
+    </div>
+    <div style="text-align:right">
+      <h2 style="font-size:18px">Tenant Statement</h2>
+      <p style="color:#64748b;font-size:12px;margin-top:4px">
+        ${new Date(from).toLocaleDateString('en-GB')} — ${new Date(to).toLocaleDateString('en-GB')}
+      </p>
+    </div>
+  </div>
+  <div class="tenant-box">
+    <div class="item"><div class="lbl">Tenant</div><div class="val">${t.name}</div></div>
+    <div class="item"><div class="lbl">Unit</div><div class="val">${t.unit_number||'—'}</div></div>
+    <div class="item"><div class="lbl">Property</div><div class="val">${t.property_name||'—'}</div></div>
+    <div class="item"><div class="lbl">Phone</div><div class="val">${t.phone||'—'}</div></div>
+    <div class="item"><div class="lbl">Monthly Rent</div><div class="val">${fmt(t.rent_amount)}</div></div>
+    <div class="item"><div class="lbl">Lease Period</div><div class="val">${t.lease_start||'—'} to ${t.lease_end||'—'}</div></div>
+  </div>
+  ${balance > 0 ? `
+  <div class="balance-box">
+    <div><strong style="font-size:14px">⚠️ Outstanding Balance</strong><br><small>Carried forward from previous payments</small></div>
+    <strong style="font-size:18px;color:#dc2626">${fmt(balance)}</strong>
+  </div>` : ''}
+  <table>
+    <thead><tr><th>Date</th><th>Period</th><th>Amount Paid</th><th>Method</th><th>Type</th><th class="right">Balance After</th></tr></thead>
+    <tbody>
+    ${payments.length ? payments.map(p=>`<tr>
+      <td>${p.date}</td>
+      <td>${p.month} ${p.year}</td>
+      <td><strong>${fmt(p.amount)}</strong></td>
+      <td>${p.payment_method}</td>
+      <td><span class="badge ${p.payment_type==='Full'?'green':'yellow'}">${p.payment_type||'Full'}</span></td>
+      <td class="right">${fmt(p.balance_after||0)}</td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#64748b;padding:20px">No payments in this period</td></tr>'}
+    <tr style="font-weight:700;background:#f8fafc">
+      <td colspan="2">Total Paid This Period</td>
+      <td><strong>${fmt(totalPaid)}</strong></td>
+      <td colspan="2"></td>
+      <td class="right" style="color:${balance>0?'#dc2626':'#16a34a'}"><strong>${fmt(balance)}</strong></td>
+    </tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    <p>${cfg.company_name||'PMS'} &nbsp;|&nbsp; Tenant Statement &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB')}</p>
+  </div>
+</div>
+<div class="no-print" style="text-align:center;padding:24px">
+  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+</div>
+</body></html>`;
+    res.setHeader('Content-Type','text/html');
+    res.send(html);
+  } catch(e){ res.status(500).send('Error: '+e.message); }
+});
 // ── 404 & Error Handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: `Not found: ${req.method} ${req.path}` });
