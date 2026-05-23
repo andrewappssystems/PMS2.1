@@ -677,7 +677,129 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
 </div></body></html>`);
   } catch (e) { console.error('[receipt pdf]', e.message); res.status(500).send('Error: '+e.message); }
 });
+// ── NEW ROUTES TO ADD TO server.js ───────────────────────────────────────────
+// ── API: Bulk Units ───────────────────────────────────────────────────────────
+app.post('/api/units/bulk', requireAuth, async (req, res) => {
+  const err = validate([['propertyId','Property'],['units','Units']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { propertyId, units: unitList } = req.body;
+    if (!Array.isArray(unitList) || !unitList.length)
+      return res.status(400).json({ error: 'No units provided' });
+    const created = [];
+    for (const u of unitList) {
+      const id = await getNextId('units', 'unit_id', 'UNT');
+      await pool.query(
+        `INSERT INTO units (unit_id,property_id,unit_number,type,rent,description,status,created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,'Vacant',$7)`,
+        [id, propertyId, u.unitNumber, u.type||'Studio', parseFloat(u.rent)||0, u.description||'', actor(req)]
+      );
+      created.push(id);
+    }
+    clearCache('units','properties','stats');
+    res.json({ success: true, count: created.length, ids: created });
+  } catch (e) {
+    console.error('[POST /api/units/bulk]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 
+// ── API: User Management (Admin only) ─────────────────────────────────────────
+app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
+  const err = validate([['username','Username'],['fullName','Full name'],['role','Role']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { username, fullName, email='', role='User', password='' } = req.body;
+    // Check username not taken
+    const { rows: existing } = await pool.query(
+      'SELECT user_id FROM users WHERE LOWER(username)=LOWER($1)', [username.trim()]
+    );
+    if (existing.length) return res.status(400).json({ error: 'Username already exists' });
+    const id = await getNextId('users', 'user_id', 'USR');
+    const hash = password ? hashPassword(password) : '';
+    await pool.query(
+      `INSERT INTO users (user_id,username,full_name,email,role,password_hash,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,'Active',$7)`,
+      [id, username.trim(), fullName.trim(), email.trim(), role, hash, actor(req)]
+    );
+    clearCache('users');
+    res.json({ success: true, id });
+  } catch (e) {
+    console.error('[POST /api/users]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const err = validate([['fullName','Full name'],['role','Role']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { fullName, email='', role='User', status='Active' } = req.body;
+    const { rowCount } = await pool.query(
+      `UPDATE users SET full_name=$1,email=$2,role=$3,status=$4 WHERE user_id=$5`,
+      [fullName.trim(), email.trim(), role, status, req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ error: 'User not found' });
+    clearCache('users');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[PUT /api/users]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.put('/api/users/:id/password', requireAuth, requireAdmin, async (req, res) => {
+  const err = validate([['password','Password']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  if (req.body.password.length < 6)
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  try {
+    const hash = hashPassword(req.body.password);
+    const { rowCount } = await pool.query(
+      'UPDATE users SET password_hash=$1 WHERE user_id=$2', [hash, req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ error: 'User not found' });
+    clearCache('users');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[PUT /api/users/password]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  // Prevent deleting yourself
+  if (req.session.user.id === req.params.id)
+    return res.status(400).json({ error: 'You cannot delete your own account' });
+  try {
+    const { rowCount } = await pool.query(
+      `UPDATE users SET status='Inactive' WHERE user_id=$1`, [req.params.id]
+    );
+    if (!rowCount) return res.status(404).json({ error: 'User not found' });
+    clearCache('users');
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Settings: Save logo as base64 in settings table ───────────────────────────
+app.post('/api/settings/logo', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { logoBase64 } = req.body;
+    if (!logoBase64) return res.status(400).json({ error: 'No logo data provided' });
+    await pool.query(
+      `INSERT INTO settings (key,value) VALUES ('company_logo',$1)
+       ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`,
+      [logoBase64]
+    );
+    clearCache('settings');
+    res.json({ success: true });
+  } catch (e) {
+    console.error('[POST /api/settings/logo]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
 // ── 404 & Error Handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: `Not found: ${req.method} ${req.path}` });
