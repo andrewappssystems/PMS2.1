@@ -5,73 +5,88 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>PMS — Dashboard</title>
 <style>
-:root{--primary:#0f766e;--primary-light:#14b8a6;--primary-dark:#0d5c56;--danger:#ef4444;--success:#22c55e;--warning:#f59e0b;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--text-light:#64748b;--border:#e2e8f0;}
+:root{--primary:#0f766e;--primary-dark:#0d5c56;--danger:#ef4444;--success:#22c55e;--warning:#f59e0b;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--text-light:#64748b;--border:#e2e8f0;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .app{display:flex;min-height:100vh;}
 .sidebar{width:260px;background:var(--primary-dark);color:#fff;position:fixed;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
-.sidebar .logo{padding:24px 20px;font-size:20px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
-.sidebar .logo span{font-size:28px;}
+.sidebar .logo{padding:20px;font-size:18px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
+.sidebar .logo img{width:36px;height:36px;object-fit:contain;border-radius:6px;}
+.sidebar .logo .logo-icon{font-size:28px;}
 .sidebar nav{padding:12px 0;}
 .sidebar nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,.8);text-decoration:none;font-size:14px;font-weight:500;transition:.2s;cursor:pointer;}
 .sidebar nav a:hover,.sidebar nav a.active{background:rgba(255,255,255,.1);color:#fff;}
 .sidebar .nav-section{padding:8px 20px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);font-weight:700;}
-.sidebar .user{position:absolute;bottom:0;left:0;right:0;padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);background:var(--primary-dark);}
-.sidebar .user .name{font-weight:600;font-size:14px;}
-.sidebar .user .role{font-size:12px;color:rgba(255,255,255,.6);}
-.sidebar .user .logout{margin-top:8px;font-size:12px;color:#fca5a5;cursor:pointer;background:none;border:none;}
+.sidebar .user-info{position:absolute;bottom:0;left:0;right:0;padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);background:var(--primary-dark);}
+.sidebar .user-info .name{font-weight:600;font-size:14px;}
+.sidebar .user-info .role{font-size:12px;color:rgba(255,255,255,.6);}
+.sidebar .user-info .logout{margin-top:8px;font-size:12px;color:#fca5a5;cursor:pointer;background:none;border:none;}
 .main{flex:1;margin-left:260px;min-height:100vh;}
 .topbar{background:var(--card);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
 .topbar h1{font-size:20px;font-weight:700;}
 .topbar .date{color:var(--text-light);font-size:14px;}
 .topbar .mobile-menu{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
 .content{padding:24px;}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
 .stat-card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
 .stat-card .label{font-size:12px;color:var(--text-light);text-transform:uppercase;font-weight:600;letter-spacing:.5px;}
-.stat-card .value{font-size:28px;font-weight:700;margin-top:4px;color:var(--primary);}
+.stat-card .value{font-size:26px;font-weight:700;margin-top:4px;color:var(--primary);}
+.stat-card.danger .value{color:var(--danger);}
+.stat-card.warning .value{color:var(--warning);}
+/* Critical arrears widget */
+.arrears-widget{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:24px;}
+.arrears-widget h3{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.arrears-widget .arrears-list{display:flex;flex-direction:column;gap:8px;}
+.arrears-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fef2f2;border-radius:8px;border-left:3px solid var(--danger);}
+.arrears-item .ai-info{font-size:13px;font-weight:600;}
+.arrears-item .ai-sub{font-size:12px;color:var(--text-light);}
+.arrears-item .ai-amt{font-size:14px;font-weight:700;color:var(--danger);}
+/* Quick actions */
 .quick-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;}
-.quick-actions button{padding:10px 20px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:.2s;}
+.quick-actions button{padding:10px 20px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:.2s;white-space:nowrap;}
 .quick-actions button:hover{background:var(--primary-dark);}
 .quick-actions button.secondary{background:var(--card);color:var(--primary);border:1px solid var(--primary);}
+/* Tables */
 .data-table{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
-.data-table .table-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
-.data-table .table-header h3{font-size:16px;font-weight:700;}
-.data-table .table-header .search{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:240px;}
-.data-table table{width:100%;border-collapse:collapse;font-size:14px;}
-.data-table th{text-align:left;padding:12px 20px;background:#f8fafc;font-size:12px;text-transform:uppercase;color:var(--text-light);font-weight:600;letter-spacing:.3px;white-space:nowrap;}
-.data-table td{padding:12px 20px;border-bottom:1px solid var(--border);}
-.data-table tr:hover{background:#f8fafc;}
+.table-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
+.table-header h3{font-size:16px;font-weight:700;}
+.table-header .search{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:240px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;padding:12px 20px;background:#f8fafc;font-size:12px;text-transform:uppercase;color:var(--text-light);font-weight:600;white-space:nowrap;}
+td{padding:12px 20px;border-bottom:1px solid var(--border);}
+tr:hover{background:#f8fafc;}
 .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;}
 .badge.success{background:#dcfce7;color:#166534;}
 .badge.danger{background:#fee2e2;color:#991b1b;}
 .badge.warning{background:#fef3c7;color:#92400e;}
 .badge.info{background:#dbeafe;color:#1e40af;}
-.actions{display:flex;gap:6px;}
-.actions button{padding:6px 12px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;}
+.actions{display:flex;gap:6px;flex-wrap:wrap;}
+.actions button{padding:5px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;}
 .btn-edit{background:#dbeafe;color:#1e40af;}
 .btn-delete{background:#fee2e2;color:#991b1b;}
 .btn-view{background:#f3f4f6;color:#374151;}
 .btn-receipt{background:#dcfce7;color:#166534;}
-.empty-state{text-align:center;padding:60px 20px;}
-.empty-state .icon{font-size:48px;margin-bottom:16px;}
-.empty-state h3{font-size:18px;color:var(--text-light);margin-bottom:8px;}
+.btn-pwd{background:#fef3c7;color:#92400e;}
+.empty-state{text-align:center;padding:50px 20px;}
+.empty-state .icon{font-size:40px;margin-bottom:12px;}
+.empty-state h3{font-size:16px;color:var(--text-light);}
 /* Pagination */
 .pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);font-size:13px;color:var(--text-light);}
-.pagination .pg-btns{display:flex;gap:6px;}
-.pagination button{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:13px;cursor:pointer;}
-.pagination button:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary);}
-.pagination button:disabled{opacity:.4;cursor:not-allowed;}
-.pagination button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-/* Loading spinner */
+.pg-btns{display:flex;gap:6px;}
+.pg-btns button{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:13px;cursor:pointer;}
+.pg-btns button:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary);}
+.pg-btns button:disabled{opacity:.4;cursor:not-allowed;}
+.pg-btns button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
 .loading-row td{text-align:center;padding:40px;color:var(--text-light);}
-.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle;}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.active{display:flex;}
-.modal{background:var(--card);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal{background:var(--card);border-radius:16px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal.wide{max-width:720px;}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--card);z-index:1;}
 .modal-header h2{font-size:18px;font-weight:700;}
 .modal-header .close{background:none;border:none;font-size:24px;color:var(--text-light);cursor:pointer;}
 .modal-body{padding:24px;}
@@ -81,25 +96,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
 .form-group label{font-size:12px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.3px;}
 .form-group input,.form-group select,.form-group textarea{padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);}
-.form-group textarea{min-height:80px;resize:vertical;}
-.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;}
+.form-group textarea{min-height:70px;resize:vertical;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;position:sticky;bottom:0;background:var(--card);}
 .modal-footer button{padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;border:none;}
 .btn-cancel{background:var(--bg);color:var(--text);}
 .btn-save{background:var(--primary);color:#fff;}
-/* Sections */
+/* Bulk unit preview */
+.unit-preview{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:14px;max-height:160px;overflow-y:auto;margin-top:8px;}
+.unit-preview .preview-tag{display:inline-block;background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:4px;font-size:12px;margin:3px;}
+/* Settings form */
+.settings-form{display:flex;flex-direction:column;gap:0;}
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);gap:20px;}
+.settings-row label{font-size:14px;font-weight:600;min-width:160px;}
+.settings-row input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;}
+.settings-row input:focus{border-color:var(--primary);}
+.settings-row input[readonly]{background:#f8fafc;color:var(--text-light);}
+.logo-preview{width:80px;height:80px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#f8fafc;}
+.logo-placeholder{width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text-light);}
+/* Section */
 .section{display:none;}
 .section.active{display:block;}
 .section-title{font-size:24px;font-weight:700;margin-bottom:20px;}
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;border-radius:10px;color:#fff;font-weight:600;font-size:14px;z-index:300;transform:translateY(100px);opacity:0;transition:.3s;}
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;border-radius:10px;color:#fff;font-weight:600;font-size:14px;z-index:400;transform:translateY(100px);opacity:0;transition:.3s;max-width:320px;}
 .toast.show{transform:translateY(0);opacity:1;}
 .toast.success{background:var(--success);}
 .toast.error{background:var(--danger);}
 /* Prompt */
-.prompt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:250;align-items:center;justify-content:center;padding:20px;}
+.prompt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px;}
 .prompt-overlay.active{display:flex;}
-.prompt-box{background:var(--card);border-radius:16px;padding:32px;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.prompt-box h3{font-size:18px;margin-bottom:12px;}
+.prompt-box{background:var(--card);border-radius:16px;padding:32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.prompt-box h3{font-size:18px;margin-bottom:10px;}
 .prompt-box p{color:var(--text-light);margin-bottom:24px;font-size:14px;}
 .prompt-buttons{display:flex;gap:12px;justify-content:center;}
 .prompt-buttons button{padding:10px 24px;border-radius:8px;font-weight:600;cursor:pointer;border:none;}
@@ -113,18 +140,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
   .stats-grid{grid-template-columns:repeat(2,1fr);}
   .form-grid{grid-template-columns:1fr;}
   .data-table{overflow-x:auto;}
-  .data-table table{min-width:600px;}
+  table{min-width:600px;}
   .quick-actions{overflow-x:auto;flex-wrap:nowrap;padding-bottom:8px;}
   .modal{max-height:95vh;}
   .table-header{flex-direction:column;align-items:flex-start!important;}
   .table-header .search{width:100%!important;}
+  .settings-row{flex-direction:column;align-items:flex-start;}
 }
 </style>
 </head>
 <body>
 <div class="app">
   <aside class="sidebar" id="sidebar">
-    <div class="logo"><span>🏢</span> PMS</div>
+    <div class="logo" id="sidebarLogo">
+      <span class="logo-icon">🏢</span>
+      <span id="logoCompanyName">PMS</span>
+    </div>
     <nav>
       <a class="active" onclick="showSection('dashboard',event)">📊 Dashboard</a>
       <div class="nav-section">Portfolio</div>
@@ -143,7 +174,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
       <a onclick="showSection('users',event)" id="navUsers">🔐 Users</a>
       <a onclick="showSection('settings',event)" id="navSettings">⚙️ Settings</a>
     </nav>
-    <div class="user">
+    <div class="user-info">
       <div class="name" id="userName">Loading...</div>
       <div class="role" id="userRole">...</div>
       <button class="logout" onclick="logout()">🚪 Sign Out</button>
@@ -158,7 +189,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
     </div>
     <div class="content">
 
-      <!-- Dashboard -->
+      <!-- ── DASHBOARD ── -->
       <div class="section active" id="sec-dashboard">
         <div class="stats-grid">
           <div class="stat-card"><div class="label">Landlords</div><div class="value" id="statLandlords">—</div></div>
@@ -166,9 +197,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
           <div class="stat-card"><div class="label">Units</div><div class="value" id="statUnits">—</div></div>
           <div class="stat-card"><div class="label">Tenants</div><div class="value" id="statTenants">—</div></div>
           <div class="stat-card"><div class="label">Occupied</div><div class="value" id="statOccupied">—</div></div>
-          <div class="stat-card"><div class="label">Vacant</div><div class="value" id="statVacant">—</div></div>
-          <div class="stat-card"><div class="label">Total Rent</div><div class="value" id="statRent">—</div></div>
-          <div class="stat-card"><div class="label">Expenses</div><div class="value" id="statExpenses">—</div></div>
+          <div class="stat-card warning"><div class="label">Vacant</div><div class="value" id="statVacant">—</div></div>
+          <div class="stat-card"><div class="label">Total Rent Collected</div><div class="value" id="statRent">—</div></div>
+          <div class="stat-card"><div class="label">Total Expenses</div><div class="value" id="statExpenses">—</div></div>
+          <div class="stat-card danger"><div class="label">Total Arrears</div><div class="value" id="statArrears">—</div></div>
+          <div class="stat-card danger"><div class="label">Tenants in Arrears</div><div class="value" id="statArrearsCount">—</div></div>
+        </div>
+        <!-- Critical Arrears Widget -->
+        <div class="arrears-widget" id="criticalArrearsWidget" style="display:none">
+          <h3>🚨 Critical Arrears <span id="criticalArrearsSubtitle" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
+          <div class="arrears-list" id="criticalArrearsList"></div>
+          <div style="margin-top:12px"><button class="secondary" style="padding:8px 16px;border-radius:8px;border:1px solid var(--primary);background:var(--card);color:var(--primary);font-weight:600;font-size:13px;cursor:pointer" onclick="showSection('arrears',event)">View All Arrears →</button></div>
         </div>
         <div class="quick-actions">
           <button onclick="openModal('landlord')">+ Add Landlord</button>
@@ -181,7 +220,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Landlords -->
+      <!-- ── LANDLORDS ── -->
       <div class="section" id="sec-landlords">
         <div class="section-title">Landlords</div>
         <div class="quick-actions"><button onclick="openModal('landlord')">+ Add Landlord</button></div>
@@ -192,7 +231,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Properties -->
+      <!-- ── PROPERTIES ── -->
       <div class="section" id="sec-properties">
         <div class="section-title">Properties</div>
         <div class="quick-actions"><button onclick="openModal('property')">+ Add Property</button></div>
@@ -203,10 +242,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Units -->
+      <!-- ── UNITS ── -->
       <div class="section" id="sec-units">
         <div class="section-title">Units</div>
-        <div class="quick-actions"><button onclick="openModal('unit')">+ Add Unit</button></div>
+        <div class="quick-actions">
+          <button onclick="openModal('unit')">+ Add Unit</button>
+          <button class="secondary" onclick="openModal('bulk_unit')">+ Add Units in Bulk</button>
+        </div>
         <div class="data-table">
           <div class="table-header"><h3>All Units</h3><input class="search" placeholder="Search..." oninput="filterTable('unitsTable',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Property</th><th>Unit No.</th><th>Type</th><th>Rent (UGX)</th><th>Status</th><th>Actions</th></tr></thead>
@@ -214,7 +256,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Tenants -->
+      <!-- ── TENANTS ── -->
       <div class="section" id="sec-tenants">
         <div class="section-title">Tenants</div>
         <div class="quick-actions"><button onclick="openModal('tenant')">+ Add Tenant</button></div>
@@ -225,7 +267,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Rent -->
+      <!-- ── RENT ── -->
       <div class="section" id="sec-rent">
         <div class="section-title">Rent Collection</div>
         <div class="quick-actions"><button onclick="openModal('rent')">+ Record Payment</button></div>
@@ -237,17 +279,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Arrears -->
+      <!-- ── ARREARS ── -->
       <div class="section" id="sec-arrears">
         <div class="section-title">Arrears</div>
         <div class="data-table">
           <div class="table-header"><h3>Outstanding Rent</h3></div>
-          <table><thead><tr><th>Tenant</th><th>Unit</th><th>Monthly Rent</th><th>Months Due</th><th>Total Due (UGX)</th><th>Actions</th></tr></thead>
-          <tbody id="arrearsTable"><tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <table><thead><tr><th>Tenant</th><th>Unit</th><th>Monthly Rent</th><th>Months Due</th><th>Total Due (UGX)</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="arrearsTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- Expenses -->
+      <!-- ── EXPENSES ── -->
       <div class="section" id="sec-expenses">
         <div class="section-title">Expenses</div>
         <div class="quick-actions"><button onclick="openModal('expense')">+ Add Expense</button></div>
@@ -259,7 +301,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Invoices -->
+      <!-- ── INVOICES ── -->
       <div class="section" id="sec-invoices">
         <div class="section-title">Invoices</div>
         <div class="quick-actions"><button onclick="openModal('invoice')">+ Create Invoice</button></div>
@@ -271,7 +313,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Receipts -->
+      <!-- ── RECEIPTS ── -->
       <div class="section" id="sec-receipts">
         <div class="section-title">Receipts</div>
         <div class="data-table">
@@ -282,22 +324,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
         </div>
       </div>
 
-      <!-- Users -->
+      <!-- ── USERS ── -->
       <div class="section" id="sec-users">
         <div class="section-title">Users</div>
+        <div class="quick-actions" id="usersActions" style="display:none">
+          <button onclick="openModal('user')">+ Add User</button>
+        </div>
         <div class="data-table">
           <div class="table-header"><h3>All Users</h3></div>
-          <table><thead><tr><th>ID</th><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th></tr></thead>
-          <tbody id="usersTable"><tr class="loading-row"><td colspan="6"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <table><thead><tr><th>ID</th><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="usersTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- Settings -->
+      <!-- ── SETTINGS ── -->
       <div class="section" id="sec-settings">
         <div class="section-title">Settings</div>
-        <div class="data-table" style="max-width:600px;">
-          <div class="table-header"><h3>System Settings</h3></div>
-          <div id="settingsContent" style="padding:20px;">Loading...</div>
+        <div class="data-table" style="max-width:680px;">
+          <div class="table-header">
+            <h3>System Settings</h3>
+            <button id="saveSettingsBtn" style="display:none;padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer" onclick="saveSettings()">💾 Save Settings</button>
+          </div>
+          <!-- Logo section -->
+          <div class="settings-row" id="logoRow" style="display:none">
+            <label>Company Logo</label>
+            <div style="display:flex;align-items:center;gap:16px">
+              <div id="logoPreviewWrap"><div class="logo-placeholder">🏢</div></div>
+              <div>
+                <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
+                <button onclick="document.getElementById('logoFileInput').click()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;background:var(--card)">📁 Choose Logo</button>
+                <div style="font-size:12px;color:var(--text-light);margin-top:6px">PNG, JPG — max 500KB recommended</div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-form" id="settingsForm">
+            <div style="padding:30px;text-align:center;color:var(--text-light)"><span class="spinner"></span> Loading settings…</div>
+          </div>
         </div>
       </div>
 
@@ -307,7 +369,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
 
 <!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal">
+  <div class="modal" id="modalBox">
     <div class="modal-header"><h2 id="modalTitle">Add New</h2><button class="close" onclick="closeModal()">×</button></div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer">
@@ -334,413 +396,421 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-s
 <script>
 const USER = <%- JSON.stringify(user) %>;
 
-// ── State ────────────────────────────────────────────────────────────────────
-let landlords=[], properties=[], units=[], tenants=[], rentData=[], settings={};
+// ── State ─────────────────────────────────────────────────────────────────────
+let landlords=[], properties=[], units=[], tenants=[], rentData=[], allUsers=[], settings={};
 let currentForm='', editingId=null;
-// Pagination state for paginated tables
-const pgState = {
-  rent:     { page:1, pages:1 },
-  expenses: { page:1, pages:1 },
-  invoices: { page:1, pages:1 },
-  receipts: { page:1, pages:1 }
-};
+let pendingLogoBase64 = null;
+const pgState = { rent:{page:1,pages:1}, expenses:{page:1,pages:1}, invoices:{page:1,pages:1}, receipts:{page:1,pages:1} };
 
-// ── Field Accessors (handles any column name variation) ───────────────────────
-const isActive = x => (x.Status||x.status||'Active').trim().toLowerCase() === 'active';
-const isVacant = u => (u.Status||u.status||'Vacant').trim().toLowerCase() === 'vacant';
+// ── Accessors ─────────────────────────────────────────────────────────────────
+const isActive = x => (x.Status||x.status||'Active').toLowerCase()==='active';
+const isVacant = u => (u.Status||u.status||'Vacant').toLowerCase()==='vacant';
+const ll={id:l=>l.ID||'',name:l=>l.Name||'',phone:l=>l.Phone||'',email:l=>l.Email||'',comm:l=>l['Commission Rate']||'10',status:l=>l.Status||'Active',addr:l=>l.Address||'',bank:l=>l['Bank Name']||'',acct:l=>l['Bank Account']||''};
+const pr={id:p=>p.ID||'',name:p=>p.Name||'',llid:p=>p['Landlord ID']||'',llname:p=>p['Landlord Name']||'',addr:p=>p.Address||'',type:p=>p.Type||'Residential',units:p=>p['Total Units']||'0',status:p=>p.Status||'Active'};
+const un={id:u=>u.ID||'',prop:u=>u['Property ID']||'',pname:u=>u['Property Name']||'',num:u=>u['Unit Number']||'',type:u=>u.Type||'Studio',rent:u=>u.Rent||'0',desc:u=>u.Description||'',status:u=>u.Status||'Vacant'};
+const tn={id:t=>t.ID||'',name:t=>t.Name||'',phone:t=>t.Phone||'',email:t=>t.Email||'',idno:t=>t['ID Number']||'',unit:t=>t['Unit ID']||'',unum:t=>t['Unit Number']||'',start:t=>t['Lease Start']||'',end:t=>t['Lease End']||'',rent:t=>t['Rent Amount']||'0',deposit:t=>t.Deposit||'0',status:t=>t.Status||'Active'};
+const rn={id:r=>r.ID||'',tenant:r=>r['Tenant ID']||'',tname:r=>r['Tenant Name']||'',unit:r=>r['Unit ID']||'',unum:r=>r['Unit Number']||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r['Payment Method']||'Cash',date:r=>r.Date||''};
+const ex={id:e=>e.ID||'',prop:e=>e['Property ID']||'',pname:e=>e['Property Name']||'',cat:e=>e.Category||'',desc:e=>e.Description||'',amt:e=>e.Amount||'0',date:e=>e.Date||''};
+const inv={id:i=>i.ID||'',type:i=>i.Type||'',eid:i=>i.EntityId||'',ename:i=>i.EntityName||'',desc:i=>i.Description||'',amt:i=>i.Amount||'0',month:i=>i.Month||'',year:i=>i.Year||'',status:i=>i.Status||'Unpaid'};
+const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r.PaymentMethod||'Cash',date:r=>r.Date||''};
 
-const ll = {
-  id:   l=>l.ID||l['Landlord ID']||'', name: l=>l.Name||'',
-  phone:l=>l.Phone||'',               email:l=>l.Email||'',
-  comm: l=>l['Commission Rate']||l.Commission||'10',
-  status:l=>l.Status||'Active',
-};
-const pr = {
-  id:   p=>p.ID||p['Property ID']||'', name:p=>p.Name||'',
-  llid: p=>p['Landlord ID']||'',       llname:p=>p['Landlord Name']||'',
-  addr: p=>p.Address||'',              type:p=>p.Type||'Residential',
-  units:p=>p['Total Units']||'0',      status:p=>p.Status||'Active',
-};
-const un = {
-  id:   u=>u.ID||u['Unit ID']||'', prop:u=>u['Property ID']||'',
-  pname:u=>u['Property Name']||'', num: u=>u['Unit Number']||'',
-  type: u=>u.Type||'Studio',       rent:u=>u.Rent||u['Rent']||'0',
-  desc: u=>u.Description||'',      status:u=>u.Status||'Vacant',
-};
-const tn = {
-  id:     t=>t.ID||t['Tenant ID']||'', name:  t=>t.Name||'',
-  phone:  t=>t.Phone||'',              email: t=>t.Email||'',
-  idno:   t=>t['ID Number']||'',       unit:  t=>t['Unit ID']||'',
-  unum:   t=>t['Unit Number']||'',     start: t=>t['Lease Start']||'',
-  end:    t=>t['Lease End']||'',       rent:  t=>t['Rent Amount']||'0',
-  deposit:t=>t.Deposit||'0',          status:t=>t.Status||'Active',
-};
-const rn = {
-  id:    r=>r.ID||'', tenant:r=>r['Tenant ID']||'', tname:r=>r['Tenant Name']||'',
-  unit:  r=>r['Unit ID']||'', unum:r=>r['Unit Number']||'',
-  amt:   r=>r.Amount||'0', month:r=>r.Month||'', year:r=>r.Year||'',
-  method:r=>r['Payment Method']||'Cash', date:r=>r.Date||'',
-};
-const ex = {
-  id:   e=>e.ID||'', prop:e=>e['Property ID']||'', pname:e=>e['Property Name']||'',
-  cat:  e=>e.Category||'', desc:e=>e.Description||'',
-  amt:  e=>e.Amount||'0',  date:e=>e.Date||'',
-};
-const inv = {
-  id:    i=>i.ID||'', type:i=>i.Type||'', eid:i=>i.EntityId||'',
-  ename: i=>i.EntityName||'', desc:i=>i.Description||'',
-  amt:   i=>i.Amount||'0', month:i=>i.Month||'', year:i=>i.Year||'',
-  status:i=>i.Status||'Unpaid', date:i=>i.Date||'',
-};
-const rc = {
-  id:    r=>r.ID||'', tenant:r=>r.TenantName||'', unit:r=>r.UnitNumber||'',
-  amt:   r=>r.Amount||'0', month:r=>r.Month||'', year:r=>r.Year||'',
-  method:r=>r.PaymentMethod||'Cash', date:r=>r.Date||'',
-};
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
   document.getElementById('userName').textContent = USER.name||USER.username;
   document.getElementById('userRole').textContent = USER.role;
   document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  if(USER.role !== 'Admin'){
-    ['navAdminLabel','navUsers','navSettings'].forEach(id=>{
-      const el=document.getElementById(id); if(el) el.style.display='none';
-    });
+  if(USER.role!=='Admin'){
+    ['navAdminLabel','navUsers','navSettings'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  } else {
+    const ua=document.getElementById('usersActions'); if(ua) ua.style.display='flex';
+    const sb=document.getElementById('saveSettingsBtn'); if(sb) sb.style.display='block';
+    const lr=document.getElementById('logoRow'); if(lr) lr.style.display='flex';
   }
   loadAllData();
 });
 
 function logout(){ window.location.href='/logout'; }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
-
-function showSection(id, e){
+function showSection(id,e){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
-  if(e && e.target) e.target.classList.add('active');
-  document.getElementById('pageTitle').textContent = id.charAt(0).toUpperCase()+id.slice(1);
+  if(e&&e.target) e.target.classList.add('active');
+  document.getElementById('pageTitle').textContent=id.charAt(0).toUpperCase()+id.slice(1);
   document.getElementById('sidebar').classList.remove('open');
-  if(id==='arrears') loadArrears();
+  if(id==='arrears') renderArrears();
 }
 
-// ── API fetch helpers ─────────────────────────────────────────────────────────
-async function apiFetch(url){ const r=await fetch(url); return r.json(); }
-
-// ── Load all base data (non-paginated) ────────────────────────────────────────
+// ── Data Loading ──────────────────────────────────────────────────────────────
 async function loadAllData(){
   try {
-    const stats = await apiFetch('/api/stats');
-    document.getElementById('statLandlords').textContent  = stats.landlords||0;
-    document.getElementById('statProperties').textContent = stats.properties||0;
-    document.getElementById('statUnits').textContent      = stats.units||0;
-    document.getElementById('statTenants').textContent    = stats.tenants||0;
-    document.getElementById('statOccupied').textContent   = stats.occupied||0;
-    document.getElementById('statVacant').textContent     = stats.vacant||0;
-    document.getElementById('statRent').textContent       = Number(stats.totalRent||0).toLocaleString();
-    document.getElementById('statExpenses').textContent   = Number(stats.totalExpenses||0).toLocaleString();
-  } catch(e){ console.error('Stats error',e); }
+    const s=await fetch('/api/stats').then(r=>r.json());
+    document.getElementById('statLandlords').textContent=s.landlords||0;
+    document.getElementById('statProperties').textContent=s.properties||0;
+    document.getElementById('statUnits').textContent=s.units||0;
+    document.getElementById('statTenants').textContent=s.tenants||0;
+    document.getElementById('statOccupied').textContent=s.occupied||0;
+    document.getElementById('statVacant').textContent=s.vacant||0;
+    document.getElementById('statRent').textContent='UGX '+Number(s.totalRent||0).toLocaleString();
+    document.getElementById('statExpenses').textContent='UGX '+Number(s.totalExpenses||0).toLocaleString();
+  } catch(e){ console.error('Stats',e); }
 
-  try { landlords  = await apiFetch('/api/landlords');  renderLandlords(); }  catch(e){ landlords=[];  renderLandlords(); }
-  try { properties = await apiFetch('/api/properties'); renderProperties(); } catch(e){ properties=[]; renderProperties(); }
-  try { units      = await apiFetch('/api/units');      renderUnits(); }      catch(e){ units=[];      renderUnits(); }
-  try { tenants    = await apiFetch('/api/tenants');    renderTenants(); }    catch(e){ tenants=[];    renderTenants(); }
-  try { settings   = await apiFetch('/api/settings'); renderSettings(); }    catch(e){ settings={}; }
-
-  // Load paginated tables
+  const load = async (url,fb=[])=>{ try{ return await fetch(url).then(r=>r.json()); }catch(e){ return fb; } };
+  landlords  = await load('/api/landlords');  renderLandlords();
+  properties = await load('/api/properties'); renderProperties();
+  units      = await load('/api/units');      renderUnits();
+  tenants    = await load('/api/tenants');    renderTenants();
+  settings   = await load('/api/settings',{}); renderSettings(); applyBranding();
+  if(USER.role==='Admin'){ allUsers=await load('/api/users',[]); renderUsers(); }
   await loadPage('rent',1);
   await loadPage('expenses',1);
   await loadPage('invoices',1);
   await loadPage('receipts',1);
+  // After all data loaded, compute arrears for dashboard
+  computeDashboardArrears();
+}
 
-  // Load users if admin
-  if(USER.role==='Admin'){
-    try { const users=await apiFetch('/api/users'); renderUsers(users); } catch(e){ renderUsers([]); }
-  }
+// ── Arrears computation ───────────────────────────────────────────────────────
+function computeArrearsForAll(){
+  const now=new Date(); const arr=[];
+  tenants.filter(t=>isActive(t)).forEach(t=>{
+    const u=units.find(x=>un.id(x)===tn.unit(t));
+    const rentAmt=parseFloat(tn.rent(t))||0; if(!rentAmt) return;
+    const leaseStart=tn.start(t)?new Date(tn.start(t)):null; if(!leaseStart) return;
+    const paid=new Set(rentData.filter(r=>rn.tenant(r)===tn.id(t)).map(r=>`${rn.year(r)}-${String(rn.month(r)).padStart(2,'0')}`));
+    let due=0; const check=new Date(leaseStart); check.setMonth(check.getMonth()+1);
+    while(check<=now){ const ym=`${check.getFullYear()}-${String(check.getMonth()+1).padStart(2,'0')}`; if(!paid.has(ym)) due++; check.setMonth(check.getMonth()+1); }
+    if(due>0) arr.push({t,u,rent:rentAmt,months:due,total:rentAmt*due});
+  });
+  return arr.sort((a,b)=>b.total-a.total);
+}
+
+function computeDashboardArrears(){
+  const arr=computeArrearsForAll();
+  const totalArrears=arr.reduce((s,a)=>s+a.total,0);
+  document.getElementById('statArrears').textContent='UGX '+totalArrears.toLocaleString();
+  document.getElementById('statArrearsCount').textContent=arr.length;
+  // Critical = 2+ months overdue
+  const critical=arr.filter(a=>a.months>=2);
+  const widget=document.getElementById('criticalArrearsWidget');
+  if(!critical.length){ widget.style.display='none'; return; }
+  widget.style.display='block';
+  document.getElementById('criticalArrearsSubtitle').textContent=`— ${critical.length} tenant${critical.length>1?'s':''} with 2+ months overdue`;
+  const top5=critical.slice(0,5);
+  document.getElementById('criticalArrearsList').innerHTML=top5.map(a=>`
+    <div class="arrears-item">
+      <div>
+        <div class="ai-info">${tn.name(a.t)}</div>
+        <div class="ai-sub">Unit: ${a.u?un.num(a.u):'N/A'} &nbsp;|&nbsp; ${a.months} months overdue</div>
+      </div>
+      <div class="ai-amt">UGX ${a.total.toLocaleString()}</div>
+    </div>`).join('');
+}
+
+function renderArrears(){
+  const tb=document.getElementById('arrearsTable');
+  const arr=computeArrearsForAll();
+  if(!arr.length){ tb.innerHTML=empty(7,'✅','All tenants are up to date'); return; }
+  tb.innerHTML=arr.map(a=>{
+    const level=a.months>=3?'danger':a.months>=2?'warning':'info';
+    const label=a.months>=3?'Critical':a.months>=2?'High':'Overdue';
+    return `<tr>
+      <td><strong>${tn.name(a.t)}</strong></td>
+      <td>${a.u?un.num(a.u):'N/A'}</td>
+      <td>${Number(a.rent).toLocaleString()}</td>
+      <td>${a.months}</td>
+      <td style="font-weight:700;color:var(--danger)">UGX ${a.total.toLocaleString()}</td>
+      <td><span class="badge ${level}">${label}</span></td>
+      <td class="actions"><button class="btn-edit" onclick="openModal('rent',null,'${tn.id(a.t)}')">Record Payment</button></td>
+    </tr>`;
+  }).join('');
 }
 
 // ── Paginated loader ──────────────────────────────────────────────────────────
-async function loadPage(type, page){
-  const urlMap = { rent:'/api/rent', expenses:'/api/expenses', invoices:'/api/invoices', receipts:'/api/receipts' };
+async function loadPage(type,page){
+  const urlMap={rent:'/api/rent',expenses:'/api/expenses',invoices:'/api/invoices',receipts:'/api/receipts'};
   try {
-    const res = await apiFetch(`${urlMap[type]}?page=${page}&limit=50`);
-    // Handle both paginated {data,total,page,pages} and plain array responses
-    const rows  = Array.isArray(res) ? res : (res.data || []);
-    const pages = Array.isArray(res) ? 1   : (res.pages || 1);
-    pgState[type] = { page: Array.isArray(res) ? 1 : (res.page||1), pages };
-    if(type==='rent')     { rentData=rows; renderRent(); renderPagination('rent','rentPagination'); }
-    if(type==='expenses') { renderExpensesData(rows); renderPagination('expenses','expensesPagination'); }
-    if(type==='invoices') { renderInvoicesData(rows); renderPagination('invoices','invoicesPagination'); }
-    if(type==='receipts') { renderReceiptsData(rows); renderPagination('receipts','receiptsPagination'); }
-  } catch(e){ console.error(`loadPage ${type}:`, e); }
+    const res=await fetch(`${urlMap[type]}?page=${page}&limit=50`).then(r=>r.json());
+    const rows=Array.isArray(res)?res:(res.data||[]);
+    const pages=Array.isArray(res)?1:(res.pages||1);
+    pgState[type]={page:Array.isArray(res)?1:(res.page||1),pages};
+    if(type==='rent'){ rentData=rows; renderRent(); renderPg('rent','rentPagination'); computeDashboardArrears(); }
+    if(type==='expenses'){ renderExpensesData(rows); renderPg('expenses','expensesPagination'); }
+    if(type==='invoices'){ renderInvoicesData(rows); renderPg('invoices','invoicesPagination'); }
+    if(type==='receipts'){ renderReceiptsData(rows); renderPg('receipts','receiptsPagination'); }
+  } catch(e){ console.error(`loadPage ${type}`,e); }
 }
 
-// ── Pagination UI ─────────────────────────────────────────────────────────────
-function renderPagination(type, containerId){
-  const { page, pages } = pgState[type];
-  const el = document.getElementById(containerId);
-  if(!el) return;
-  if(pages <= 1){ el.style.display='none'; return; }
+function renderPg(type,cid){
+  const {page,pages}=pgState[type];
+  const el=document.getElementById(cid); if(!el) return;
+  if(pages<=1){ el.style.display='none'; return; }
   el.style.display='flex';
+  const s=Math.max(1,page-2),e=Math.min(pages,page+2);
   let btns='';
-  const start = Math.max(1, page-2), end = Math.min(pages, page+2);
-  if(start>1) btns+=`<button onclick="loadPage('${type}',1)">1</button>`;
-  if(start>2) btns+=`<span style="padding:6px 4px">…</span>`;
-  for(let i=start;i<=end;i++) btns+=`<button class="${i===page?'active':''}" onclick="loadPage('${type}',${i})">${i}</button>`;
-  if(end<pages-1) btns+=`<span style="padding:6px 4px">…</span>`;
-  if(end<pages) btns+=`<button onclick="loadPage('${type}',${pages})">${pages}</button>`;
-  el.innerHTML=`
-    <span>Page ${page} of ${pages}</span>
-    <div class="pg-btns">
-      <button onclick="loadPage('${type}',${page-1})" ${page<=1?'disabled':''}>← Prev</button>
-      ${btns}
-      <button onclick="loadPage('${type}',${page+1})" ${page>=pages?'disabled':''}>Next →</button>
-    </div>`;
+  if(s>1) btns+=`<button onclick="loadPage('${type}',1)">1</button>`;
+  if(s>2) btns+=`<span style="padding:4px">…</span>`;
+  for(let i=s;i<=e;i++) btns+=`<button class="${i===page?'active':''}" onclick="loadPage('${type}',${i})">${i}</button>`;
+  if(e<pages-1) btns+=`<span style="padding:4px">…</span>`;
+  if(e<pages) btns+=`<button onclick="loadPage('${type}',${pages})">${pages}</button>`;
+  el.innerHTML=`<span>Page ${page} of ${pages}</span><div class="pg-btns"><button onclick="loadPage('${type}',${page-1})" ${page<=1?'disabled':''}>← Prev</button>${btns}<button onclick="loadPage('${type}',${page+1})" ${page>=pages?'disabled':''}>Next →</button></div>`;
 }
 
-// ── Render Functions ──────────────────────────────────────────────────────────
-function empty(colspan, icon, msg){
-  return `<tr><td colspan="${colspan}"><div class="empty-state"><div class="icon">${icon}</div><h3>${msg}</h3></div></td></tr>`;
-}
+// ── Render functions ──────────────────────────────────────────────────────────
+const empty=(n,icon,msg)=>`<tr><td colspan="${n}"><div class="empty-state"><div class="icon">${icon}</div><h3>${msg}</h3></div></td></tr>`;
 
 function renderLandlords(){
   const tb=document.getElementById('landlordsTable');
   if(!landlords.length){ tb.innerHTML=empty(7,'📋','No landlords yet'); return; }
-  tb.innerHTML=landlords.map(l=>`<tr>
-    <td>${ll.id(l)}</td><td><strong>${ll.name(l)}</strong></td>
-    <td>${ll.phone(l)}</td><td>${ll.email(l)}</td>
-    <td>${ll.comm(l)}%</td>
-    <td><span class="badge ${isActive(l)?'success':'danger'}">${ll.status(l)}</span></td>
-    <td class="actions">
-      <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
-      <button class="btn-delete" onclick="deleteLandlord('${ll.id(l)}')">Delete</button>
-    </td></tr>`).join('');
+  tb.innerHTML=landlords.map(l=>`<tr><td>${ll.id(l)}</td><td><strong>${ll.name(l)}</strong></td><td>${ll.phone(l)}</td><td>${ll.email(l)}</td><td>${ll.comm(l)}%</td><td><span class="badge ${isActive(l)?'success':'danger'}">${ll.status(l)}</span></td><td class="actions"><button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button><button class="btn-delete" onclick="deleteLandlord('${ll.id(l)}')">Delete</button></td></tr>`).join('');
 }
-
 function renderProperties(){
   const tb=document.getElementById('propertiesTable');
   if(!properties.length){ tb.innerHTML=empty(8,'🏘️','No properties yet'); return; }
-  tb.innerHTML=properties.map(p=>`<tr>
-    <td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td>
-    <td>${pr.llname(p)||pr.llid(p)}</td><td>${pr.addr(p)}</td>
-    <td>${pr.type(p)}</td><td>${pr.units(p)}</td>
-    <td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button></td>
-  </tr>`).join('');
+  tb.innerHTML=properties.map(p=>`<tr><td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td><td>${pr.llname(p)||pr.llid(p)}</td><td>${pr.addr(p)}</td><td>${pr.type(p)}</td><td>${pr.units(p)}</td><td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td><td class="actions"><button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button></td></tr>`).join('');
 }
-
 function renderUnits(){
   const tb=document.getElementById('unitsTable');
   if(!units.length){ tb.innerHTML=empty(7,'🚪','No units yet'); return; }
-  tb.innerHTML=units.map(u=>`<tr>
-    <td>${un.id(u)}</td><td>${un.pname(u)||un.prop(u)}</td>
-    <td><strong>${un.num(u)}</strong></td><td>${un.type(u)}</td>
-    <td>${Number(un.rent(u)||0).toLocaleString()}</td>
-    <td><span class="badge ${isVacant(u)?'warning':'success'}">${un.status(u)}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button></td>
-  </tr>`).join('');
+  tb.innerHTML=units.map(u=>`<tr><td>${un.id(u)}</td><td>${un.pname(u)||un.prop(u)}</td><td><strong>${un.num(u)}</strong></td><td>${un.type(u)}</td><td>${Number(un.rent(u)||0).toLocaleString()}</td><td><span class="badge ${isVacant(u)?'warning':'success'}">${un.status(u)}</span></td><td class="actions"><button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button></td></tr>`).join('');
 }
-
 function renderTenants(){
   const tb=document.getElementById('tenantsTable');
   if(!tenants.length){ tb.innerHTML=empty(8,'👥','No tenants yet'); return; }
-  tb.innerHTML=tenants.map(t=>`<tr>
-    <td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td>
-    <td>${tn.phone(t)}</td><td>${tn.unum(t)||tn.unit(t)}</td>
-    <td>${Number(tn.rent(t)||0).toLocaleString()}</td>
-    <td>${tn.end(t)||'—'}</td>
-    <td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button></td>
-  </tr>`).join('');
+  tb.innerHTML=tenants.map(t=>`<tr><td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td><td>${tn.phone(t)}</td><td>${tn.unum(t)||tn.unit(t)}</td><td>${Number(tn.rent(t)||0).toLocaleString()}</td><td>${tn.end(t)||'—'}</td><td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td><td class="actions"><button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button></td></tr>`).join('');
 }
-
 function renderRent(){
   const tb=document.getElementById('rentTable');
   if(!rentData.length){ tb.innerHTML=empty(8,'💰','No payments recorded'); return; }
-  tb.innerHTML=rentData.map(r=>`<tr>
-    <td>${rn.id(r)}</td>
-    <td>${rn.tname(r)||rn.tenant(r)}</td>
-    <td>${rn.unum(r)||rn.unit(r)}</td>
-    <td>${Number(rn.amt(r)||0).toLocaleString()}</td>
-    <td>${rn.month(r)} ${rn.year(r)}</td>
-    <td>${rn.method(r)}</td><td>${rn.date(r)}</td>
-    <td class="actions"><button class="btn-receipt" onclick="quickReceiptFromRent('${rn.id(r)}')">🧾 Receipt</button></td>
-  </tr>`).join('');
+  tb.innerHTML=rentData.map(r=>`<tr><td>${rn.id(r)}</td><td>${rn.tname(r)||rn.tenant(r)}</td><td>${rn.unum(r)||rn.unit(r)}</td><td>${Number(rn.amt(r)||0).toLocaleString()}</td><td>${rn.month(r)} ${rn.year(r)}</td><td>${rn.method(r)}</td><td>${rn.date(r)}</td><td class="actions"><button class="btn-receipt" onclick="quickReceiptFromRent('${rn.id(r)}')">🧾 Receipt</button></td></tr>`).join('');
 }
-
 function renderExpensesData(rows){
   const tb=document.getElementById('expensesTable');
   if(!rows.length){ tb.innerHTML=empty(7,'📑','No expenses recorded'); return; }
-  tb.innerHTML=rows.map(e=>`<tr>
-    <td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td>
-    <td>${ex.cat(e)}</td><td>${ex.desc(e)}</td>
-    <td>${Number(ex.amt(e)||0).toLocaleString()}</td><td>${ex.date(e)}</td>
-    <td class="actions"><button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button></td>
-  </tr>`).join('');
+  tb.innerHTML=rows.map(e=>`<tr><td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td><td>${ex.cat(e)}</td><td>${ex.desc(e)}</td><td>${Number(ex.amt(e)||0).toLocaleString()}</td><td>${ex.date(e)}</td><td class="actions"><button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button></td></tr>`).join('');
 }
-
 function renderInvoicesData(rows){
   const tb=document.getElementById('invoicesTable');
   if(!rows.length){ tb.innerHTML=empty(8,'📄','No invoices yet'); return; }
-  tb.innerHTML=rows.map(i=>`<tr>
-    <td>${inv.id(i)}</td><td>${inv.type(i)}</td><td>${inv.ename(i)}</td>
-    <td>${inv.desc(i)}</td><td>${Number(inv.amt(i)||0).toLocaleString()}</td>
-    <td>${inv.month(i)} ${inv.year(i)}</td>
-    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
-    <td class="actions">
-      <button class="btn-view" onclick="viewInvoice('${inv.id(i)}')">View</button>
-      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
-    </td>
-  </tr>`).join('');
+  tb.innerHTML=rows.map(i=>`<tr><td>${inv.id(i)}</td><td>${inv.type(i)}</td><td>${inv.ename(i)}</td><td>${inv.desc(i)}</td><td>${Number(inv.amt(i)||0).toLocaleString()}</td><td>${inv.month(i)} ${inv.year(i)}</td><td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td><td class="actions"><button class="btn-view" onclick="viewInvoice('${inv.id(i)}')">View</button>${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}</td></tr>`).join('');
 }
-
 function renderReceiptsData(rows){
   const tb=document.getElementById('receiptsTable');
   if(!rows.length){ tb.innerHTML=empty(8,'🧾','No receipts yet'); return; }
-  tb.innerHTML=rows.map(r=>`<tr>
-    <td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td>
-    <td>${Number(rc.amt(r)||0).toLocaleString()}</td>
-    <td>${rc.month(r)} ${rc.year(r)}</td>
-    <td>${rc.method(r)}</td><td>${rc.date(r)}</td>
-    <td class="actions"><button class="btn-view" onclick="viewReceipt('${rc.id(r)}')">View</button></td>
-  </tr>`).join('');
+  tb.innerHTML=rows.map(r=>`<tr><td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td><td>${Number(rc.amt(r)||0).toLocaleString()}</td><td>${rc.month(r)} ${rc.year(r)}</td><td>${rc.method(r)}</td><td>${rc.date(r)}</td><td class="actions"><button class="btn-view" onclick="viewReceipt('${rc.id(r)}')">View</button></td></tr>`).join('');
 }
-
-function renderUsers(users){
+function renderUsers(){
   const tb=document.getElementById('usersTable');
-  if(!users||!users.length){ tb.innerHTML=empty(6,'🔐','No users found'); return; }
-  tb.innerHTML=users.map(u=>`<tr>
-    <td>${u.ID||''}</td><td>${u.Name||''}</td><td>${u.Username||''}</td>
-    <td>${u.Email||''}</td>
-    <td><span class="badge info">${u.Role||'User'}</span></td>
-    <td><span class="badge ${(u.Status||'').toLowerCase()==='active'?'success':'danger'}">${u.Status||'Active'}</span></td>
-  </tr>`).join('');
+  if(!allUsers.length){ tb.innerHTML=empty(7,'🔐','No users found'); return; }
+  tb.innerHTML=allUsers.map(u=>`<tr><td>${u.ID||''}</td><td>${u.Name||''}</td><td>${u.Username||''}</td><td>${u.Email||''}</td><td><span class="badge info">${u.Role||'User'}</span></td><td><span class="badge ${(u.Status||'').toLowerCase()==='active'?'success':'danger'}">${u.Status||'Active'}</span></td><td class="actions">${USER.role==='Admin'?`<button class="btn-edit" onclick="editUser('${u.ID||''}')">Edit</button><button class="btn-pwd" onclick="setPassword('${u.ID||''}','${u.Name||u.Username||''}')">Set Password</button><button class="btn-delete" onclick="deactivateUser('${u.ID||''}')">Deactivate</button>`:'—'}</td></tr>`).join('');
 }
 
+// ── Settings render & save ────────────────────────────────────────────────────
+const SETTING_LABELS = {
+  company_name:'Company Name', company_address:'Address',
+  company_phone:'Phone', company_email:'Email',
+  currency:'Currency', vat_rate:'VAT Rate (%)'
+};
 function renderSettings(){
-  const div=document.getElementById('settingsContent');
-  const entries=Object.entries(settings||{});
-  if(!entries.length){ div.innerHTML='<p style="color:var(--text-light)">No settings configured</p>'; return; }
-  div.innerHTML=entries.map(([k,v])=>`
-    <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)">
-      <strong>${k}</strong><span>${v}</span>
+  const form=document.getElementById('settingsForm');
+  // Apply logo if exists
+  if(settings.company_logo){
+    document.getElementById('logoPreviewWrap').innerHTML=`<img class="logo-preview" src="${settings.company_logo}" alt="Logo">`;
+  }
+  if(USER.role!=='Admin'){
+    // Read-only view for non-admins
+    const entries=Object.entries(settings).filter(([k])=>k!=='company_logo');
+    if(!entries.length){ form.innerHTML='<div style="padding:20px;color:var(--text-light)">No settings configured</div>'; return; }
+    form.innerHTML=entries.map(([k,v])=>`<div class="settings-row"><label>${SETTING_LABELS[k]||k}</label><span>${v}</span></div>`).join('');
+    return;
+  }
+  // Editable form for admin
+  const keys=['company_name','company_address','company_phone','company_email','currency','vat_rate'];
+  form.innerHTML=keys.map(k=>`
+    <div class="settings-row">
+      <label for="setting_${k}">${SETTING_LABELS[k]||k}</label>
+      <input id="setting_${k}" value="${(settings[k]||'').replace(/"/g,'&quot;')}" placeholder="${SETTING_LABELS[k]||k}">
     </div>`).join('');
 }
-
-// ── Arrears ───────────────────────────────────────────────────────────────────
-function loadArrears(){
-  const tb=document.getElementById('arrearsTable');
-  const activeTenants=tenants.filter(t=>isActive(t));
-  const now=new Date(); const arrears=[];
-  activeTenants.forEach(t=>{
-    const u=units.find(x=>un.id(x)===tn.unit(t));
-    const rentAmt=parseFloat(tn.rent(t))||0; if(!rentAmt) return;
-    const leaseStart=tn.start(t)?new Date(tn.start(t)):null; if(!leaseStart) return;
-    const paid=new Set(rentData.filter(r=>rn.tenant(r)===tn.id(t)).map(r=>`${rn.year(r)}-${rn.month(r)}`));
-    let due=0; const check=new Date(leaseStart); check.setMonth(check.getMonth()+1);
-    while(check<=now){ const ym=`${check.getFullYear()}-${String(check.getMonth()+1).padStart(2,'0')}`; if(!paid.has(ym)) due++; check.setMonth(check.getMonth()+1); }
-    if(due>0) arrears.push({t,u,rent:rentAmt,months:due,total:rentAmt*due});
-  });
-  if(!arrears.length){ tb.innerHTML=empty(6,'✅','All tenants are up to date'); return; }
-  tb.innerHTML=arrears.map(a=>`<tr>
-    <td>${tn.name(a.t)}</td><td>${a.u?un.num(a.u):'N/A'}</td>
-    <td>${a.rent.toLocaleString()}</td><td>${a.months}</td>
-    <td style="color:var(--danger);font-weight:700">${a.total.toLocaleString()}</td>
-    <td class="actions"><button class="btn-edit" onclick="openModal('rent',null,'${tn.id(a.t)}')">Record Payment</button></td>
-  </tr>`).join('');
+function applyBranding(){
+  // Apply company name to sidebar
+  const name=settings.company_name||'PMS';
+  document.getElementById('logoCompanyName').textContent=name.length>12?name.substring(0,12)+'…':name;
+  // Apply logo to sidebar if exists
+  if(settings.company_logo){
+    const logo=document.getElementById('sidebarLogo');
+    logo.querySelector('.logo-icon').style.display='none';
+    if(!logo.querySelector('img')){
+      const img=document.createElement('img');
+      img.src=settings.company_logo;
+      img.style.cssText='width:34px;height:34px;object-fit:contain;border-radius:6px;';
+      logo.insertBefore(img, logo.firstChild);
+    }
+  }
+}
+async function saveSettings(){
+  const btn=document.getElementById('saveSettingsBtn');
+  btn.textContent='Saving…'; btn.disabled=true;
+  try {
+    const keys=['company_name','company_address','company_phone','company_email','currency','vat_rate'];
+    const payload={};
+    keys.forEach(k=>{ const el=document.getElementById('setting_'+k); if(el) payload[k]=el.value; });
+    const res=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.success){
+      // Save logo if pending
+      if(pendingLogoBase64){
+        await fetch('/api/settings/logo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({logoBase64:pendingLogoBase64})});
+        pendingLogoBase64=null;
+      }
+      showToast('Settings saved!','success');
+      settings=await fetch('/api/settings').then(r=>r.json());
+      applyBranding();
+    } else { showToast(data.error||'Failed to save','error'); }
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+  btn.textContent='💾 Save Settings'; btn.disabled=false;
+}
+function handleLogoUpload(event){
+  const file=event.target.files[0]; if(!file) return;
+  if(file.size>800000){ showToast('Logo too large — max 800KB','error'); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    pendingLogoBase64=e.target.result;
+    document.getElementById('logoPreviewWrap').innerHTML=`<img class="logo-preview" src="${e.target.result}" alt="Logo">`;
+    showToast('Logo ready — click Save Settings to apply','info');
+  };
+  reader.readAsDataURL(file);
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 function openModal(type, e, prefillTenantId=null){
   currentForm=type; editingId=null;
-  document.getElementById('modalOverlay').classList.add('active');
+  const overlay=document.getElementById('modalOverlay');
+  const box=document.getElementById('modalBox');
+  overlay.classList.add('active');
+  box.className=type==='bulk_unit'?'modal wide':'modal';
   const body=document.getElementById('modalBody');
   const title=document.getElementById('modalTitle');
 
-  const llOpts   = landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
-  const propOpts = properties.filter(isActive).map(p=>`<option value="${pr.id(p)}">${pr.name(p)}</option>`).join('');
-  const vacOpts  = units.filter(isVacant).map(u=>{
-    const p=properties.find(x=>pr.id(x)===un.prop(u))||{};
-    return `<option value="${un.id(u)}" data-rent="${un.rent(u)}">${un.num(u)} – ${pr.name(p)||un.prop(u)}</option>`;
-  }).join('');
-  const tnOpts   = tenants.filter(isActive).map(t=>`<option value="${tn.id(t)}" data-unit="${tn.unit(t)}" data-rent="${tn.rent(t)}">${tn.name(t)}</option>`).join('');
-
+  const llOpts=landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
+  const propOpts=properties.filter(isActive).map(p=>`<option value="${pr.id(p)}">${pr.name(p)}</option>`).join('');
+  const vacOpts=units.filter(isVacant).map(u=>{ const p=properties.find(x=>pr.id(x)===un.prop(u))||{}; return `<option value="${un.id(u)}" data-rent="${un.rent(u)}">${un.num(u)} – ${pr.name(p)||un.prop(u)}</option>`; }).join('');
+  const tnOpts=tenants.filter(isActive).map(t=>`<option value="${tn.id(t)}" data-unit="${tn.unit(t)}" data-rent="${tn.rent(t)}">${tn.name(t)}</option>`).join('');
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const curMonth=new Date().getMonth();
-  const monthOpts=months.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===curMonth?'selected':''}>${m}</option>`).join('');
-  const curYear=new Date().getFullYear();
-  const today=new Date().toISOString().split('T')[0];
+  const mOpts=months.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('');
+  const yr=new Date().getFullYear();
+  const tod=new Date().toISOString().split('T')[0];
   const CATS=['Maintenance','Utilities','Insurance','Property Tax','Legal Fees','Marketing','Cleaning','Security','Repairs','Renovation','Landscaping','Management Fees','Commission','Other'];
   const catOpts=CATS.map(c=>`<option>${c}</option>`).join('');
+  const UNIT_TYPES=['Studio','1 Bedroom','2 Bedroom','3 Bedroom','4+ Bedroom','Shop','Office','Warehouse'];
+  const utOpts=UNIT_TYPES.map(t=>`<option>${t}</option>`).join('');
 
-  const FORMS = {
+  const FORMS={
     landlord:()=>{ title.textContent='Add Landlord'; return `<div class="form-grid">
       <div class="form-group full"><label>Full Name *</label><input id="f_name" required placeholder="e.g. John Mukasa"></div>
       <div class="form-group"><label>Phone</label><input id="f_phone" placeholder="+256 7XX XXX XXX"></div>
       <div class="form-group"><label>Email</label><input id="f_email" type="email"></div>
       <div class="form-group full"><label>Address</label><input id="f_address"></div>
       <div class="form-group"><label>Bank Name</label><input id="f_bank"></div>
-      <div class="form-group"><label>Bank Account</label><input id="f_account"></div>
+      <div class="form-group"><label>Bank Account No.</label><input id="f_account"></div>
       <div class="form-group"><label>Commission %</label><input id="f_commission" type="number" value="10" min="0" max="100"></div>
     </div>`; },
+
     property:()=>{ title.textContent='Add Property'; return `<div class="form-grid">
-      <div class="form-group full"><label>Property Name *</label><input id="f_name" required></div>
+      <div class="form-group full"><label>Property Name *</label><input id="f_name" required placeholder="e.g. Bugolobi Apartments"></div>
       <div class="form-group full"><label>Landlord *</label><select id="f_landlord"><option value="">— Select landlord —</option>${llOpts||'<option disabled>No landlords — add one first</option>'}</select></div>
-      <div class="form-group full"><label>Address</label><input id="f_address" placeholder="e.g. Plot 12, Nakasero Road"></div>
-      <div class="form-group"><label>Type</label><select id="f_type"><option>Residential</option><option>Commercial</option><option>Mixed</option><option>Industrial</option></select></div>
+      <div class="form-group full"><label>Address / Location</label><input id="f_address" placeholder="e.g. Plot 12, Nakasero Road"></div>
+      <div class="form-group"><label>Property Type</label><select id="f_type"><option>Residential</option><option>Commercial</option><option>Mixed</option><option>Industrial</option></select></div>
     </div>`; },
-    unit:()=>{ title.textContent='Add Unit'; return `<div class="form-grid">
+
+    unit:()=>{ title.textContent='Add Single Unit'; return `<div class="form-grid">
       <div class="form-group full"><label>Property *</label><select id="f_property"><option value="">— Select property —</option>${propOpts||'<option disabled>No properties — add one first</option>'}</select></div>
-      <div class="form-group"><label>Unit Number *</label><input id="f_unitno" required placeholder="e.g. A1, Unit 3"></div>
-      <div class="form-group"><label>Type</label><select id="f_type"><option>Studio</option><option>1 Bedroom</option><option>2 Bedroom</option><option>3 Bedroom</option><option>4+ Bedroom</option><option>Shop</option><option>Office</option><option>Warehouse</option></select></div>
-      <div class="form-group"><label>Monthly Rent (UGX)</label><input id="f_rent" type="number" placeholder="0"></div>
-      <div class="form-group full"><label>Description</label><textarea id="f_desc" placeholder="Floor, features, parking…"></textarea></div>
+      <div class="form-group"><label>Unit Number / Name *</label><input id="f_unitno" required placeholder="e.g. A1, Shop 3"></div>
+      <div class="form-group"><label>Unit Type</label><select id="f_type">${utOpts}</select></div>
+      <div class="form-group"><label>Monthly Rent (UGX)</label><input id="f_rent" type="number" placeholder="0" min="0"></div>
+      <div class="form-group full"><label>Description / Notes</label><textarea id="f_desc" placeholder="Floor, features, parking…"></textarea></div>
     </div>`; },
+
+    bulk_unit:()=>{ title.textContent='Add Units in Bulk'; return `<div class="form-grid">
+      <div class="form-group full"><label>Property *</label><select id="f_property" onchange="previewUnits()"><option value="">— Select property —</option>${propOpts||'<option disabled>No properties — add one first</option>'}</select></div>
+      <div class="form-group"><label>Unit Type *</label><select id="f_type" onchange="previewUnits()">${utOpts}</select></div>
+      <div class="form-group"><label>Monthly Rent (UGX) *</label><input id="f_rent" type="number" placeholder="e.g. 500000" min="0" oninput="previewUnits()"></div>
+      <div class="form-group"><label>Unit Label Prefix</label><input id="f_prefix" placeholder="e.g. A, Unit, Shop, Apt" value="Unit" oninput="previewUnits()"></div>
+      <div class="form-group"><label>Start Number</label><input id="f_start" type="number" value="1" min="1" oninput="previewUnits()"></div>
+      <div class="form-group"><label>Number of Units *</label><input id="f_count" type="number" placeholder="e.g. 10" min="1" max="100" oninput="previewUnits()"></div>
+      <div class="form-group full">
+        <label>Preview — unit names that will be created</label>
+        <div class="unit-preview" id="bulkPreview"><em style="color:var(--text-light);font-size:13px">Fill in the fields above to preview unit names</em></div>
+      </div>
+    </div>`; },
+
     tenant:()=>{ title.textContent='Add Tenant'; return `<div class="form-grid">
       <div class="form-group full"><label>Full Name *</label><input id="f_name" required></div>
       <div class="form-group"><label>Phone *</label><input id="f_phone" required placeholder="+256 7XX XXX XXX"></div>
       <div class="form-group"><label>Email</label><input id="f_email" type="email"></div>
       <div class="form-group"><label>National ID / Passport</label><input id="f_idno"></div>
       <div class="form-group full"><label>Vacant Unit *</label><select id="f_unit" onchange="autoFillRent()"><option value="">— Select vacant unit —</option>${vacOpts||'<option disabled>No vacant units available</option>'}</select></div>
-      <div class="form-group"><label>Lease Start</label><input id="f_start" type="date" value="${today}"></div>
+      <div class="form-group"><label>Lease Start</label><input id="f_start" type="date" value="${tod}"></div>
       <div class="form-group"><label>Lease End</label><input id="f_end" type="date"></div>
       <div class="form-group"><label>Monthly Rent (UGX)</label><input id="f_rent" type="number" placeholder="Auto-fills from unit"></div>
       <div class="form-group"><label>Security Deposit (UGX)</label><input id="f_deposit" type="number" placeholder="0"></div>
     </div>`; },
+
     rent:()=>{ title.textContent='Record Rent Payment'; return `<div class="form-grid">
       <div class="form-group full"><label>Tenant *</label><select id="f_tenant" onchange="autoFillUnit()"><option value="">— Select tenant —</option>${tnOpts||'<option disabled>No active tenants</option>'}</select></div>
       <div class="form-group"><label>Unit (auto-filled)</label><input id="f_unit" readonly style="background:#f8fafc"></div>
       <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
-      <div class="form-group"><label>Month</label><select id="f_month">${monthOpts}</select></div>
-      <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${curYear}"></div>
+      <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
+      <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
       <div class="form-group"><label>Payment Method</label><select id="f_method"><option>Cash</option><option>Bank Transfer</option><option>Mobile Money</option><option>Cheque</option><option>Card</option></select></div>
       <div class="form-group full"><label>Reference / Transaction ID</label><input id="f_ref" placeholder="MTN ref, cheque no., etc."></div>
     </div>`; },
+
     expense:()=>{ title.textContent='Add Expense'; return `<div class="form-grid">
       <div class="form-group full"><label>Property (optional)</label><select id="f_property"><option value="">— General / Not property-specific —</option>${propOpts}</select></div>
       <div class="form-group"><label>Category *</label><select id="f_category">${catOpts}</select></div>
       <div class="form-group full"><label>Description *</label><input id="f_desc" required placeholder="What was this expense for?"></div>
       <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
-      <div class="form-group"><label>Date</label><input id="f_date" type="date" value="${today}"></div>
+      <div class="form-group"><label>Date</label><input id="f_date" type="date" value="${tod}"></div>
     </div>`; },
+
     invoice:()=>{ title.textContent='Create Invoice'; return `<div class="form-grid">
       <div class="form-group full"><label>Invoice Type *</label><select id="f_invType" onchange="updateInvoiceEntity()"><option value="">— Select type —</option><option value="landlord">Landlord Management Fee</option><option value="tenant">Tenant Rent Invoice</option></select></div>
       <div class="form-group full"><label>Bill To *</label><select id="f_entity" disabled><option value="">Select type first…</option></select></div>
       <div class="form-group full"><label>Description</label><input id="f_desc" placeholder="e.g. Management fee for June 2025"></div>
       <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
-      <div class="form-group"><label>Month</label><select id="f_month">${monthOpts}</select></div>
-      <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${curYear}"></div>
+      <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
+      <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
+    </div>`; },
+
+    user:()=>{ title.textContent='Add User'; return `<div class="form-grid">
+      <div class="form-group full"><label>Full Name *</label><input id="f_name" required placeholder="e.g. Sarah Nambi"></div>
+      <div class="form-group"><label>Username *</label><input id="f_username" required placeholder="e.g. sarah.nambi"></div>
+      <div class="form-group"><label>Email</label><input id="f_email" type="email"></div>
+      <div class="form-group"><label>Role *</label><select id="f_role"><option value="User">User</option><option value="Admin">Admin</option></select></div>
+      <div class="form-group"><label>Password *</label><input id="f_password" type="password" required placeholder="Min 6 characters"></div>
+      <div class="form-group"><label>Confirm Password *</label><input id="f_password2" type="password" required placeholder="Repeat password"></div>
     </div>`; }
   };
 
-  body.innerHTML = (FORMS[type]||(() => '<p>Unknown form</p>'))();
+  body.innerHTML=(FORMS[type]||(() => '<p>Unknown form</p>'))();
 
-  if(type==='rent' && prefillTenantId){
-    setTimeout(()=>{
-      const sel=document.getElementById('f_tenant');
-      if(sel){ sel.value=prefillTenantId; autoFillUnit(); }
-    }, 60);
+  if(type==='rent'&&prefillTenantId){
+    setTimeout(()=>{ const sel=document.getElementById('f_tenant'); if(sel){ sel.value=prefillTenantId; autoFillUnit(); } },60);
   }
+}
+
+// ── Bulk unit preview ─────────────────────────────────────────────────────────
+function previewUnits(){
+  const prefix=(document.getElementById('f_prefix')?.value||'Unit').trim();
+  const start=parseInt(document.getElementById('f_start')?.value)||1;
+  const count=parseInt(document.getElementById('f_count')?.value)||0;
+  const preview=document.getElementById('bulkPreview');
+  if(!count||count<1){ preview.innerHTML='<em style="color:var(--text-light);font-size:13px">Enter a number of units to preview</em>'; return; }
+  if(count>100){ preview.innerHTML='<em style="color:var(--danger);font-size:13px">Maximum 100 units at once</em>'; return; }
+  const names=[];
+  for(let i=0;i<count;i++) names.push(`${prefix} ${start+i}`);
+  preview.innerHTML=names.map(n=>`<span class="preview-tag">${n}</span>`).join('');
 }
 
 function autoFillUnit(){
@@ -768,8 +838,7 @@ function closeModal(){
   const b=document.getElementById('modalSave'); b.textContent='Save'; b.disabled=false;
   currentForm=''; editingId=null;
 }
-
-const gv = id => { const e=document.getElementById(id); return e?e.value.trim():''; };
+const gv=id=>{ const e=document.getElementById(id); return e?e.value.trim():''; };
 
 // ── Save Form ─────────────────────────────────────────────────────────────────
 async function saveForm(){
@@ -798,6 +867,20 @@ async function saveForm(){
         method=editingId?'PUT':'POST';
         payload={propertyId:gv('f_property'),unitNumber:gv('f_unitno'),type:gv('f_type'),rent:gv('f_rent'),description:gv('f_desc')};
         break;
+      case 'bulk_unit':{
+        if(!gv('f_property')){ showToast('Please select a property','error'); break; }
+        if(!gv('f_count')){ showToast('Enter number of units','error'); break; }
+        if(!gv('f_rent')){ showToast('Monthly rent is required','error'); break; }
+        const prefix=(gv('f_prefix')||'Unit').trim();
+        const start=parseInt(gv('f_start'))||1;
+        const count=parseInt(gv('f_count'));
+        if(count<1||count>100){ showToast('Enter between 1 and 100 units','error'); break; }
+        const unitList=[];
+        for(let i=0;i<count;i++) unitList.push({unitNumber:`${prefix} ${start+i}`,type:gv('f_type'),rent:gv('f_rent'),description:''});
+        endpoint='/api/units/bulk';
+        payload={propertyId:gv('f_property'),units:unitList};
+        break;
+      }
       case 'tenant':
         if(!gv('f_name')){ showToast('Name required','error'); break; }
         if(!gv('f_phone')){ showToast('Phone required','error'); break; }
@@ -809,7 +892,7 @@ async function saveForm(){
       case 'rent':
         if(!gv('f_tenant')){ showToast('Please select a tenant','error'); break; }
         if(!gv('f_amount')){ showToast('Amount required','error'); break; }
-        endpoint='/api/rent'; method='POST';
+        endpoint='/api/rent';
         payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref')};
         break;
       case 'expense':
@@ -819,13 +902,24 @@ async function saveForm(){
         method=editingId?'PUT':'POST';
         payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')};
         break;
-      case 'invoice':
+      case 'invoice':{
         if(!gv('f_invType')||!gv('f_entity')){ showToast('Select type and entity','error'); break; }
         if(!gv('f_amount')){ showToast('Amount required','error'); break; }
-        endpoint='/api/invoices'; method='POST';
-        const t2=gv('f_invType'), eid=gv('f_entity');
-        const ename=t2==='landlord'?(landlords.find(x=>ll.id(x)===eid)||{}).Name||'':(tenants.find(x=>tn.id(x)===eid)||{}).Name||'';
-        payload={type:t2,entityId:eid,entityName:ename,description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
+        const itype=gv('f_invType'), ieid=gv('f_entity');
+        const iname=itype==='landlord'?(landlords.find(x=>ll.id(x)===ieid)||{}).Name||'':(tenants.find(x=>tn.id(x)===ieid)||{}).Name||'';
+        endpoint='/api/invoices';
+        payload={type:itype,entityId:ieid,entityName:iname,description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
+        break;
+      }
+      case 'user':
+        if(!gv('f_name')){ showToast('Full name required','error'); break; }
+        if(!gv('f_username')){ showToast('Username required','error'); break; }
+        if(!gv('f_password')){ showToast('Password required','error'); break; }
+        if(gv('f_password')!==gv('f_password2')){ showToast('Passwords do not match','error'); break; }
+        if(gv('f_password').length<6){ showToast('Password must be at least 6 characters','error'); break; }
+        endpoint=editingId?`/api/users/${editingId}`:'/api/users';
+        method=editingId?'PUT':'POST';
+        payload={username:gv('f_username'),fullName:gv('f_name'),email:gv('f_email'),role:gv('f_role'),password:gv('f_password')};
         break;
       default:
         showToast('Unknown form','error'); btn.textContent='Save'; btn.disabled=false; return;
@@ -837,53 +931,47 @@ async function saveForm(){
 
     if(data.success){
       const sf=currentForm, sid=data.id, sp={...payload};
-      showToast('Saved!','success');
+      showToast(sf==='bulk_unit'?`${data.count} units created!`:'Saved successfully!','success');
       closeModal();
       await loadAllData();
-
+      // After property added — prompt to bulk add units
       if(sf==='property'&&!editingId){
-        showPrompt('Add Units?',`"${sp.name}" added. Add units to it now?`,()=>{
-          openModal('unit');
+        showPrompt('Add Units Now?',`"${sp.name}" created. Add all its units now in bulk?`,()=>{
+          openModal('bulk_unit');
           setTimeout(()=>{ const s=document.getElementById('f_property'); if(s) s.value=sid; },80);
         });
       }
+      // After rent recorded — auto-generate receipt
       if(sf==='rent'){
         const t=tenants.find(x=>tn.id(x)===sp.tenantId)||{};
         const u=units.find(x=>un.id(x)===sp.unitId)||{};
-        const rcpRes=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({rentId:sid,tenantName:tn.name(t),unitNumber:un.num(u),amount:sp.amount,month:sp.month,year:sp.year,paymentMethod:sp.paymentMethod})});
+        const rcpRes=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId:sid,tenantName:tn.name(t),unitNumber:un.num(u),amount:sp.amount,month:sp.month,year:sp.year,paymentMethod:sp.paymentMethod})});
         const rcpData=await rcpRes.json();
-        if(rcpData.success){
-          await loadPage('receipts',1);
-          showToast('Receipt generated!','success');
-          showPrompt('View Receipt?','Receipt created. Open it now?',()=>viewReceipt(rcpData.id));
-        }
+        if(rcpData.success){ await loadPage('receipts',1); showPrompt('View Receipt?','Receipt generated. Open it now?',()=>viewReceipt(rcpData.id)); }
       }
-    } else {
-      showToast(data.error||'Failed to save','error');
-    }
+      if(sf==='user'){ allUsers=await fetch('/api/users').then(r=>r.json()); renderUsers(); }
+    } else { showToast(data.error||'Failed to save','error'); }
   } catch(e){ showToast('Error: '+e.message,'error'); }
   btn.textContent='Save'; btn.disabled=false;
 }
 
-// ── Edit Functions ────────────────────────────────────────────────────────────
+// ── Edit functions ────────────────────────────────────────────────────────────
 function editLandlord(id){
-  const l=landlords.find(x=>ll.id(x)===id); if(!l){ showToast('Not found','error'); return; }
+  const l=landlords.find(x=>ll.id(x)===id); if(!l) return;
   openModal('landlord'); editingId=id;
   document.getElementById('modalTitle').textContent='Edit Landlord';
   setTimeout(()=>{
     document.getElementById('f_name').value=ll.name(l);
     document.getElementById('f_phone').value=ll.phone(l);
     document.getElementById('f_email').value=ll.email(l);
-    document.getElementById('f_address').value=l.Address||'';
-    document.getElementById('f_bank').value=l['Bank Name']||'';
-    document.getElementById('f_account').value=l['Bank Account']||'';
+    document.getElementById('f_address').value=ll.addr(l);
+    document.getElementById('f_bank').value=ll.bank(l);
+    document.getElementById('f_account').value=ll.acct(l);
     document.getElementById('f_commission').value=ll.comm(l);
   },60);
 }
-
 function editProperty(id){
-  const p=properties.find(x=>pr.id(x)===id); if(!p){ showToast('Not found','error'); return; }
+  const p=properties.find(x=>pr.id(x)===id); if(!p) return;
   openModal('property'); editingId=id;
   document.getElementById('modalTitle').textContent='Edit Property';
   setTimeout(()=>{
@@ -893,9 +981,8 @@ function editProperty(id){
     document.getElementById('f_type').value=pr.type(p);
   },60);
 }
-
 function editUnit(id){
-  const u=units.find(x=>un.id(x)===id); if(!u){ showToast('Not found','error'); return; }
+  const u=units.find(x=>un.id(x)===id); if(!u) return;
   openModal('unit'); editingId=id;
   document.getElementById('modalTitle').textContent='Edit Unit';
   setTimeout(()=>{
@@ -906,9 +993,8 @@ function editUnit(id){
     document.getElementById('f_desc').value=un.desc(u);
   },60);
 }
-
 function editTenant(id){
-  const t=tenants.find(x=>tn.id(x)===id); if(!t){ showToast('Not found','error'); return; }
+  const t=tenants.find(x=>tn.id(x)===id); if(!t) return;
   openModal('tenant'); editingId=id;
   document.getElementById('modalTitle').textContent='Edit Tenant';
   setTimeout(()=>{
@@ -920,22 +1006,14 @@ function editTenant(id){
     document.getElementById('f_end').value=tn.end(t);
     document.getElementById('f_rent').value=tn.rent(t);
     document.getElementById('f_deposit').value=tn.deposit(t);
-    // Show all units for edit (not just vacant)
     const sel=document.getElementById('f_unit');
-    if(sel){
-      sel.innerHTML='<option value="">— Select unit —</option>'+units.map(u=>{
-        const p=properties.find(x=>pr.id(x)===un.prop(u))||{};
-        return `<option value="${un.id(u)}" ${un.id(u)===tn.unit(t)?'selected':''}>${un.num(u)} – ${pr.name(p)} (${un.status(u)})</option>`;
-      }).join('');
-    }
+    if(sel){ sel.innerHTML='<option value="">— Select unit —</option>'+units.map(u=>{ const p=properties.find(x=>pr.id(x)===un.prop(u))||{}; return `<option value="${un.id(u)}" ${un.id(u)===tn.unit(t)?'selected':''}>${un.num(u)} – ${pr.name(p)} (${un.status(u)})</option>`; }).join(''); }
   },60);
 }
-
 function editExpense(id){
-  // Fetch from current page data
-  fetch(`/api/expenses?page=1&limit=200`).then(r=>r.json()).then(res=>{
+  fetch('/api/expenses?page=1&limit=200').then(r=>r.json()).then(res=>{
     const rows=Array.isArray(res)?res:(res.data||[]);
-    const e=rows.find(x=>ex.id(x)===id); if(!e){ showToast('Not found','error'); return; }
+    const e=rows.find(x=>ex.id(x)===id); if(!e) return;
     openModal('expense'); editingId=id;
     document.getElementById('modalTitle').textContent='Edit Expense';
     setTimeout(()=>{
@@ -945,6 +1023,47 @@ function editExpense(id){
       document.getElementById('f_amount').value=ex.amt(e);
       document.getElementById('f_date').value=ex.date(e);
     },60);
+  });
+}
+function editUser(id){
+  const u=allUsers.find(x=>x.ID===id); if(!u) return;
+  openModal('user'); editingId=id;
+  document.getElementById('modalTitle').textContent='Edit User';
+  setTimeout(()=>{
+    document.getElementById('f_name').value=u.Name||'';
+    const usel=document.getElementById('f_username');
+    if(usel){ usel.value=u.Username||''; usel.readOnly=true; usel.style.background='#f8fafc'; }
+    document.getElementById('f_email').value=u.Email||'';
+    document.getElementById('f_role').value=u.Role||'User';
+    // Hide password fields for edit (use Set Password button instead)
+    ['f_password','f_password2'].forEach(fid=>{ const el=document.getElementById(fid); if(el) el.closest('.form-group').style.display='none'; });
+  },60);
+}
+function setPassword(userId, userName){
+  showPrompt(`Set Password`, `Enter a new password for ${userName}:`,()=>{});
+  // Override prompt to be a password input
+  document.getElementById('promptMessage').innerHTML=`
+    <input id="newPwdInput" type="password" placeholder="New password (min 6 chars)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:8px">
+    <input id="newPwdInput2" type="password" placeholder="Confirm password" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px">`;
+  document.getElementById('promptYes').onclick=async()=>{
+    const p1=document.getElementById('newPwdInput')?.value||'';
+    const p2=document.getElementById('newPwdInput2')?.value||'';
+    if(p1.length<6){ showToast('Password must be at least 6 characters','error'); return; }
+    if(p1!==p2){ showToast('Passwords do not match','error'); return; }
+    closePrompt();
+    const res=await fetch(`/api/users/${userId}/password`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+    const data=await res.json();
+    if(data.success) showToast('Password updated!','success');
+    else showToast(data.error||'Failed','error');
+  };
+}
+function deactivateUser(id){
+  const u=allUsers.find(x=>x.ID===id);
+  showPrompt('Deactivate User?',`Deactivate "${u?u.Name:id}"? They will no longer be able to log in.`,async()=>{
+    const res=await fetch(`/api/users/${id}`,{method:'DELETE'});
+    const data=await res.json();
+    if(data.success){ showToast('User deactivated','success'); allUsers=await fetch('/api/users').then(r=>r.json()); renderUsers(); }
+    else showToast(data.error||'Failed','error');
   });
 }
 
@@ -959,39 +1078,36 @@ function deleteLandlord(id){
 // ── Invoice / Receipt ─────────────────────────────────────────────────────────
 function viewInvoice(id){ window.open('/api/invoices/'+id+'/pdf','_blank'); }
 function viewReceipt(id){ window.open('/api/receipts/'+id+'/pdf','_blank'); }
-
 async function payInvoice(id){
   await fetch('/api/invoices/'+id+'/pay',{method:'PUT'});
   showToast('Invoice marked as paid','success');
-  loadPage('invoices', pgState.invoices.page);
+  loadPage('invoices',pgState.invoices.page);
 }
-
 async function quickReceiptFromRent(rentId){
   const r=rentData.find(x=>rn.id(x)===rentId); if(!r){ showToast('Rent record not found','error'); return; }
   const t=tenants.find(x=>tn.id(x)===rn.tenant(r))||{};
   const u=units.find(x=>un.id(x)===rn.unit(r))||{};
-  const res=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({rentId,tenantName:tn.name(t),unitNumber:un.num(u),amount:rn.amt(r),month:rn.month(r),year:rn.year(r),paymentMethod:rn.method(r)})});
+  const res=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId,tenantName:tn.name(t),unitNumber:un.num(u),amount:rn.amt(r),month:rn.month(r),year:rn.year(r),paymentMethod:rn.method(r)})});
   const data=await res.json();
   if(data.success){ showToast('Receipt generated!','success'); await loadPage('receipts',1); viewReceipt(data.id); }
   else showToast(data.error||'Failed','error');
 }
 
 // ── Prompt ────────────────────────────────────────────────────────────────────
-function showPrompt(title,message,onYes){
+function showPrompt(title,msg,onYes){
   document.getElementById('promptTitle').textContent=title;
-  document.getElementById('promptMessage').textContent=message;
+  document.getElementById('promptMessage').innerHTML=msg;
   document.getElementById('promptYes').onclick=()=>{ closePrompt(); onYes(); };
   document.getElementById('promptOverlay').classList.add('active');
 }
 function closePrompt(){ document.getElementById('promptOverlay').classList.remove('active'); }
 
-// ── Table filter ──────────────────────────────────────────────────────────────
-function filterTable(tbodyId, q){
+// ── Filter ────────────────────────────────────────────────────────────────────
+function filterTable(id,q){
   const lq=q.toLowerCase();
-  document.querySelectorAll('#'+tbodyId+' tr').forEach(row=>{
-    if(row.querySelector('.empty-state')||row.classList.contains('loading-row')) return;
-    row.style.display=row.textContent.toLowerCase().includes(lq)?'':'none';
+  document.querySelectorAll('#'+id+' tr').forEach(r=>{
+    if(r.querySelector('.empty-state')||r.classList.contains('loading-row')) return;
+    r.style.display=r.textContent.toLowerCase().includes(lq)?'':'none';
   });
 }
 
