@@ -173,6 +173,9 @@ tr:hover{background:#f8fafc;}
       <div class="nav-section" id="navAdminLabel">Admin</div>
       <a onclick="showSection('users',event)" id="navUsers">🔐 Users</a>
       <a onclick="showSection('settings',event)" id="navSettings">⚙️ Settings</a>
+      <div class="nav-section">Reports</div>
+      <a onclick="showSection('reports',event)">📈 Reports</a>
+      <a onclick="showSection('archive',event)" id="navArchive">🗃️ Archive</a>
     </nav>
     <div class="user-info">
       <div class="name" id="userName">Loading...</div>
@@ -187,6 +190,32 @@ tr:hover{background:#f8fafc;}
       <h1 id="pageTitle">Dashboard</h1>
       <div class="date" id="dashDate"></div>
     </div>
+  <div class="section" id="sec-reports">
+  <div class="section-title">Reports</div>
+  <div class="quick-actions">
+    <button onclick="openReportModal('portfolio')">📊 Portfolio Report</button>
+    <button onclick="openReportModal('landlord')">👤 Landlord Report</button>
+    <button onclick="openReportModal('tenant')">👥 Tenant Statement</button>
+    <button class="secondary" onclick="openBulkInvoiceModal()">📄 Bulk Invoices</button>
+  </div>
+   <div class="section" id="sec-archive">
+  <div class="section-title">Deleted Records Archive</div>
+  <div class="data-table">
+    <div class="table-header">
+      <h3>Archive</h3>
+      <div style="display:flex;gap:8px">
+        <select id="archiveTypeFilter" onchange="loadArchive()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+          <option value="">All types</option>
+          <option value="tenant">Tenants</option>
+          <option value="landlord">Landlords</option>
+        </select>
+        <input id="archiveSearch" class="search" placeholder="Search by name..." oninput="loadArchive()" style="width:200px">
+      </div>
+    </div>
+    <table><thead><tr><th>Deleted At</th><th>Type</th><th>ID</th><th>Name</th><th>Deleted By</th></tr></thead>
+    <tbody id="archiveTable"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Select a filter or search to load archive</td></tr></tbody></table>
+  </div>
+</div>
     <div class="content">
 
       <!-- ── DASHBOARD ── -->
@@ -1116,6 +1145,193 @@ function showToast(msg,type='success'){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast '+type+' show';
   setTimeout(()=>t.classList.remove('show'),3500);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// DASHBOARD v2 PATCH — JavaScript additions only
+const fmtUGX = n => 'UGX ' + Number(n||0).toLocaleString();
+
+// ── Rent due alert on dashboard load ─────────────────────────────────────────
+async function loadRentDueStatus() {
+  try {
+    const d = await fetch('/api/rent/due-status').then(r=>r.json());
+    const bar = document.getElementById('rentDueBar');
+    if (!bar) return;
+    if (d.dueToday) {
+      bar.style.display='flex';
+      bar.style.background='#fef3c7';
+      bar.style.borderColor='#f59e0b';
+      bar.innerHTML=`<span style="font-size:18px">📅</span><strong style="color:#92400e">Rent is due today (1st).</strong><span style="color:#92400e">${d.totalUnpaid} tenant${d.totalUnpaid!==1?'s':''} have not yet paid this month.</span>`;
+    } else if (d.overdueCount > 0) {
+      bar.style.display='flex';
+      bar.style.background='#fee2e2';
+      bar.style.borderColor='#ef4444';
+      bar.innerHTML=`<span style="font-size:18px">⚠️</span><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">— rent was due on the 1st.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:6px 14px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">View Arrears</button>`;
+    } else {
+      bar.style.display='none';
+    }
+  } catch(e) { console.error('due-status', e); }
+}
+
+// ── WhatsApp message modal ────────────────────────────────────────────────────
+async function generateWhatsApp(receiptId) {
+  try {
+    const res = await fetch('/api/rent/whatsapp-message', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ receiptId })
+    });
+    const data = await res.json();
+    if (!data.success) { showToast(data.error||'Failed','error'); return; }
+    // Show in a prompt-style modal
+    document.getElementById('promptTitle').textContent = '📱 WhatsApp Message';
+    document.getElementById('promptMessage').innerHTML = `
+      <textarea id="waMsg" style="width:100%;height:180px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;resize:vertical">${data.message}</textarea>
+      <small style="color:#64748b;display:block;margin-top:6px">Copy this message and send it to the tenant via WhatsApp.</small>`;
+    document.getElementById('promptYes').textContent = '📋 Copy';
+    document.getElementById('promptYes').onclick = () => {
+      const el = document.getElementById('waMsg');
+      el.select();
+      document.execCommand('copy');
+      showToast('Copied to clipboard!','success');
+      closePrompt();
+    };
+    document.getElementById('promptOverlay').classList.add('active');
+  } catch(e) { showToast('Error: '+e.message,'error'); }
+}
+
+// ── Rent increase modal ───────────────────────────────────────────────────────
+function openRentIncreaseModal(unitId) {
+  const u = units.find(x=>un.id(x)===unitId);
+  const t = tenants.find(x=>tn.unit(x)===unitId && isActive(x));
+  currentForm = 'rent_increase'; editingId = unitId;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className = 'modal';
+  document.getElementById('modalTitle').textContent = 'Rent Increase';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Unit</label>
+        <input value="${u ? un.num(u) : unitId}" readonly style="background:#f8fafc">
+      </div>
+      <div class="form-group full">
+        <label>Tenant</label>
+        <input value="${t ? tn.name(t) : 'No active tenant'}" readonly style="background:#f8fafc">
+      </div>
+      <div class="form-group">
+        <label>Current Rent (UGX)</label>
+        <input value="${Number(u ? un.rent(u) : 0).toLocaleString()}" readonly style="background:#f8fafc">
+      </div>
+      <div class="form-group">
+        <label>New Monthly Rent (UGX) *</label>
+        <input id="f_newrent" type="number" required placeholder="Enter new amount">
+      </div>
+      <div class="form-group">
+        <label>Effective Date *</label>
+        <input id="f_effdate" type="date" value="${today}" required>
+      </div>
+      <div class="form-group full">
+        <label>Notes / Reason</label>
+        <textarea id="f_notes" placeholder="e.g. Annual review — 10% increase"></textarea>
+      </div>
+    </div>`;
+}
+
+// ── Partial payment toggle in rent modal ──────────────────────────────────────
+function togglePartialPayment() {
+  const isPartial = document.getElementById('f_isPartial')?.checked;
+  const partialDiv = document.getElementById('partialFields');
+  if (partialDiv) partialDiv.style.display = isPartial ? 'block' : 'none';
+}
+
+// ── Reports section ───────────────────────────────────────────────────────────
+function openReportModal(type) {
+  currentForm = 'report_' + type;
+  editingId = null;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className = 'modal';
+  const now = new Date();
+  const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  const today = now.toISOString().split('T')[0];
+  const llOpts = landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
+  const tnOpts = tenants.map(t=>`<option value="${tn.id(t)}">${tn.name(t)} — ${tn.unum(t)||tn.unit(t)}</option>`).join('');
+
+  if (type === 'portfolio') {
+    document.getElementById('modalTitle').textContent = '📊 Portfolio Report';
+    document.getElementById('modalBody').innerHTML = `
+      <div class="form-grid">
+        <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstOfMonth}"></div>
+        <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
+      </div>
+      <p style="color:#64748b;font-size:13px;margin-top:12px">Generates a full portfolio summary including all properties, rent collected, expenses, occupancy and arrears across all landlords.</p>`;
+    document.getElementById('modalSave').textContent = 'Generate Report';
+  } else if (type === 'landlord') {
+    document.getElementById('modalTitle').textContent = '👤 Landlord Report';
+    document.getElementById('modalBody').innerHTML = `
+      <div class="form-grid">
+        <div class="form-group full"><label>Landlord *</label>
+          <select id="r_landlord"><option value="">— Select landlord —</option>${llOpts}</select>
+        </div>
+        <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstOfMonth}"></div>
+        <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
+      </div>
+      <p style="color:#64748b;font-size:13px;margin-top:12px">Includes property overview, rent collected, expenses, arrears, and net disbursement amount for the landlord.</p>`;
+    document.getElementById('modalSave').textContent = 'Generate Report';
+  } else if (type === 'tenant') {
+    document.getElementById('modalTitle').textContent = '👥 Tenant Statement';
+    document.getElementById('modalBody').innerHTML = `
+      <div class="form-grid">
+        <div class="form-group full"><label>Tenant *</label>
+          <select id="r_tenant"><option value="">— Select tenant —</option>${tnOpts}</select>
+        </div>
+        <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstOfMonth}"></div>
+        <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
+      </div>
+      <p style="color:#64748b;font-size:13px;margin-top:12px">Shows all payments made, outstanding balance, and lease details for the selected tenant.</p>`;
+    document.getElementById('modalSave').textContent = 'Generate Statement';
+  }
+}
+
+// ── Archive search ────────────────────────────────────────────────────────────
+async function loadArchive() {
+  const type   = document.getElementById('archiveTypeFilter')?.value || '';
+  const search = document.getElementById('archiveSearch')?.value    || '';
+  const tb     = document.getElementById('archiveTable');
+  if (!tb) return;
+  tb.innerHTML = `<tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading…</td></tr>`;
+  try {
+    const rows = await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`).then(r=>r.json());
+    if (!rows.length) { tb.innerHTML = empty(5,'🗃️','No archived records found'); return; }
+    tb.innerHTML = rows.map(r=>`<tr>
+      <td>${r.deleted_at}</td>
+      <td><span class="badge info">${r.entity_type}</span></td>
+      <td>${r.entity_id}</td>
+      <td>${r.entity_label}</td>
+      <td>${r.deleted_by||'—'}</td>
+    </tr>`).join('');
+  } catch(e) { tb.innerHTML = empty(5,'❌','Failed to load archive'); }
+}
+
+// ── Bulk invoice modal ────────────────────────────────────────────────────────
+function openBulkInvoiceModal() {
+  currentForm = 'bulk_invoice';
+  editingId = null;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className = 'modal';
+  document.getElementById('modalTitle').textContent = 'Bulk Management Fee Invoices';
+  const now = new Date();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const mOpts = months.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join('');
+  document.getElementById('modalBody').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label>Month *</label><select id="f_month">${mOpts}</select></div>
+      <div class="form-group"><label>Year *</label><input id="f_year" type="number" value="${now.getFullYear()}"></div>
+      <div class="form-group full"><label>Description (optional)</label>
+        <input id="f_desc" placeholder="e.g. Management fee for May 2025"></div>
+      <div class="form-group full"><label>Override Amount (leave blank to auto-calculate from commission rate)</label>
+        <input id="f_override" type="number" placeholder="Leave blank for auto-calculation per landlord"></div>
+    </div>
+    <p style="color:#64748b;font-size:13px;margin-top:12px">This will create one management fee invoice for each active landlord based on their commission rate and rent collected that month.</p>`;
+  document.getElementById('modalSave').textContent = 'Create All Invoices';
 }
 </script>
 </body>
