@@ -9,148 +9,169 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 .app{display:flex;min-height:100vh;}
+/* Sidebar */
 .sidebar{width:260px;background:var(--primary-dark);color:#fff;position:fixed;height:100vh;overflow-y:auto;z-index:100;transition:transform .3s;}
-.sidebar .logo{padding:20px;font-size:18px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
-.sidebar .logo img{width:36px;height:36px;object-fit:contain;border-radius:6px;}
-.sidebar .logo .logo-icon{font-size:28px;}
-.sidebar nav{padding:12px 0;}
-.sidebar nav a{display:flex;align-items:center;gap:12px;padding:12px 20px;color:rgba(255,255,255,.8);text-decoration:none;font-size:14px;font-weight:500;transition:.2s;cursor:pointer;}
-.sidebar nav a:hover,.sidebar nav a.active{background:rgba(255,255,255,.1);color:#fff;}
-.sidebar .nav-section{padding:8px 20px 4px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);font-weight:700;}
-.sidebar .user-info{position:absolute;bottom:0;left:0;right:0;padding:16px 20px;border-top:1px solid rgba(255,255,255,.1);background:var(--primary-dark);}
+.sidebar .logo{padding:18px 20px;font-size:18px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px;}
+.sidebar .logo img.logo-img{width:34px;height:34px;object-fit:contain;border-radius:6px;}
+.sidebar .logo .logo-icon{font-size:26px;}
+.sidebar nav{padding:10px 0 80px;}
+.sidebar nav a{display:flex;align-items:center;gap:12px;padding:11px 20px;color:rgba(255,255,255,.8);text-decoration:none;font-size:14px;font-weight:500;transition:.2s;cursor:pointer;}
+.sidebar nav a:hover,.sidebar nav a.active{background:rgba(255,255,255,.12);color:#fff;}
+.sidebar .nav-section{padding:8px 20px 3px;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.35);font-weight:700;margin-top:4px;}
+.sidebar .user-info{position:fixed;bottom:0;left:0;width:260px;padding:14px 20px;border-top:1px solid rgba(255,255,255,.1);background:var(--primary-dark);}
 .sidebar .user-info .name{font-weight:600;font-size:14px;}
-.sidebar .user-info .role{font-size:12px;color:rgba(255,255,255,.6);}
-.sidebar .user-info .logout{margin-top:8px;font-size:12px;color:#fca5a5;cursor:pointer;background:none;border:none;}
+.sidebar .user-info .role{font-size:11px;color:rgba(255,255,255,.6);}
+.sidebar .user-info .logout{margin-top:6px;font-size:12px;color:#fca5a5;cursor:pointer;background:none;border:none;}
+/* Main */
 .main{flex:1;margin-left:260px;min-height:100vh;}
-.topbar{background:var(--card);padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
+.topbar{background:var(--card);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;}
 .topbar h1{font-size:20px;font-weight:700;}
-.topbar .date{color:var(--text-light);font-size:14px;}
+.topbar .date{color:var(--text-light);font-size:13px;}
 .topbar .mobile-menu{display:none;background:none;border:none;font-size:24px;cursor:pointer;}
 .content{padding:24px;}
 /* Stats */
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px;}
-.stat-card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
-.stat-card .label{font-size:12px;color:var(--text-light);text-transform:uppercase;font-weight:600;letter-spacing:.5px;}
-.stat-card .value{font-size:26px;font-weight:700;margin-top:4px;color:var(--primary);}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.stat-card .label{font-size:11px;color:var(--text-light);text-transform:uppercase;font-weight:600;letter-spacing:.5px;}
+.stat-card .value{font-size:24px;font-weight:700;margin-top:4px;color:var(--primary);}
 .stat-card.danger .value{color:var(--danger);}
 .stat-card.warning .value{color:var(--warning);}
-/* Critical arrears widget */
-.arrears-widget{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:24px;}
+/* Alert bar */
+.alert-bar{display:none;align-items:center;gap:12px;padding:13px 18px;border-radius:10px;border:2px solid;margin-bottom:18px;font-size:14px;font-weight:500;}
+/* Critical arrears */
+.arrears-widget{background:var(--card);border-radius:12px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:20px;}
 .arrears-widget h3{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
-.arrears-widget .arrears-list{display:flex;flex-direction:column;gap:8px;}
+.arrears-list{display:flex;flex-direction:column;gap:8px;}
 .arrears-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fef2f2;border-radius:8px;border-left:3px solid var(--danger);}
-.arrears-item .ai-info{font-size:13px;font-weight:600;}
-.arrears-item .ai-sub{font-size:12px;color:var(--text-light);}
-.arrears-item .ai-amt{font-size:14px;font-weight:700;color:var(--danger);}
+.ai-info{font-size:13px;font-weight:600;}
+.ai-sub{font-size:12px;color:var(--text-light);}
+.ai-amt{font-size:14px;font-weight:700;color:var(--danger);}
 /* Quick actions */
-.quick-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;}
-.quick-actions button{padding:10px 20px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:.2s;white-space:nowrap;}
+.quick-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.quick-actions button{padding:9px 18px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:600;font-size:13px;cursor:pointer;transition:.2s;white-space:nowrap;}
 .quick-actions button:hover{background:var(--primary-dark);}
 .quick-actions button.secondary{background:var(--card);color:var(--primary);border:1px solid var(--primary);}
+.quick-actions button.danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
 /* Tables */
 .data-table{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);}
-.table-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:12px;}
-.table-header h3{font-size:16px;font-weight:700;}
-.table-header .search{padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;width:240px;}
-table{width:100%;border-collapse:collapse;font-size:14px;}
-th{text-align:left;padding:12px 20px;background:#f8fafc;font-size:12px;text-transform:uppercase;color:var(--text-light);font-weight:600;white-space:nowrap;}
-td{padding:12px 20px;border-bottom:1px solid var(--border);}
-tr:hover{background:#f8fafc;}
-.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;}
+.table-header{padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;}
+.table-header h3{font-size:15px;font-weight:700;}
+.search{padding:8px 13px;border:1px solid var(--border);border-radius:8px;font-size:13px;width:220px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:11px 16px;background:#f8fafc;font-size:11px;text-transform:uppercase;color:var(--text-light);font-weight:600;white-space:nowrap;}
+td{padding:11px 16px;border-bottom:1px solid var(--border);}
+tr:hover td{background:#f8fafc;}
+/* Skeleton loader */
+.skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:4px;height:14px;display:inline-block;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-row td{padding:14px 16px;}
+.sk-row td div{height:12px;border-radius:4px;background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;}
+/* Badges */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;text-transform:uppercase;}
 .badge.success{background:#dcfce7;color:#166534;}
 .badge.danger{background:#fee2e2;color:#991b1b;}
 .badge.warning{background:#fef3c7;color:#92400e;}
 .badge.info{background:#dbeafe;color:#1e40af;}
-.actions{display:flex;gap:6px;flex-wrap:wrap;}
-.actions button{padding:5px 10px;border-radius:6px;border:none;font-size:12px;font-weight:600;cursor:pointer;}
+/* Action buttons */
+.actions{display:flex;gap:5px;flex-wrap:wrap;}
+.actions button{padding:5px 10px;border-radius:6px;border:none;font-size:11px;font-weight:600;cursor:pointer;}
 .btn-edit{background:#dbeafe;color:#1e40af;}
 .btn-delete{background:#fee2e2;color:#991b1b;}
 .btn-view{background:#f3f4f6;color:#374151;}
 .btn-receipt{background:#dcfce7;color:#166534;}
 .btn-pwd{background:#fef3c7;color:#92400e;}
-.empty-state{text-align:center;padding:50px 20px;}
-.empty-state .icon{font-size:40px;margin-bottom:12px;}
-.empty-state h3{font-size:16px;color:var(--text-light);}
+.btn-wa{background:#dcfce7;color:#166534;}
+.btn-increase{background:#ede9fe;color:#6d28d9;}
+/* Empty state */
+.empty-state{text-align:center;padding:48px 20px;}
+.empty-state .icon{font-size:38px;margin-bottom:10px;}
+.empty-state h3{font-size:15px;color:var(--text-light);}
 /* Pagination */
-.pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);font-size:13px;color:var(--text-light);}
-.pg-btns{display:flex;gap:6px;}
-.pg-btns button{padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:13px;cursor:pointer;}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--text-light);}
+.pg-btns{display:flex;gap:5px;}
+.pg-btns button{padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);font-size:12px;cursor:pointer;}
 .pg-btns button:hover:not(:disabled){background:var(--primary);color:#fff;border-color:var(--primary);}
 .pg-btns button:disabled{opacity:.4;cursor:not-allowed;}
 .pg-btns button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-.loading-row td{text-align:center;padding:40px;color:var(--text-light);}
-.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px;}
-@keyframes spin{to{transform:rotate(360deg)}}
 /* Modal */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px;}
 .modal-overlay.active{display:flex;}
 .modal{background:var(--card);border-radius:16px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
 .modal.wide{max-width:720px;}
-.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--card);z-index:1;}
-.modal-header h2{font-size:18px;font-weight:700;}
-.modal-header .close{background:none;border:none;font-size:24px;color:var(--text-light);cursor:pointer;}
-.modal-body{padding:24px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-.form-group{display:flex;flex-direction:column;gap:6px;}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--card);z-index:1;}
+.modal-header h2{font-size:17px;font-weight:700;}
+.modal-header .close{background:none;border:none;font-size:22px;color:var(--text-light);cursor:pointer;}
+.modal-body{padding:22px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
 .form-group.full{grid-column:1/-1;}
-.form-group label{font-size:12px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.3px;}
-.form-group input,.form-group select,.form-group textarea{padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;outline:none;}
+.form-group label{font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;letter-spacing:.3px;}
+.form-group input,.form-group select,.form-group textarea{padding:9px 13px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;outline:none;}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);}
 .form-group textarea{min-height:70px;resize:vertical;}
-.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px;position:sticky;bottom:0;background:var(--card);}
-.modal-footer button{padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;border:none;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--card);}
+.modal-footer button{padding:9px 20px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;border:none;}
 .btn-cancel{background:var(--bg);color:var(--text);}
 .btn-save{background:var(--primary);color:#fff;}
-/* Bulk unit preview */
-.unit-preview{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:14px;max-height:160px;overflow-y:auto;margin-top:8px;}
-.unit-preview .preview-tag{display:inline-block;background:#dbeafe;color:#1e40af;padding:3px 8px;border-radius:4px;font-size:12px;margin:3px;}
-/* Settings form */
-.settings-form{display:flex;flex-direction:column;gap:0;}
-.settings-row{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);gap:20px;}
-.settings-row label{font-size:14px;font-weight:600;min-width:160px;}
-.settings-row input{flex:1;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;}
+/* Unit preview */
+.unit-preview{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:12px;max-height:140px;overflow-y:auto;margin-top:6px;}
+.preview-tag{display:inline-block;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:11px;margin:2px;}
+/* Settings */
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:13px 20px;border-bottom:1px solid var(--border);gap:20px;}
+.settings-row label{font-size:13px;font-weight:600;min-width:160px;}
+.settings-row input{flex:1;padding:7px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;}
 .settings-row input:focus{border-color:var(--primary);}
-.settings-row input[readonly]{background:#f8fafc;color:var(--text-light);}
-.logo-preview{width:80px;height:80px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#f8fafc;}
-.logo-placeholder{width:80px;height:80px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text-light);}
-/* Section */
+.logo-preview{width:72px;height:72px;object-fit:contain;border-radius:8px;border:1px solid var(--border);}
+.logo-placeholder{width:72px;height:72px;border-radius:8px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text-light);}
+/* Sections */
 .section{display:none;}
 .section.active{display:block;}
-.section-title{font-size:24px;font-weight:700;margin-bottom:20px;}
+.section-title{font-size:22px;font-weight:700;margin-bottom:18px;}
+/* Report cards */
+.report-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px;}
+.report-card{background:var(--card);border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,.05);cursor:pointer;border:2px solid transparent;transition:.2s;}
+.report-card:hover{border-color:var(--primary);transform:translateY(-2px);}
+.report-card .icon{font-size:32px;margin-bottom:10px;}
+.report-card h3{font-size:15px;font-weight:700;margin-bottom:6px;}
+.report-card p{font-size:12px;color:var(--text-light);}
 /* Toast */
-.toast{position:fixed;bottom:24px;right:24px;padding:14px 24px;border-radius:10px;color:#fff;font-weight:600;font-size:14px;z-index:400;transform:translateY(100px);opacity:0;transition:.3s;max-width:320px;}
+.toast{position:fixed;bottom:24px;right:24px;padding:13px 22px;border-radius:10px;color:#fff;font-weight:600;font-size:13px;z-index:400;transform:translateY(100px);opacity:0;transition:.3s;max-width:320px;}
 .toast.show{transform:translateY(0);opacity:1;}
 .toast.success{background:var(--success);}
 .toast.error{background:var(--danger);}
+.toast.info{background:#3b82f6;}
 /* Prompt */
-.prompt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px;}
+.prompt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:16px;}
 .prompt-overlay.active{display:flex;}
-.prompt-box{background:var(--card);border-radius:16px;padding:32px;max-width:400px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
-.prompt-box h3{font-size:18px;margin-bottom:10px;}
-.prompt-box p{color:var(--text-light);margin-bottom:24px;font-size:14px;}
-.prompt-buttons{display:flex;gap:12px;justify-content:center;}
-.prompt-buttons button{padding:10px 24px;border-radius:8px;font-weight:600;cursor:pointer;border:none;}
+.prompt-box{background:var(--card);border-radius:16px;padding:28px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.prompt-box h3{font-size:17px;margin-bottom:10px;}
+.prompt-box p{color:var(--text-light);margin-bottom:22px;font-size:13px;}
+.prompt-buttons{display:flex;gap:10px;justify-content:center;}
+.prompt-buttons button{padding:9px 22px;border-radius:8px;font-weight:600;cursor:pointer;border:none;}
 .btn-yes{background:var(--primary);color:#fff;}
 .btn-no{background:var(--bg);color:var(--text);}
+.btn-yes.danger{background:var(--danger);}
+/* Undo bar */
+.undo-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;display:flex;align-items:center;gap:16px;font-size:13px;z-index:350;transition:.3s;white-space:nowrap;}
+.undo-bar.show{transform:translateX(-50%) translateY(0);}
+.undo-bar button{padding:5px 14px;background:#fff;color:#1e293b;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;}
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%);}
-  .sidebar.open{transform:translateX(0);}
-  .main{margin-left:0;}
-  .topbar .mobile-menu{display:block;}
+  .sidebar{transform:translateX(-100%);} .sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;} .topbar .mobile-menu{display:block;}
   .stats-grid{grid-template-columns:repeat(2,1fr);}
   .form-grid{grid-template-columns:1fr;}
-  .data-table{overflow-x:auto;}
-  table{min-width:600px;}
+  .data-table{overflow-x:auto;} table{min-width:600px;}
   .quick-actions{overflow-x:auto;flex-wrap:nowrap;padding-bottom:8px;}
   .modal{max-height:95vh;}
   .table-header{flex-direction:column;align-items:flex-start!important;}
-  .table-header .search{width:100%!important;}
-  .settings-row{flex-direction:column;align-items:flex-start;}
+  .search{width:100%!important;}
+  .sidebar .user-info{width:100%;}
 }
 </style>
 </head>
 <body>
 <div class="app">
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="logo" id="sidebarLogo">
       <span class="logo-icon">🏢</span>
@@ -170,12 +191,12 @@ tr:hover{background:#f8fafc;}
       <a onclick="showSection('expenses',event)">📑 Expenses</a>
       <a onclick="showSection('invoices',event)">📄 Invoices</a>
       <a onclick="showSection('receipts',event)">🧾 Receipts</a>
+      <div class="nav-section">Analytics</div>
+      <a onclick="showSection('reports',event)">📈 Reports</a>
       <div class="nav-section" id="navAdminLabel">Admin</div>
       <a onclick="showSection('users',event)" id="navUsers">🔐 Users</a>
-      <a onclick="showSection('settings',event)" id="navSettings">⚙️ Settings</a>
-      <div class="nav-section">Reports</div>
-      <a onclick="showSection('reports',event)">📈 Reports</a>
       <a onclick="showSection('archive',event)" id="navArchive">🗃️ Archive</a>
+      <a onclick="showSection('settings',event)" id="navSettings">⚙️ Settings</a>
     </nav>
     <div class="user-info">
       <div class="name" id="userName">Loading...</div>
@@ -190,205 +211,221 @@ tr:hover{background:#f8fafc;}
       <h1 id="pageTitle">Dashboard</h1>
       <div class="date" id="dashDate"></div>
     </div>
-  <div class="section" id="sec-reports">
-  <div class="section-title">Reports</div>
-  <div class="quick-actions">
-    <button onclick="openReportModal('portfolio')">📊 Portfolio Report</button>
-    <button onclick="openReportModal('landlord')">👤 Landlord Report</button>
-    <button onclick="openReportModal('tenant')">👥 Tenant Statement</button>
-    <button class="secondary" onclick="openBulkInvoiceModal()">📄 Bulk Invoices</button>
-  </div>
-   <div class="section" id="sec-archive">
-  <div class="section-title">Deleted Records Archive</div>
-  <div class="data-table">
-    <div class="table-header">
-      <h3>Archive</h3>
-      <div style="display:flex;gap:8px">
-        <select id="archiveTypeFilter" onchange="loadArchive()" style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px">
-          <option value="">All types</option>
-          <option value="tenant">Tenants</option>
-          <option value="landlord">Landlords</option>
-        </select>
-        <input id="archiveSearch" class="search" placeholder="Search by name..." oninput="loadArchive()" style="width:200px">
-      </div>
-    </div>
-    <table><thead><tr><th>Deleted At</th><th>Type</th><th>ID</th><th>Name</th><th>Deleted By</th></tr></thead>
-    <tbody id="archiveTable"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Select a filter or search to load archive</td></tr></tbody></table>
-  </div>
-</div>
     <div class="content">
 
-      <!-- ── DASHBOARD ── -->
+      <!-- ══ DASHBOARD ══ -->
       <div class="section active" id="sec-dashboard">
+        <div class="alert-bar" id="rentDueBar"></div>
         <div class="stats-grid">
           <div class="stat-card"><div class="label">Landlords</div><div class="value" id="statLandlords">—</div></div>
           <div class="stat-card"><div class="label">Properties</div><div class="value" id="statProperties">—</div></div>
           <div class="stat-card"><div class="label">Units</div><div class="value" id="statUnits">—</div></div>
-          <div class="stat-card"><div class="label">Tenants</div><div class="value" id="statTenants">—</div></div>
+          <div class="stat-card"><div class="label">Active Tenants</div><div class="value" id="statTenants">—</div></div>
           <div class="stat-card"><div class="label">Occupied</div><div class="value" id="statOccupied">—</div></div>
           <div class="stat-card warning"><div class="label">Vacant</div><div class="value" id="statVacant">—</div></div>
-          <div class="stat-card"><div class="label">Total Rent Collected</div><div class="value" id="statRent">—</div></div>
-          <div class="stat-card"><div class="label">Total Expenses</div><div class="value" id="statExpenses">—</div></div>
-          <div class="stat-card danger"><div class="label">Total Arrears</div><div class="value" id="statArrears">—</div></div>
+          <div class="stat-card"><div class="label">Rent Collected</div><div class="value" id="statRent" style="font-size:16px">—</div></div>
+          <div class="stat-card"><div class="label">Total Expenses</div><div class="value" id="statExpenses" style="font-size:16px">—</div></div>
+          <div class="stat-card danger"><div class="label">Total Arrears</div><div class="value" id="statArrears" style="font-size:16px">—</div></div>
           <div class="stat-card danger"><div class="label">Tenants in Arrears</div><div class="value" id="statArrearsCount">—</div></div>
         </div>
-        <!-- Critical Arrears Widget -->
-        <div class="arrears-widget" id="criticalArrearsWidget" style="display:none">
-          <h3>🚨 Critical Arrears <span id="criticalArrearsSubtitle" style="font-size:13px;font-weight:400;color:var(--text-light)"></span></h3>
-          <div class="arrears-list" id="criticalArrearsList"></div>
-          <div style="margin-top:12px"><button class="secondary" style="padding:8px 16px;border-radius:8px;border:1px solid var(--primary);background:var(--card);color:var(--primary);font-weight:600;font-size:13px;cursor:pointer" onclick="showSection('arrears',event)">View All Arrears →</button></div>
+        <div class="arrears-widget" id="criticalWidget" style="display:none">
+          <h3>🚨 Critical Arrears <span id="criticalSub" style="font-size:12px;font-weight:400;color:var(--text-light)"></span></h3>
+          <div class="arrears-list" id="criticalList"></div>
+          <div style="margin-top:12px"><button class="secondary" style="padding:7px 14px;border-radius:8px;border:1px solid var(--primary);background:var(--card);color:var(--primary);font-weight:600;font-size:12px;cursor:pointer" onclick="showSection('arrears',event)">View All Arrears →</button></div>
         </div>
         <div class="quick-actions">
-          <button onclick="openModal('landlord')">+ Add Landlord</button>
-          <button onclick="openModal('property')">+ Add Property</button>
-          <button onclick="openModal('unit')">+ Add Unit</button>
-          <button onclick="openModal('tenant')">+ Add Tenant</button>
+          <button onclick="openModal('landlord')">+ Landlord</button>
+          <button onclick="openModal('property')">+ Property</button>
+          <button onclick="openModal('unit')">+ Unit</button>
+          <button onclick="openModal('tenant')">+ Tenant</button>
           <button class="secondary" onclick="openModal('rent')">+ Record Rent</button>
-          <button class="secondary" onclick="openModal('expense')">+ Add Expense</button>
-          <button class="secondary" onclick="openModal('invoice')">+ Create Invoice</button>
+          <button class="secondary" onclick="openModal('expense')">+ Expense</button>
+          <button class="secondary" onclick="openModal('invoice')">+ Invoice</button>
         </div>
       </div>
 
-      <!-- ── LANDLORDS ── -->
+      <!-- ══ LANDLORDS ══ -->
       <div class="section" id="sec-landlords">
         <div class="section-title">Landlords</div>
         <div class="quick-actions"><button onclick="openModal('landlord')">+ Add Landlord</button></div>
         <div class="data-table">
-          <div class="table-header"><h3>All Landlords</h3><input class="search" placeholder="Search..." oninput="filterTable('landlordsTable',this.value)"></div>
+          <div class="table-header"><h3>All Landlords</h3><input class="search" placeholder="Search..." oninput="filterTable('tLandlords',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Commission</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="landlordsTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <tbody id="tLandlords"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- ── PROPERTIES ── -->
+      <!-- ══ PROPERTIES ══ -->
       <div class="section" id="sec-properties">
         <div class="section-title">Properties</div>
         <div class="quick-actions"><button onclick="openModal('property')">+ Add Property</button></div>
         <div class="data-table">
-          <div class="table-header"><h3>All Properties</h3><input class="search" placeholder="Search..." oninput="filterTable('propertiesTable',this.value)"></div>
+          <div class="table-header"><h3>All Properties</h3><input class="search" placeholder="Search..." oninput="filterTable('tProperties',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Name</th><th>Landlord</th><th>Address</th><th>Type</th><th>Units</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="propertiesTable"><tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <tbody id="tProperties"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- ── UNITS ── -->
+      <!-- ══ UNITS ══ -->
       <div class="section" id="sec-units">
         <div class="section-title">Units</div>
         <div class="quick-actions">
           <button onclick="openModal('unit')">+ Add Unit</button>
-          <button class="secondary" onclick="openModal('bulk_unit')">+ Add Units in Bulk</button>
+          <button class="secondary" onclick="openModal('bulk_unit')">+ Bulk Add Units</button>
         </div>
         <div class="data-table">
-          <div class="table-header"><h3>All Units</h3><input class="search" placeholder="Search..." oninput="filterTable('unitsTable',this.value)"></div>
+          <div class="table-header"><h3>All Units</h3><input class="search" placeholder="Search..." oninput="filterTable('tUnits',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Property</th><th>Unit No.</th><th>Type</th><th>Rent (UGX)</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="unitsTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <tbody id="tUnits"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- ── TENANTS ── -->
+      <!-- ══ TENANTS ══ -->
       <div class="section" id="sec-tenants">
         <div class="section-title">Tenants</div>
         <div class="quick-actions"><button onclick="openModal('tenant')">+ Add Tenant</button></div>
         <div class="data-table">
-          <div class="table-header"><h3>All Tenants</h3><input class="search" placeholder="Search..." oninput="filterTable('tenantsTable',this.value)"></div>
-          <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Unit</th><th>Rent (UGX)</th><th>Lease End</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="tenantsTable"><tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <div class="table-header"><h3>All Tenants</h3><input class="search" placeholder="Search..." oninput="filterTable('tTenants',this.value)"></div>
+          <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Unit</th><th>Monthly Rent</th><th>Lease End</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tTenants"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- ── RENT ── -->
+      <!-- ══ RENT ══ -->
       <div class="section" id="sec-rent">
         <div class="section-title">Rent Collection</div>
         <div class="quick-actions"><button onclick="openModal('rent')">+ Record Payment</button></div>
         <div class="data-table">
-          <div class="table-header"><h3>Payment History</h3><input class="search" placeholder="Search..." oninput="filterTable('rentTable',this.value)"></div>
-          <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody id="rentTable"><tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr></tbody></table>
-          <div class="pagination" id="rentPagination" style="display:none"></div>
+          <div class="table-header"><h3>Payment History</h3><input class="search" placeholder="Search..." oninput="filterTable('tRent',this.value)"></div>
+          <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Type</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="tRent"><tr class="sk-row"><td colspan="9"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="pagination" id="pgRent" style="display:none"></div>
         </div>
       </div>
 
-      <!-- ── ARREARS ── -->
+      <!-- ══ ARREARS ══ -->
       <div class="section" id="sec-arrears">
         <div class="section-title">Arrears</div>
         <div class="data-table">
           <div class="table-header"><h3>Outstanding Rent</h3></div>
-          <table><thead><tr><th>Tenant</th><th>Unit</th><th>Monthly Rent</th><th>Months Due</th><th>Total Due (UGX)</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="arrearsTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <table><thead><tr><th>Tenant</th><th>Unit</th><th>Property</th><th>Monthly Rent</th><th>Months Due</th><th>Balance (UGX)</th><th>Level</th><th>Actions</th></tr></thead>
+          <tbody id="tArrears"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- ── EXPENSES ── -->
+      <!-- ══ EXPENSES ══ -->
       <div class="section" id="sec-expenses">
         <div class="section-title">Expenses</div>
         <div class="quick-actions"><button onclick="openModal('expense')">+ Add Expense</button></div>
         <div class="data-table">
-          <div class="table-header"><h3>All Expenses</h3><input class="search" placeholder="Search..." oninput="filterTable('expensesTable',this.value)"></div>
+          <div class="table-header"><h3>All Expenses</h3><input class="search" placeholder="Search..." oninput="filterTable('tExpenses',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Property</th><th>Category</th><th>Description</th><th>Amount (UGX)</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody id="expensesTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
-          <div class="pagination" id="expensesPagination" style="display:none"></div>
+          <tbody id="tExpenses"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="pagination" id="pgExpenses" style="display:none"></div>
         </div>
       </div>
 
-      <!-- ── INVOICES ── -->
+      <!-- ══ INVOICES ══ -->
       <div class="section" id="sec-invoices">
         <div class="section-title">Invoices</div>
-        <div class="quick-actions"><button onclick="openModal('invoice')">+ Create Invoice</button></div>
+        <div class="quick-actions">
+          <button onclick="openModal('invoice')">+ Create Invoice</button>
+          <button class="secondary" onclick="openModal('bulk_invoice')">+ Bulk Management Fees</button>
+        </div>
         <div class="data-table">
-          <div class="table-header"><h3>All Invoices</h3><input class="search" placeholder="Search..." oninput="filterTable('invoicesTable',this.value)"></div>
+          <div class="table-header"><h3>All Invoices</h3><input class="search" placeholder="Search..." oninput="filterTable('tInvoices',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Type</th><th>Entity</th><th>Description</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="invoicesTable"><tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr></tbody></table>
-          <div class="pagination" id="invoicesPagination" style="display:none"></div>
+          <tbody id="tInvoices"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="pagination" id="pgInvoices" style="display:none"></div>
         </div>
       </div>
 
-      <!-- ── RECEIPTS ── -->
+      <!-- ══ RECEIPTS ══ -->
       <div class="section" id="sec-receipts">
         <div class="section-title">Receipts</div>
         <div class="data-table">
-          <div class="table-header"><h3>All Receipts</h3><input class="search" placeholder="Search..." oninput="filterTable('receiptsTable',this.value)"></div>
-          <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
-          <tbody id="receiptsTable"><tr class="loading-row"><td colspan="8"><span class="spinner"></span>Loading…</td></tr></tbody></table>
-          <div class="pagination" id="receiptsPagination" style="display:none"></div>
+          <div class="table-header"><h3>All Receipts</h3><input class="search" placeholder="Search..." oninput="filterTable('tReceipts',this.value)"></div>
+          <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Type</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="tReceipts"><tr class="sk-row"><td colspan="9"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="pagination" id="pgReceipts" style="display:none"></div>
         </div>
       </div>
 
-      <!-- ── USERS ── -->
+      <!-- ══ REPORTS ══ -->
+      <div class="section" id="sec-reports">
+        <div class="section-title">Reports & Analytics</div>
+        <div class="report-cards">
+          <div class="report-card" onclick="openReportModal('portfolio')">
+            <div class="icon">📊</div>
+            <h3>Portfolio Report</h3>
+            <p>Full summary — all properties, rent collected, expenses, occupancy & arrears across the portfolio.</p>
+          </div>
+          <div class="report-card" onclick="openReportModal('landlord')">
+            <div class="icon">👤</div>
+            <h3>Landlord Report</h3>
+            <p>Per-landlord statement — rent collected, management fee, expenses, arrears & net disbursement.</p>
+          </div>
+          <div class="report-card" onclick="openReportModal('tenant')">
+            <div class="icon">👥</div>
+            <h3>Tenant Statement</h3>
+            <p>Individual tenant payment history, outstanding balance & lease details for any date range.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ USERS ══ -->
       <div class="section" id="sec-users">
         <div class="section-title">Users</div>
-        <div class="quick-actions" id="usersActions" style="display:none">
+        <div class="quick-actions" id="usersActionsBar" style="display:none">
           <button onclick="openModal('user')">+ Add User</button>
         </div>
         <div class="data-table">
           <div class="table-header"><h3>All Users</h3></div>
           <table><thead><tr><th>ID</th><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody id="usersTable"><tr class="loading-row"><td colspan="7"><span class="spinner"></span>Loading…</td></tr></tbody></table>
+          <tbody id="tUsers"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
         </div>
       </div>
 
-      <!-- ── SETTINGS ── -->
+      <!-- ══ ARCHIVE ══ -->
+      <div class="section" id="sec-archive">
+        <div class="section-title">Deleted Records Archive</div>
+        <div class="data-table">
+          <div class="table-header">
+            <h3>Archive</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <select id="archiveTypeFilter" onchange="loadArchive()" style="padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+                <option value="">All types</option>
+                <option value="tenant">Tenants</option>
+                <option value="landlord">Landlords</option>
+              </select>
+              <input id="archiveSearch" class="search" placeholder="Search by name..." oninput="loadArchive()" style="width:180px">
+            </div>
+          </div>
+          <table><thead><tr><th>Deleted At</th><th>Type</th><th>ID</th><th>Name / Label</th><th>Deleted By</th></tr></thead>
+          <tbody id="tArchive"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Use the filters above to search deleted records.</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS ══ -->
       <div class="section" id="sec-settings">
         <div class="section-title">Settings</div>
-        <div class="data-table" style="max-width:680px;">
+        <div class="data-table" style="max-width:680px">
           <div class="table-header">
             <h3>System Settings</h3>
-            <button id="saveSettingsBtn" style="display:none;padding:10px 20px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer" onclick="saveSettings()">💾 Save Settings</button>
+            <button id="saveSettingsBtn" style="display:none;padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px" onclick="saveSettings()">💾 Save Settings</button>
           </div>
-          <!-- Logo section -->
           <div class="settings-row" id="logoRow" style="display:none">
             <label>Company Logo</label>
-            <div style="display:flex;align-items:center;gap:16px">
+            <div style="display:flex;align-items:center;gap:14px">
               <div id="logoPreviewWrap"><div class="logo-placeholder">🏢</div></div>
               <div>
                 <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
-                <button onclick="document.getElementById('logoFileInput').click()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;background:var(--card)">📁 Choose Logo</button>
-                <div style="font-size:12px;color:var(--text-light);margin-top:6px">PNG, JPG — max 500KB recommended</div>
+                <button onclick="document.getElementById('logoFileInput').click()" style="padding:7px 14px;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;background:var(--card)">📁 Choose Logo</button>
+                <div style="font-size:11px;color:var(--text-light);margin-top:4px">PNG / JPG — max 800KB</div>
               </div>
             </div>
           </div>
-          <div class="settings-form" id="settingsForm">
-            <div style="padding:30px;text-align:center;color:var(--text-light)"><span class="spinner"></span> Loading settings…</div>
-          </div>
+          <div id="settingsForm"><div style="padding:28px;text-align:center;color:var(--text-light)">Loading settings…</div></div>
         </div>
       </div>
 
@@ -399,7 +436,7 @@ tr:hover{background:#f8fafc;}
 <!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalBox">
-    <div class="modal-header"><h2 id="modalTitle">Add New</h2><button class="close" onclick="closeModal()">×</button></div>
+    <div class="modal-header"><h2 id="modalTitle">—</h2><button class="close" onclick="closeModal()">×</button></div>
     <div class="modal-body" id="modalBody"></div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -408,16 +445,22 @@ tr:hover{background:#f8fafc;}
   </div>
 </div>
 
-<!-- Prompt -->
+<!-- Prompt / Confirm -->
 <div class="prompt-overlay" id="promptOverlay" onclick="if(event.target===this)closePrompt()">
   <div class="prompt-box">
     <h3 id="promptTitle">Confirm</h3>
-    <p id="promptMessage"></p>
+    <p id="promptMessage" style="word-break:break-word"></p>
     <div class="prompt-buttons">
       <button class="btn-yes" id="promptYes">Yes</button>
       <button class="btn-no" onclick="closePrompt()">No</button>
     </div>
   </div>
+</div>
+
+<!-- Undo bar -->
+<div class="undo-bar" id="undoBar">
+  <span id="undoMsg">Deleted</span>
+  <button onclick="triggerUndo()">↩ Undo</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -427,39 +470,42 @@ const USER = <%- JSON.stringify(user) %>;
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let landlords=[], properties=[], units=[], tenants=[], rentData=[], allUsers=[], settings={};
-let currentForm='', editingId=null;
-let pendingLogoBase64 = null;
-const pgState = { rent:{page:1,pages:1}, expenses:{page:1,pages:1}, invoices:{page:1,pages:1}, receipts:{page:1,pages:1} };
+let currentForm='', editingId=null, pendingLogoBase64=null;
+let undoTimer=null, undoAction=null;
+const pgState={rent:{page:1,pages:1},expenses:{page:1,pages:1},invoices:{page:1,pages:1},receipts:{page:1,pages:1}};
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+const fmtUGX = n => 'UGX ' + Number(n||0).toLocaleString();
 
 // ── Accessors ─────────────────────────────────────────────────────────────────
-const isActive = x => (x.Status||x.status||'Active').toLowerCase()==='active';
-const isVacant = u => (u.Status||u.status||'Vacant').toLowerCase()==='vacant';
+const isActive = x=>(x.Status||x.status||'Active').toLowerCase()==='active';
+const isVacant = u=>(u.Status||u.status||'Vacant').toLowerCase()==='vacant';
 const ll={id:l=>l.ID||'',name:l=>l.Name||'',phone:l=>l.Phone||'',email:l=>l.Email||'',comm:l=>l['Commission Rate']||'10',status:l=>l.Status||'Active',addr:l=>l.Address||'',bank:l=>l['Bank Name']||'',acct:l=>l['Bank Account']||''};
 const pr={id:p=>p.ID||'',name:p=>p.Name||'',llid:p=>p['Landlord ID']||'',llname:p=>p['Landlord Name']||'',addr:p=>p.Address||'',type:p=>p.Type||'Residential',units:p=>p['Total Units']||'0',status:p=>p.Status||'Active'};
 const un={id:u=>u.ID||'',prop:u=>u['Property ID']||'',pname:u=>u['Property Name']||'',num:u=>u['Unit Number']||'',type:u=>u.Type||'Studio',rent:u=>u.Rent||'0',desc:u=>u.Description||'',status:u=>u.Status||'Vacant'};
 const tn={id:t=>t.ID||'',name:t=>t.Name||'',phone:t=>t.Phone||'',email:t=>t.Email||'',idno:t=>t['ID Number']||'',unit:t=>t['Unit ID']||'',unum:t=>t['Unit Number']||'',start:t=>t['Lease Start']||'',end:t=>t['Lease End']||'',rent:t=>t['Rent Amount']||'0',deposit:t=>t.Deposit||'0',status:t=>t.Status||'Active'};
-const rn={id:r=>r.ID||'',tenant:r=>r['Tenant ID']||'',tname:r=>r['Tenant Name']||'',unit:r=>r['Unit ID']||'',unum:r=>r['Unit Number']||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r['Payment Method']||'Cash',date:r=>r.Date||''};
+const rn={id:r=>r.ID||'',tenant:r=>r['Tenant ID']||'',tname:r=>r['Tenant Name']||'',unit:r=>r['Unit ID']||'',unum:r=>r['Unit Number']||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r['Payment Method']||'Cash',ptype:r=>r['payment_type']||r.PaymentType||'Full',date:r=>r.Date||''};
 const ex={id:e=>e.ID||'',prop:e=>e['Property ID']||'',pname:e=>e['Property Name']||'',cat:e=>e.Category||'',desc:e=>e.Description||'',amt:e=>e.Amount||'0',date:e=>e.Date||''};
 const inv={id:i=>i.ID||'',type:i=>i.Type||'',eid:i=>i.EntityId||'',ename:i=>i.EntityName||'',desc:i=>i.Description||'',amt:i=>i.Amount||'0',month:i=>i.Month||'',year:i=>i.Year||'',status:i=>i.Status||'Unpaid'};
-const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r.PaymentMethod||'Cash',date:r=>r.Date||''};
+const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r.PaymentMethod||'Cash',ptype:r=>r.payment_type||r.PaymentType||'Full',date:r=>r.Date||''};
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('userName').textContent = USER.name||USER.username;
-  document.getElementById('userRole').textContent = USER.role;
-  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  if(USER.role!=='Admin'){
-    ['navAdminLabel','navUsers','navSettings'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('userName').textContent=USER.name||USER.username;
+  document.getElementById('userRole').textContent=USER.role;
+  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(USER.role==='Admin'){
+    document.getElementById('usersActionsBar').style.display='flex';
+    document.getElementById('saveSettingsBtn').style.display='block';
+    document.getElementById('logoRow').style.display='flex';
   } else {
-    const ua=document.getElementById('usersActions'); if(ua) ua.style.display='flex';
-    const sb=document.getElementById('saveSettingsBtn'); if(sb) sb.style.display='block';
-    const lr=document.getElementById('logoRow'); if(lr) lr.style.display='flex';
+    ['navAdminLabel','navUsers','navArchive','navSettings'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   }
   loadAllData();
 });
+function logout(){window.location.href='/logout';}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
 
-function logout(){ window.location.href='/logout'; }
-function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
 function showSection(id,e){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
@@ -470,9 +516,9 @@ function showSection(id,e){
   if(id==='arrears') renderArrears();
 }
 
-// ── Data Loading ──────────────────────────────────────────────────────────────
+// ── Data loading ──────────────────────────────────────────────────────────────
 async function loadAllData(){
-  try {
+  try{
     const s=await fetch('/api/stats').then(r=>r.json());
     document.getElementById('statLandlords').textContent=s.landlords||0;
     document.getElementById('statProperties').textContent=s.properties||0;
@@ -480,76 +526,84 @@ async function loadAllData(){
     document.getElementById('statTenants').textContent=s.tenants||0;
     document.getElementById('statOccupied').textContent=s.occupied||0;
     document.getElementById('statVacant').textContent=s.vacant||0;
-    document.getElementById('statRent').textContent='UGX '+Number(s.totalRent||0).toLocaleString();
-    document.getElementById('statExpenses').textContent='UGX '+Number(s.totalExpenses||0).toLocaleString();
-  } catch(e){ console.error('Stats',e); }
-
-  const load = async (url,fb=[])=>{ try{ return await fetch(url).then(r=>r.json()); }catch(e){ return fb; } };
-  landlords  = await load('/api/landlords');  renderLandlords();
-  properties = await load('/api/properties'); renderProperties();
-  units      = await load('/api/units');      renderUnits();
-  tenants    = await load('/api/tenants');    renderTenants();
-  settings   = await load('/api/settings',{}); renderSettings(); applyBranding();
-  if(USER.role==='Admin'){ allUsers=await load('/api/users',[]); renderUsers(); }
-  await loadPage('rent',1);
-  await loadPage('expenses',1);
-  await loadPage('invoices',1);
-  await loadPage('receipts',1);
-  // After all data loaded, compute arrears for dashboard
+    document.getElementById('statRent').textContent=fmtUGX(s.totalRent);
+    document.getElementById('statExpenses').textContent=fmtUGX(s.totalExpenses);
+  }catch(e){console.error('stats',e);}
+  const load=async(url,fb=[])=>{try{return await fetch(url).then(r=>r.json());}catch(e){return fb;}};
+  landlords =await load('/api/landlords');  renderLandlords();
+  properties=await load('/api/properties'); renderProperties();
+  units     =await load('/api/units');      renderUnits();
+  tenants   =await load('/api/tenants');    renderTenants();
+  settings  =await load('/api/settings',{}); renderSettings(); applyBranding();
+  if(USER.role==='Admin'){allUsers=await load('/api/users',[]); renderUsers();}
+  await Promise.all([loadPage('rent',1),loadPage('expenses',1),loadPage('invoices',1),loadPage('receipts',1)]);
   computeDashboardArrears();
+  loadRentDueStatus();
 }
 
-// ── Arrears computation ───────────────────────────────────────────────────────
-function computeArrearsForAll(){
+// ── Rent due alert ────────────────────────────────────────────────────────────
+async function loadRentDueStatus(){
+  try{
+    const d=await fetch('/api/rent/due-status').then(r=>r.json());
+    const bar=document.getElementById('rentDueBar');
+    if(!bar) return;
+    if(d.dueToday){
+      bar.style.display='flex'; bar.style.background='#fef3c7'; bar.style.borderColor='#f59e0b';
+      bar.innerHTML=`<span style="font-size:18px">📅</span><strong style="color:#92400e">Rent is due today (1st of the month).</strong><span style="color:#92400e">&nbsp;${d.totalUnpaid} tenant${d.totalUnpaid!==1?'s':''} have not yet paid.</span>`;
+    } else if(d.overdueCount>0){
+      bar.style.display='flex'; bar.style.background='#fee2e2'; bar.style.borderColor='#ef4444';
+      bar.innerHTML=`<span style="font-size:18px">⚠️</span><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">&nbsp;— rent was due on the 1st.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:5px 12px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer">View →</button>`;
+    } else {
+      bar.style.display='none';
+    }
+  }catch(e){console.error('due-status',e);}
+}
+
+// ── Arrears ───────────────────────────────────────────────────────────────────
+function computeArrearsAll(){
   const now=new Date(); const arr=[];
   tenants.filter(t=>isActive(t)).forEach(t=>{
     const u=units.find(x=>un.id(x)===tn.unit(t));
     const rentAmt=parseFloat(tn.rent(t))||0; if(!rentAmt) return;
-    const leaseStart=tn.start(t)?new Date(tn.start(t)):null; if(!leaseStart) return;
+    const ls=tn.start(t)?new Date(tn.start(t)):null; if(!ls) return;
     const paid=new Set(rentData.filter(r=>rn.tenant(r)===tn.id(t)).map(r=>`${rn.year(r)}-${String(rn.month(r)).padStart(2,'0')}`));
-    let due=0; const check=new Date(leaseStart); check.setMonth(check.getMonth()+1);
-    while(check<=now){ const ym=`${check.getFullYear()}-${String(check.getMonth()+1).padStart(2,'0')}`; if(!paid.has(ym)) due++; check.setMonth(check.getMonth()+1); }
+    let due=0; const check=new Date(ls); check.setMonth(check.getMonth()+1);
+    while(check<=now){const ym=`${check.getFullYear()}-${String(check.getMonth()+1).padStart(2,'0')}`;if(!paid.has(ym))due++;check.setMonth(check.getMonth()+1);}
     if(due>0) arr.push({t,u,rent:rentAmt,months:due,total:rentAmt*due});
   });
   return arr.sort((a,b)=>b.total-a.total);
 }
-
 function computeDashboardArrears(){
-  const arr=computeArrearsForAll();
-  const totalArrears=arr.reduce((s,a)=>s+a.total,0);
-  document.getElementById('statArrears').textContent='UGX '+totalArrears.toLocaleString();
+  const arr=computeArrearsAll();
+  const total=arr.reduce((s,a)=>s+a.total,0);
+  document.getElementById('statArrears').textContent=fmtUGX(total);
   document.getElementById('statArrearsCount').textContent=arr.length;
-  // Critical = 2+ months overdue
   const critical=arr.filter(a=>a.months>=2);
-  const widget=document.getElementById('criticalArrearsWidget');
-  if(!critical.length){ widget.style.display='none'; return; }
-  widget.style.display='block';
-  document.getElementById('criticalArrearsSubtitle').textContent=`— ${critical.length} tenant${critical.length>1?'s':''} with 2+ months overdue`;
-  const top5=critical.slice(0,5);
-  document.getElementById('criticalArrearsList').innerHTML=top5.map(a=>`
+  const w=document.getElementById('criticalWidget');
+  if(!critical.length){w.style.display='none';return;}
+  w.style.display='block';
+  document.getElementById('criticalSub').textContent=`— ${critical.length} tenant${critical.length!==1?'s':''} with 2+ months overdue`;
+  document.getElementById('criticalList').innerHTML=critical.slice(0,5).map(a=>`
     <div class="arrears-item">
-      <div>
-        <div class="ai-info">${tn.name(a.t)}</div>
-        <div class="ai-sub">Unit: ${a.u?un.num(a.u):'N/A'} &nbsp;|&nbsp; ${a.months} months overdue</div>
-      </div>
-      <div class="ai-amt">UGX ${a.total.toLocaleString()}</div>
+      <div><div class="ai-info">${tn.name(a.t)}</div><div class="ai-sub">Unit: ${a.u?un.num(a.u):'N/A'} &nbsp;|&nbsp; ${a.months} months</div></div>
+      <div class="ai-amt">${fmtUGX(a.total)}</div>
     </div>`).join('');
 }
-
 function renderArrears(){
-  const tb=document.getElementById('arrearsTable');
-  const arr=computeArrearsForAll();
-  if(!arr.length){ tb.innerHTML=empty(7,'✅','All tenants are up to date'); return; }
+  const arr=computeArrearsAll(); const tb=document.getElementById('tArrears');
+  if(!arr.length){tb.innerHTML=empty(8,'✅','All tenants are up to date');return;}
   tb.innerHTML=arr.map(a=>{
-    const level=a.months>=3?'danger':a.months>=2?'warning':'info';
-    const label=a.months>=3?'Critical':a.months>=2?'High':'Overdue';
+    const lv=a.months>=3?'danger':a.months>=2?'warning':'info';
+    const lb=a.months>=3?'Critical':a.months>=2?'High':'Overdue';
+    const p=a.u?properties.find(x=>pr.id(x)===un.prop(a.u)):null;
     return `<tr>
       <td><strong>${tn.name(a.t)}</strong></td>
       <td>${a.u?un.num(a.u):'N/A'}</td>
-      <td>${Number(a.rent).toLocaleString()}</td>
+      <td>${p?pr.name(p):'—'}</td>
+      <td>${fmtUGX(a.rent)}</td>
       <td>${a.months}</td>
-      <td style="font-weight:700;color:var(--danger)">UGX ${a.total.toLocaleString()}</td>
-      <td><span class="badge ${level}">${label}</span></td>
+      <td style="font-weight:700;color:var(--danger)">${fmtUGX(a.total)}</td>
+      <td><span class="badge ${lv}">${lb}</span></td>
       <td class="actions"><button class="btn-edit" onclick="openModal('rent',null,'${tn.id(a.t)}')">Record Payment</button></td>
     </tr>`;
   }).join('');
@@ -557,137 +611,188 @@ function renderArrears(){
 
 // ── Paginated loader ──────────────────────────────────────────────────────────
 async function loadPage(type,page){
-  const urlMap={rent:'/api/rent',expenses:'/api/expenses',invoices:'/api/invoices',receipts:'/api/receipts'};
-  try {
-    const res=await fetch(`${urlMap[type]}?page=${page}&limit=50`).then(r=>r.json());
+  const urls={rent:'/api/rent',expenses:'/api/expenses',invoices:'/api/invoices',receipts:'/api/receipts'};
+  try{
+    const res=await fetch(`${urls[type]}?page=${page}&limit=50`).then(r=>r.json());
     const rows=Array.isArray(res)?res:(res.data||[]);
     const pages=Array.isArray(res)?1:(res.pages||1);
     pgState[type]={page:Array.isArray(res)?1:(res.page||1),pages};
-    if(type==='rent'){ rentData=rows; renderRent(); renderPg('rent','rentPagination'); computeDashboardArrears(); }
-    if(type==='expenses'){ renderExpensesData(rows); renderPg('expenses','expensesPagination'); }
-    if(type==='invoices'){ renderInvoicesData(rows); renderPg('invoices','invoicesPagination'); }
-    if(type==='receipts'){ renderReceiptsData(rows); renderPg('receipts','receiptsPagination'); }
-  } catch(e){ console.error(`loadPage ${type}`,e); }
+    if(type==='rent'){rentData=rows;renderRent();renderPg('rent','pgRent');computeDashboardArrears();}
+    if(type==='expenses'){renderExpData(rows);renderPg('expenses','pgExpenses');}
+    if(type==='invoices'){renderInvData(rows);renderPg('invoices','pgInvoices');}
+    if(type==='receipts'){renderRcpData(rows);renderPg('receipts','pgReceipts');}
+  }catch(e){console.error('loadPage',type,e);}
 }
-
 function renderPg(type,cid){
-  const {page,pages}=pgState[type];
-  const el=document.getElementById(cid); if(!el) return;
-  if(pages<=1){ el.style.display='none'; return; }
+  const{page,pages}=pgState[type]; const el=document.getElementById(cid); if(!el)return;
+  if(pages<=1){el.style.display='none';return;}
   el.style.display='flex';
   const s=Math.max(1,page-2),e=Math.min(pages,page+2);
-  let btns='';
-  if(s>1) btns+=`<button onclick="loadPage('${type}',1)">1</button>`;
-  if(s>2) btns+=`<span style="padding:4px">…</span>`;
-  for(let i=s;i<=e;i++) btns+=`<button class="${i===page?'active':''}" onclick="loadPage('${type}',${i})">${i}</button>`;
-  if(e<pages-1) btns+=`<span style="padding:4px">…</span>`;
-  if(e<pages) btns+=`<button onclick="loadPage('${type}',${pages})">${pages}</button>`;
-  el.innerHTML=`<span>Page ${page} of ${pages}</span><div class="pg-btns"><button onclick="loadPage('${type}',${page-1})" ${page<=1?'disabled':''}>← Prev</button>${btns}<button onclick="loadPage('${type}',${page+1})" ${page>=pages?'disabled':''}>Next →</button></div>`;
+  let b='';
+  if(s>1)b+=`<button onclick="loadPage('${type}',1)">1</button>`;
+  if(s>2)b+=`<span style="padding:4px">…</span>`;
+  for(let i=s;i<=e;i++)b+=`<button class="${i===page?'active':''}" onclick="loadPage('${type}',${i})">${i}</button>`;
+  if(e<pages-1)b+=`<span style="padding:4px">…</span>`;
+  if(e<pages)b+=`<button onclick="loadPage('${type}',${pages})">${pages}</button>`;
+  el.innerHTML=`<span>Page ${page} of ${pages}</span><div class="pg-btns"><button onclick="loadPage('${type}',${page-1})" ${page<=1?'disabled':''}>← Prev</button>${b}<button onclick="loadPage('${type}',${page+1})" ${page>=pages?'disabled':''}>Next →</button></div>`;
 }
 
 // ── Render functions ──────────────────────────────────────────────────────────
 const empty=(n,icon,msg)=>`<tr><td colspan="${n}"><div class="empty-state"><div class="icon">${icon}</div><h3>${msg}</h3></div></td></tr>`;
 
 function renderLandlords(){
-  const tb=document.getElementById('landlordsTable');
-  if(!landlords.length){ tb.innerHTML=empty(7,'📋','No landlords yet'); return; }
-  tb.innerHTML=landlords.map(l=>`<tr><td>${ll.id(l)}</td><td><strong>${ll.name(l)}</strong></td><td>${ll.phone(l)}</td><td>${ll.email(l)}</td><td>${ll.comm(l)}%</td><td><span class="badge ${isActive(l)?'success':'danger'}">${ll.status(l)}</span></td><td class="actions"><button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button><button class="btn-delete" onclick="deleteLandlord('${ll.id(l)}')">Delete</button></td></tr>`).join('');
+  const tb=document.getElementById('tLandlords');
+  if(!landlords.length){tb.innerHTML=empty(7,'📋','No landlords yet');return;}
+  tb.innerHTML=landlords.map(l=>`<tr>
+    <td>${ll.id(l)}</td><td><strong>${ll.name(l)}</strong></td>
+    <td>${ll.phone(l)}</td><td>${ll.email(l)}</td>
+    <td>${ll.comm(l)}%</td>
+    <td><span class="badge ${isActive(l)?'success':'danger'}">${ll.status(l)}</span></td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
+      <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')">Delete</button>
+    </td></tr>`).join('');
 }
 function renderProperties(){
-  const tb=document.getElementById('propertiesTable');
-  if(!properties.length){ tb.innerHTML=empty(8,'🏘️','No properties yet'); return; }
-  tb.innerHTML=properties.map(p=>`<tr><td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td><td>${pr.llname(p)||pr.llid(p)}</td><td>${pr.addr(p)}</td><td>${pr.type(p)}</td><td>${pr.units(p)}</td><td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td><td class="actions"><button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button></td></tr>`).join('');
+  const tb=document.getElementById('tProperties');
+  if(!properties.length){tb.innerHTML=empty(8,'🏘️','No properties yet');return;}
+  tb.innerHTML=properties.map(p=>`<tr>
+    <td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td>
+    <td>${pr.llname(p)||pr.llid(p)}</td><td>${pr.addr(p)}</td>
+    <td>${pr.type(p)}</td><td>${pr.units(p)}</td>
+    <td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td>
+    <td class="actions"><button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button></td>
+  </tr>`).join('');
 }
 function renderUnits(){
-  const tb=document.getElementById('unitsTable');
-  if(!units.length){ tb.innerHTML=empty(7,'🚪','No units yet'); return; }
-  tb.innerHTML=units.map(u=>`<tr><td>${un.id(u)}</td><td>${un.pname(u)||un.prop(u)}</td><td><strong>${un.num(u)}</strong></td><td>${un.type(u)}</td><td>${Number(un.rent(u)||0).toLocaleString()}</td><td><span class="badge ${isVacant(u)?'warning':'success'}">${un.status(u)}</span></td><td class="actions"><button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button></td></tr>`).join('');
+  const tb=document.getElementById('tUnits');
+  if(!units.length){tb.innerHTML=empty(7,'🚪','No units yet');return;}
+  tb.innerHTML=units.map(u=>`<tr>
+    <td>${un.id(u)}</td><td>${un.pname(u)||un.prop(u)}</td>
+    <td><strong>${un.num(u)}</strong></td><td>${un.type(u)}</td>
+    <td>${fmtUGX(un.rent(u))}</td>
+    <td><span class="badge ${isVacant(u)?'warning':'success'}">${un.status(u)}</span></td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
+      <button class="btn-increase" onclick="openRentIncreaseModal('${un.id(u)}')">↑ Rent</button>
+    </td></tr>`).join('');
 }
 function renderTenants(){
-  const tb=document.getElementById('tenantsTable');
-  if(!tenants.length){ tb.innerHTML=empty(8,'👥','No tenants yet'); return; }
-  tb.innerHTML=tenants.map(t=>`<tr><td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td><td>${tn.phone(t)}</td><td>${tn.unum(t)||tn.unit(t)}</td><td>${Number(tn.rent(t)||0).toLocaleString()}</td><td>${tn.end(t)||'—'}</td><td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td><td class="actions"><button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button></td></tr>`).join('');
+  const tb=document.getElementById('tTenants');
+  if(!tenants.length){tb.innerHTML=empty(8,'👥','No tenants yet');return;}
+  tb.innerHTML=tenants.map(t=>`<tr>
+    <td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td>
+    <td>${tn.phone(t)}</td><td>${tn.unum(t)||tn.unit(t)}</td>
+    <td>${fmtUGX(tn.rent(t))}</td><td>${tn.end(t)||'—'}</td>
+    <td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
+      <button class="btn-view" onclick="openReportModal('tenant','${tn.id(t)}')">Statement</button>
+      <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')">Delete</button>
+    </td></tr>`).join('');
 }
 function renderRent(){
-  const tb=document.getElementById('rentTable');
-  if(!rentData.length){ tb.innerHTML=empty(8,'💰','No payments recorded'); return; }
-  tb.innerHTML=rentData.map(r=>`<tr><td>${rn.id(r)}</td><td>${rn.tname(r)||rn.tenant(r)}</td><td>${rn.unum(r)||rn.unit(r)}</td><td>${Number(rn.amt(r)||0).toLocaleString()}</td><td>${rn.month(r)} ${rn.year(r)}</td><td>${rn.method(r)}</td><td>${rn.date(r)}</td><td class="actions"><button class="btn-receipt" onclick="quickReceiptFromRent('${rn.id(r)}')">🧾 Receipt</button></td></tr>`).join('');
+  const tb=document.getElementById('tRent');
+  if(!rentData.length){tb.innerHTML=empty(9,'💰','No payments recorded');return;}
+  tb.innerHTML=rentData.map(r=>`<tr>
+    <td>${rn.id(r)}</td><td>${rn.tname(r)||rn.tenant(r)}</td>
+    <td>${rn.unum(r)||rn.unit(r)}</td>
+    <td><strong>${fmtUGX(rn.amt(r))}</strong></td>
+    <td>${rn.month(r)} ${rn.year(r)}</td>
+    <td><span class="badge ${rn.ptype(r)==='Full'?'success':'warning'}">${rn.ptype(r)}</span></td>
+    <td>${rn.method(r)}</td><td>${rn.date(r)}</td>
+    <td class="actions">
+      <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
+    </td></tr>`).join('');
 }
-function renderExpensesData(rows){
-  const tb=document.getElementById('expensesTable');
-  if(!rows.length){ tb.innerHTML=empty(7,'📑','No expenses recorded'); return; }
-  tb.innerHTML=rows.map(e=>`<tr><td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td><td>${ex.cat(e)}</td><td>${ex.desc(e)}</td><td>${Number(ex.amt(e)||0).toLocaleString()}</td><td>${ex.date(e)}</td><td class="actions"><button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button></td></tr>`).join('');
+function renderExpData(rows){
+  const tb=document.getElementById('tExpenses');
+  if(!rows.length){tb.innerHTML=empty(7,'📑','No expenses recorded');return;}
+  tb.innerHTML=rows.map(e=>`<tr>
+    <td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td>
+    <td>${ex.cat(e)}</td><td>${ex.desc(e)}</td>
+    <td>${fmtUGX(ex.amt(e))}</td><td>${ex.date(e)}</td>
+    <td class="actions"><button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button></td>
+  </tr>`).join('');
 }
-function renderInvoicesData(rows){
-  const tb=document.getElementById('invoicesTable');
-  if(!rows.length){ tb.innerHTML=empty(8,'📄','No invoices yet'); return; }
-  tb.innerHTML=rows.map(i=>`<tr><td>${inv.id(i)}</td><td>${inv.type(i)}</td><td>${inv.ename(i)}</td><td>${inv.desc(i)}</td><td>${Number(inv.amt(i)||0).toLocaleString()}</td><td>${inv.month(i)} ${inv.year(i)}</td><td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td><td class="actions"><button class="btn-view" onclick="viewInvoice('${inv.id(i)}')">View</button>${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}</td></tr>`).join('');
+function renderInvData(rows){
+  const tb=document.getElementById('tInvoices');
+  if(!rows.length){tb.innerHTML=empty(8,'📄','No invoices yet');return;}
+  tb.innerHTML=rows.map(i=>`<tr>
+    <td>${inv.id(i)}</td><td>${inv.type(i)}</td><td>${inv.ename(i)}</td>
+    <td>${inv.desc(i)}</td><td>${fmtUGX(inv.amt(i))}</td>
+    <td>${inv.month(i)} ${inv.year(i)}</td>
+    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
+    <td class="actions">
+      <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
+    </td></tr>`).join('');
 }
-function renderReceiptsData(rows){
-  const tb=document.getElementById('receiptsTable');
-  if(!rows.length){ tb.innerHTML=empty(8,'🧾','No receipts yet'); return; }
-  tb.innerHTML=rows.map(r=>`<tr><td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td><td>${Number(rc.amt(r)||0).toLocaleString()}</td><td>${rc.month(r)} ${rc.year(r)}</td><td>${rc.method(r)}</td><td>${rc.date(r)}</td><td class="actions"><button class="btn-view" onclick="viewReceipt('${rc.id(r)}')">View</button></td></tr>`).join('');
+function renderRcpData(rows){
+  const tb=document.getElementById('tReceipts');
+  if(!rows.length){tb.innerHTML=empty(9,'🧾','No receipts yet');return;}
+  tb.innerHTML=rows.map(r=>`<tr>
+    <td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td>
+    <td>${fmtUGX(rc.amt(r))}</td>
+    <td>${rc.month(r)} ${rc.year(r)}</td>
+    <td><span class="badge ${rc.ptype(r)==='Full'?'success':'warning'}">${rc.ptype(r)}</span></td>
+    <td>${rc.method(r)}</td><td>${rc.date(r)}</td>
+    <td class="actions">
+      <button class="btn-view" onclick="window.open('/api/receipts/${rc.id(r)}/pdf','_blank')">View</button>
+      <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱 WA</button>
+    </td></tr>`).join('');
 }
 function renderUsers(){
-  const tb=document.getElementById('usersTable');
-  if(!allUsers.length){ tb.innerHTML=empty(7,'🔐','No users found'); return; }
-  tb.innerHTML=allUsers.map(u=>`<tr><td>${u.ID||''}</td><td>${u.Name||''}</td><td>${u.Username||''}</td><td>${u.Email||''}</td><td><span class="badge info">${u.Role||'User'}</span></td><td><span class="badge ${(u.Status||'').toLowerCase()==='active'?'success':'danger'}">${u.Status||'Active'}</span></td><td class="actions">${USER.role==='Admin'?`<button class="btn-edit" onclick="editUser('${u.ID||''}')">Edit</button><button class="btn-pwd" onclick="setPassword('${u.ID||''}','${u.Name||u.Username||''}')">Set Password</button><button class="btn-delete" onclick="deactivateUser('${u.ID||''}')">Deactivate</button>`:'—'}</td></tr>`).join('');
+  const tb=document.getElementById('tUsers');
+  if(!allUsers.length){tb.innerHTML=empty(7,'🔐','No users found');return;}
+  tb.innerHTML=allUsers.map(u=>`<tr>
+    <td>${u.ID||''}</td><td>${u.Name||''}</td><td>${u.Username||''}</td>
+    <td>${u.Email||''}</td>
+    <td><span class="badge info">${u.Role||'User'}</span></td>
+    <td><span class="badge ${(u.Status||'').toLowerCase()==='active'?'success':'danger'}">${u.Status||'Active'}</span></td>
+    <td class="actions">${USER.role==='Admin'?`
+      <button class="btn-edit" onclick="editUser('${u.ID||''}')">Edit</button>
+      <button class="btn-pwd" onclick="setPassword('${u.ID||''}','${u.Name||u.Username||''}')">Set Pwd</button>
+      <button class="btn-delete" onclick="deactivateUser('${u.ID||''}','${u.Name||''}')">Deactivate</button>`:'—'}
+    </td></tr>`).join('');
 }
 
-// ── Settings render & save ────────────────────────────────────────────────────
-const SETTING_LABELS = {
-  company_name:'Company Name', company_address:'Address',
-  company_phone:'Phone', company_email:'Email',
-  currency:'Currency', vat_rate:'VAT Rate (%)'
-};
+// ── Settings ──────────────────────────────────────────────────────────────────
+const SETTING_LABELS={company_name:'Company Name',company_address:'Address',company_phone:'Phone',company_email:'Email',currency:'Currency',vat_rate:'VAT Rate (%)'};
 function renderSettings(){
+  if(settings.company_logo) document.getElementById('logoPreviewWrap').innerHTML=`<img class="logo-preview" src="${settings.company_logo}">`;
   const form=document.getElementById('settingsForm');
-  // Apply logo if exists
-  if(settings.company_logo){
-    document.getElementById('logoPreviewWrap').innerHTML=`<img class="logo-preview" src="${settings.company_logo}" alt="Logo">`;
-  }
   if(USER.role!=='Admin'){
-    // Read-only view for non-admins
     const entries=Object.entries(settings).filter(([k])=>k!=='company_logo');
-    if(!entries.length){ form.innerHTML='<div style="padding:20px;color:var(--text-light)">No settings configured</div>'; return; }
-    form.innerHTML=entries.map(([k,v])=>`<div class="settings-row"><label>${SETTING_LABELS[k]||k}</label><span>${v}</span></div>`).join('');
+    form.innerHTML=entries.length?entries.map(([k,v])=>`<div class="settings-row"><label>${SETTING_LABELS[k]||k}</label><span>${v}</span></div>`).join(''):'<div style="padding:20px;color:var(--text-light)">No settings configured</div>';
     return;
   }
-  // Editable form for admin
   const keys=['company_name','company_address','company_phone','company_email','currency','vat_rate'];
-  form.innerHTML=keys.map(k=>`
-    <div class="settings-row">
-      <label for="setting_${k}">${SETTING_LABELS[k]||k}</label>
-      <input id="setting_${k}" value="${(settings[k]||'').replace(/"/g,'&quot;')}" placeholder="${SETTING_LABELS[k]||k}">
-    </div>`).join('');
+  form.innerHTML=keys.map(k=>`<div class="settings-row"><label for="s_${k}">${SETTING_LABELS[k]||k}</label><input id="s_${k}" value="${(settings[k]||'').replace(/"/g,'&quot;')}" placeholder="${SETTING_LABELS[k]||k}"></div>`).join('');
 }
 function applyBranding(){
-  // Apply company name to sidebar
   const name=settings.company_name||'PMS';
-  document.getElementById('logoCompanyName').textContent=name.length>12?name.substring(0,12)+'…':name;
-  // Apply logo to sidebar if exists
+  document.getElementById('logoCompanyName').textContent=name.length>14?name.substring(0,14)+'…':name;
   if(settings.company_logo){
     const logo=document.getElementById('sidebarLogo');
-    logo.querySelector('.logo-icon').style.display='none';
-    if(!logo.querySelector('img')){
+    const icon=logo.querySelector('.logo-icon');
+    if(icon) icon.style.display='none';
+    if(!logo.querySelector('.logo-img')){
       const img=document.createElement('img');
-      img.src=settings.company_logo;
-      img.style.cssText='width:34px;height:34px;object-fit:contain;border-radius:6px;';
-      logo.insertBefore(img, logo.firstChild);
+      img.className='logo-img'; img.src=settings.company_logo;
+      logo.insertBefore(img,logo.firstChild);
     }
   }
 }
 async function saveSettings(){
   const btn=document.getElementById('saveSettingsBtn');
   btn.textContent='Saving…'; btn.disabled=true;
-  try {
-    const keys=['company_name','company_address','company_phone','company_email','currency','vat_rate'];
+  try{
     const payload={};
-    keys.forEach(k=>{ const el=document.getElementById('setting_'+k); if(el) payload[k]=el.value; });
-    const res=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await res.json();
-    if(data.success){
-      // Save logo if pending
+    ['company_name','company_address','company_phone','company_email','currency','vat_rate'].forEach(k=>{const el=document.getElementById('s_'+k);if(el)payload[k]=el.value;});
+    const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.success){
       if(pendingLogoBase64){
         await fetch('/api/settings/logo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({logoBase64:pendingLogoBase64})});
         pendingLogoBase64=null;
@@ -695,44 +800,62 @@ async function saveSettings(){
       showToast('Settings saved!','success');
       settings=await fetch('/api/settings').then(r=>r.json());
       applyBranding();
-    } else { showToast(data.error||'Failed to save','error'); }
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+    } else showToast(d.error||'Failed','error');
+  }catch(e){showToast('Error: '+e.message,'error');}
   btn.textContent='💾 Save Settings'; btn.disabled=false;
 }
 function handleLogoUpload(event){
   const file=event.target.files[0]; if(!file) return;
-  if(file.size>800000){ showToast('Logo too large — max 800KB','error'); return; }
+  if(file.size>800000){showToast('Logo too large — max 800KB','error');return;}
   const reader=new FileReader();
   reader.onload=e=>{
     pendingLogoBase64=e.target.result;
-    document.getElementById('logoPreviewWrap').innerHTML=`<img class="logo-preview" src="${e.target.result}" alt="Logo">`;
+    document.getElementById('logoPreviewWrap').innerHTML=`<img class="logo-preview" src="${e.target.result}">`;
     showToast('Logo ready — click Save Settings to apply','info');
   };
   reader.readAsDataURL(file);
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
-function openModal(type, e, prefillTenantId=null){
+// ── Archive ───────────────────────────────────────────────────────────────────
+async function loadArchive(){
+  const type=document.getElementById('archiveTypeFilter')?.value||'';
+  const search=document.getElementById('archiveSearch')?.value||'';
+  const tb=document.getElementById('tArchive');
+  tb.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
+  try{
+    const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`).then(r=>r.json());
+    if(!rows.length){tb.innerHTML=empty(5,'🗃️','No archived records found');return;}
+    tb.innerHTML=rows.map(r=>`<tr>
+      <td>${r.deleted_at}</td>
+      <td><span class="badge info">${r.entity_type}</span></td>
+      <td>${r.entity_id}</td>
+      <td>${r.entity_label}</td>
+      <td>${r.deleted_by||'—'}</td>
+    </tr>`).join('');
+  }catch(e){tb.innerHTML=empty(5,'❌','Failed to load archive');}
+}
+
+// ── Modal opener ──────────────────────────────────────────────────────────────
+function openModal(type,e,prefillTenantId=null){
   currentForm=type; editingId=null;
-  const overlay=document.getElementById('modalOverlay');
-  const box=document.getElementById('modalBox');
-  overlay.classList.add('active');
-  box.className=type==='bulk_unit'?'modal wide':'modal';
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className=(['bulk_unit','bulk_invoice'].includes(type)?'modal wide':'modal');
   const body=document.getElementById('modalBody');
   const title=document.getElementById('modalTitle');
 
   const llOpts=landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
   const propOpts=properties.filter(isActive).map(p=>`<option value="${pr.id(p)}">${pr.name(p)}</option>`).join('');
-  const vacOpts=units.filter(isVacant).map(u=>{ const p=properties.find(x=>pr.id(x)===un.prop(u))||{}; return `<option value="${un.id(u)}" data-rent="${un.rent(u)}">${un.num(u)} – ${pr.name(p)||un.prop(u)}</option>`; }).join('');
+  const vacOpts=units.filter(isVacant).map(u=>{const p=properties.find(x=>pr.id(x)===un.prop(u))||{};return `<option value="${un.id(u)}" data-rent="${un.rent(u)}">${un.num(u)} – ${pr.name(p)||un.prop(u)}</option>`;}).join('');
   const tnOpts=tenants.filter(isActive).map(t=>`<option value="${tn.id(t)}" data-unit="${tn.unit(t)}" data-rent="${tn.rent(t)}">${tn.name(t)}</option>`).join('');
+  const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const mOpts=months.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===new Date().getMonth()?'selected':''}>${m}</option>`).join('');
-  const yr=new Date().getFullYear();
-  const tod=new Date().toISOString().split('T')[0];
+  const mOpts=months.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join('');
+  const yr=now.getFullYear();
+  const tod=now.toISOString().split('T')[0];
   const CATS=['Maintenance','Utilities','Insurance','Property Tax','Legal Fees','Marketing','Cleaning','Security','Repairs','Renovation','Landscaping','Management Fees','Commission','Other'];
   const catOpts=CATS.map(c=>`<option>${c}</option>`).join('');
-  const UNIT_TYPES=['Studio','1 Bedroom','2 Bedroom','3 Bedroom','4+ Bedroom','Shop','Office','Warehouse'];
-  const utOpts=UNIT_TYPES.map(t=>`<option>${t}</option>`).join('');
+  const UTYPES=['Studio','1 Bedroom','2 Bedroom','3 Bedroom','4+ Bedroom','Shop','Office','Warehouse'];
+  const utOpts=UTYPES.map(t=>`<option>${t}</option>`).join('');
 
   const FORMS={
     landlord:()=>{ title.textContent='Add Landlord'; return `<div class="form-grid">
@@ -752,7 +875,7 @@ function openModal(type, e, prefillTenantId=null){
       <div class="form-group"><label>Property Type</label><select id="f_type"><option>Residential</option><option>Commercial</option><option>Mixed</option><option>Industrial</option></select></div>
     </div>`; },
 
-    unit:()=>{ title.textContent='Add Single Unit'; return `<div class="form-grid">
+    unit:()=>{ title.textContent='Add Unit'; return `<div class="form-grid">
       <div class="form-group full"><label>Property *</label><select id="f_property"><option value="">— Select property —</option>${propOpts||'<option disabled>No properties — add one first</option>'}</select></div>
       <div class="form-group"><label>Unit Number / Name *</label><input id="f_unitno" required placeholder="e.g. A1, Shop 3"></div>
       <div class="form-group"><label>Unit Type</label><select id="f_type">${utOpts}</select></div>
@@ -764,12 +887,11 @@ function openModal(type, e, prefillTenantId=null){
       <div class="form-group full"><label>Property *</label><select id="f_property" onchange="previewUnits()"><option value="">— Select property —</option>${propOpts||'<option disabled>No properties — add one first</option>'}</select></div>
       <div class="form-group"><label>Unit Type *</label><select id="f_type" onchange="previewUnits()">${utOpts}</select></div>
       <div class="form-group"><label>Monthly Rent (UGX) *</label><input id="f_rent" type="number" placeholder="e.g. 500000" min="0" oninput="previewUnits()"></div>
-      <div class="form-group"><label>Unit Label Prefix</label><input id="f_prefix" placeholder="e.g. A, Unit, Shop, Apt" value="Unit" oninput="previewUnits()"></div>
+      <div class="form-group"><label>Label Prefix</label><input id="f_prefix" value="Unit" placeholder="e.g. Apt, Shop" oninput="previewUnits()"></div>
       <div class="form-group"><label>Start Number</label><input id="f_start" type="number" value="1" min="1" oninput="previewUnits()"></div>
       <div class="form-group"><label>Number of Units *</label><input id="f_count" type="number" placeholder="e.g. 10" min="1" max="100" oninput="previewUnits()"></div>
-      <div class="form-group full">
-        <label>Preview — unit names that will be created</label>
-        <div class="unit-preview" id="bulkPreview"><em style="color:var(--text-light);font-size:13px">Fill in the fields above to preview unit names</em></div>
+      <div class="form-group full"><label>Preview</label>
+        <div class="unit-preview" id="bulkPreview"><em style="color:var(--text-light);font-size:12px">Fill in fields above to preview unit names</em></div>
       </div>
     </div>`; },
 
@@ -783,16 +905,36 @@ function openModal(type, e, prefillTenantId=null){
       <div class="form-group"><label>Lease End</label><input id="f_end" type="date"></div>
       <div class="form-group"><label>Monthly Rent (UGX)</label><input id="f_rent" type="number" placeholder="Auto-fills from unit"></div>
       <div class="form-group"><label>Security Deposit (UGX)</label><input id="f_deposit" type="number" placeholder="0"></div>
+      <div class="form-group full" style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+        <label style="font-size:12px;color:var(--primary);font-weight:700">EMERGENCY CONTACT</label>
+      </div>
+      <div class="form-group"><label>Emergency Contact Name</label><input id="f_emname" placeholder="Full name"></div>
+      <div class="form-group"><label>Emergency Contact Phone</label><input id="f_emphone" placeholder="+256 7XX XXX XXX"></div>
+      <div class="form-group full" style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+        <label style="font-size:12px;color:var(--primary);font-weight:700">NEXT OF KIN</label>
+      </div>
+      <div class="form-group"><label>Next of Kin Name</label><input id="f_nokin" placeholder="Full name"></div>
+      <div class="form-group"><label>Next of Kin Phone</label><input id="f_nokinphone" placeholder="+256 7XX XXX XXX"></div>
+      <div class="form-group"><label>Relationship</label><input id="f_nokinrel" placeholder="e.g. Spouse, Parent, Sibling"></div>
     </div>`; },
 
     rent:()=>{ title.textContent='Record Rent Payment'; return `<div class="form-grid">
       <div class="form-group full"><label>Tenant *</label><select id="f_tenant" onchange="autoFillUnit()"><option value="">— Select tenant —</option>${tnOpts||'<option disabled>No active tenants</option>'}</select></div>
       <div class="form-group"><label>Unit (auto-filled)</label><input id="f_unit" readonly style="background:#f8fafc"></div>
-      <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
+      <div class="form-group"><label>Expected Rent (UGX)</label><input id="f_expected" type="number" placeholder="0" style="background:#f8fafc" readonly></div>
+      <div class="form-group"><label>Amount Paid (UGX) *</label><input id="f_amount" type="number" required placeholder="0" oninput="checkPartial()"></div>
       <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
       <div class="form-group"><label>Payment Method</label><select id="f_method"><option>Cash</option><option>Bank Transfer</option><option>Mobile Money</option><option>Cheque</option><option>Card</option></select></div>
+      <div class="form-group"><label>Payment Type</label>
+        <select id="f_ptype"><option value="Full">Full Payment</option><option value="Partial">Partial Payment</option></select>
+      </div>
       <div class="form-group full"><label>Reference / Transaction ID</label><input id="f_ref" placeholder="MTN ref, cheque no., etc."></div>
+      <div class="form-group full" id="balanceInfo" style="display:none">
+        <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px;font-size:13px;color:#92400e">
+          ⚠️ <strong id="balanceInfoText">Balance will be carried forward.</strong>
+        </div>
+      </div>
     </div>`; },
 
     expense:()=>{ title.textContent='Add Expense'; return `<div class="form-grid">
@@ -812,46 +954,76 @@ function openModal(type, e, prefillTenantId=null){
       <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
     </div>`; },
 
+    bulk_invoice:()=>{ title.textContent='Bulk Management Fee Invoices'; return `<div class="form-grid">
+      <div class="form-group"><label>Month *</label><select id="f_month">${mOpts}</select></div>
+      <div class="form-group"><label>Year *</label><input id="f_year" type="number" value="${yr}"></div>
+      <div class="form-group full"><label>Description (optional)</label><input id="f_desc" placeholder="e.g. Management fee for May 2025"></div>
+      <div class="form-group full"><label>Override Amount per Landlord (leave blank to auto-calculate)</label><input id="f_override" type="number" placeholder="Leave blank for auto-calculation per commission rate"></div>
+    </div>
+    <p style="color:var(--text-light);font-size:12px;margin-top:12px">Creates one management fee invoice per active landlord based on their commission rate and rent collected in the selected month.</p>`; },
+
     user:()=>{ title.textContent='Add User'; return `<div class="form-grid">
-      <div class="form-group full"><label>Full Name *</label><input id="f_name" required placeholder="e.g. Sarah Nambi"></div>
+      <div class="form-group full"><label>Full Name *</label><input id="f_name" required></div>
       <div class="form-group"><label>Username *</label><input id="f_username" required placeholder="e.g. sarah.nambi"></div>
       <div class="form-group"><label>Email</label><input id="f_email" type="email"></div>
       <div class="form-group"><label>Role *</label><select id="f_role"><option value="User">User</option><option value="Admin">Admin</option></select></div>
       <div class="form-group"><label>Password *</label><input id="f_password" type="password" required placeholder="Min 6 characters"></div>
       <div class="form-group"><label>Confirm Password *</label><input id="f_password2" type="password" required placeholder="Repeat password"></div>
-    </div>`; }
+    </div>`; },
+
+    rent_increase:()=>{ return ''; }, // handled in openRentIncreaseModal
+    report_portfolio:()=>{ return ''; },
+    report_landlord:()=>{ return ''; },
+    report_tenant:()=>{ return ''; },
   };
 
-  body.innerHTML=(FORMS[type]||(() => '<p>Unknown form</p>'))();
+  body.innerHTML=(FORMS[type]||(() => '<p>Unknown form type</p>'))();
 
   if(type==='rent'&&prefillTenantId){
-    setTimeout(()=>{ const sel=document.getElementById('f_tenant'); if(sel){ sel.value=prefillTenantId; autoFillUnit(); } },60);
+    setTimeout(()=>{const sel=document.getElementById('f_tenant');if(sel){sel.value=prefillTenantId;autoFillUnit();}},60);
   }
 }
 
-// ── Bulk unit preview ─────────────────────────────────────────────────────────
 function previewUnits(){
   const prefix=(document.getElementById('f_prefix')?.value||'Unit').trim();
   const start=parseInt(document.getElementById('f_start')?.value)||1;
   const count=parseInt(document.getElementById('f_count')?.value)||0;
-  const preview=document.getElementById('bulkPreview');
-  if(!count||count<1){ preview.innerHTML='<em style="color:var(--text-light);font-size:13px">Enter a number of units to preview</em>'; return; }
-  if(count>100){ preview.innerHTML='<em style="color:var(--danger);font-size:13px">Maximum 100 units at once</em>'; return; }
+  const el=document.getElementById('bulkPreview'); if(!el) return;
+  if(!count||count<1){el.innerHTML='<em style="color:var(--text-light);font-size:12px">Enter a count to preview</em>';return;}
+  if(count>100){el.innerHTML='<em style="color:var(--danger);font-size:12px">Max 100 units at once</em>';return;}
   const names=[];
   for(let i=0;i<count;i++) names.push(`${prefix} ${start+i}`);
-  preview.innerHTML=names.map(n=>`<span class="preview-tag">${n}</span>`).join('');
+  el.innerHTML=names.map(n=>`<span class="preview-tag">${n}</span>`).join('');
 }
-
 function autoFillUnit(){
   const sel=document.getElementById('f_tenant'); if(!sel) return;
   const opt=sel.selectedOptions[0];
   const ui=document.getElementById('f_unit'); if(ui) ui.value=opt?.dataset?.unit||'';
-  const ai=document.getElementById('f_amount'); if(ai&&!ai.value&&opt?.dataset?.rent) ai.value=opt.dataset.rent;
+  const rent=opt?.dataset?.rent||'';
+  const ai=document.getElementById('f_amount'); if(ai&&!ai.value&&rent) ai.value=rent;
+  const ei=document.getElementById('f_expected'); if(ei) ei.value=rent;
+  checkPartial();
 }
 function autoFillRent(){
   const sel=document.getElementById('f_unit'); if(!sel) return;
   const opt=sel.selectedOptions[0];
   const ri=document.getElementById('f_rent'); if(ri&&!ri.value&&opt?.dataset?.rent) ri.value=opt.dataset.rent;
+}
+function checkPartial(){
+  const paid=parseFloat(document.getElementById('f_amount')?.value||0);
+  const exp=parseFloat(document.getElementById('f_expected')?.value||0);
+  const infoDiv=document.getElementById('balanceInfo');
+  const infoText=document.getElementById('balanceInfoText');
+  if(!infoDiv||!infoText) return;
+  if(exp>0&&paid<exp){
+    const bal=exp-paid;
+    infoDiv.style.display='block';
+    infoText.textContent=`Balance of ${fmtUGX(bal)} will be carried forward to next month.`;
+    const ptSel=document.getElementById('f_ptype');
+    if(ptSel) ptSel.value='Partial';
+  } else {
+    infoDiv.style.display='none';
+  }
 }
 function updateInvoiceEntity(){
   const t=document.getElementById('f_invType')?.value;
@@ -859,7 +1031,7 @@ function updateInvoiceEntity(){
   sel.disabled=false;
   if(t==='landlord') sel.innerHTML='<option value="">— Select landlord —</option>'+landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
   else if(t==='tenant') sel.innerHTML='<option value="">— Select tenant —</option>'+tenants.filter(isActive).map(t=>`<option value="${tn.id(t)}">${tn.name(t)}</option>`).join('');
-  else { sel.disabled=true; sel.innerHTML='<option>Select type first…</option>'; }
+  else{sel.disabled=true;sel.innerHTML='<option>Select type first…</option>';}
 }
 
 function closeModal(){
@@ -867,122 +1039,141 @@ function closeModal(){
   const b=document.getElementById('modalSave'); b.textContent='Save'; b.disabled=false;
   currentForm=''; editingId=null;
 }
-const gv=id=>{ const e=document.getElementById(id); return e?e.value.trim():''; };
+const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
 
-// ── Save Form ─────────────────────────────────────────────────────────────────
+// ── Save form ─────────────────────────────────────────────────────────────────
 async function saveForm(){
   const btn=document.getElementById('modalSave');
   btn.textContent='Saving…'; btn.disabled=true;
-  try {
-    let payload={}, endpoint='', method='POST';
+  try{
+    let payload={},endpoint='',method='POST';
     switch(currentForm){
       case 'landlord':
-        if(!gv('f_name')){ showToast('Name is required','error'); break; }
+        if(!gv('f_name')){showToast('Name required','error');break;}
         endpoint=editingId?`/api/landlords/${editingId}`:'/api/landlords';
         method=editingId?'PUT':'POST';
         payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission')};
         break;
       case 'property':
-        if(!gv('f_name')){ showToast('Property name required','error'); break; }
-        if(!gv('f_landlord')){ showToast('Please select a landlord','error'); break; }
+        if(!gv('f_name')){showToast('Property name required','error');break;}
+        if(!gv('f_landlord')){showToast('Please select a landlord','error');break;}
         endpoint=editingId?`/api/properties/${editingId}`:'/api/properties';
         method=editingId?'PUT':'POST';
         payload={name:gv('f_name'),landlordId:gv('f_landlord'),address:gv('f_address'),type:gv('f_type')};
         break;
       case 'unit':
-        if(!gv('f_property')){ showToast('Please select a property','error'); break; }
-        if(!gv('f_unitno')){ showToast('Unit number required','error'); break; }
+        if(!gv('f_property')){showToast('Please select a property','error');break;}
+        if(!gv('f_unitno')){showToast('Unit number required','error');break;}
         endpoint=editingId?`/api/units/${editingId}`:'/api/units';
         method=editingId?'PUT':'POST';
         payload={propertyId:gv('f_property'),unitNumber:gv('f_unitno'),type:gv('f_type'),rent:gv('f_rent'),description:gv('f_desc')};
         break;
       case 'bulk_unit':{
-        if(!gv('f_property')){ showToast('Please select a property','error'); break; }
-        if(!gv('f_count')){ showToast('Enter number of units','error'); break; }
-        if(!gv('f_rent')){ showToast('Monthly rent is required','error'); break; }
+        if(!gv('f_property')){showToast('Please select a property','error');break;}
+        if(!gv('f_count')){showToast('Enter number of units','error');break;}
+        if(!gv('f_rent')){showToast('Monthly rent required','error');break;}
         const prefix=(gv('f_prefix')||'Unit').trim();
         const start=parseInt(gv('f_start'))||1;
         const count=parseInt(gv('f_count'));
-        if(count<1||count>100){ showToast('Enter between 1 and 100 units','error'); break; }
+        if(count<1||count>100){showToast('Enter 1–100 units','error');break;}
         const unitList=[];
         for(let i=0;i<count;i++) unitList.push({unitNumber:`${prefix} ${start+i}`,type:gv('f_type'),rent:gv('f_rent'),description:''});
-        endpoint='/api/units/bulk';
-        payload={propertyId:gv('f_property'),units:unitList};
+        endpoint='/api/units/bulk'; payload={propertyId:gv('f_property'),units:unitList};
         break;
       }
       case 'tenant':
-        if(!gv('f_name')){ showToast('Name required','error'); break; }
-        if(!gv('f_phone')){ showToast('Phone required','error'); break; }
-        if(!gv('f_unit')){ showToast('Please select a unit','error'); break; }
+        if(!gv('f_name')){showToast('Name required','error');break;}
+        if(!gv('f_phone')){showToast('Phone required','error');break;}
+        if(!gv('f_unit')){showToast('Please select a unit','error');break;}
         endpoint=editingId?`/api/tenants/${editingId}`:'/api/tenants';
         method=editingId?'PUT':'POST';
-        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit')};
+        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit'),emergencyName:gv('f_emname'),emergencyPhone:gv('f_emphone'),nextOfKinName:gv('f_nokin'),nextOfKinPhone:gv('f_nokinphone'),nextOfKinRel:gv('f_nokinrel')};
         break;
       case 'rent':
-        if(!gv('f_tenant')){ showToast('Please select a tenant','error'); break; }
-        if(!gv('f_amount')){ showToast('Amount required','error'); break; }
-        endpoint='/api/rent';
-        payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref')};
+        if(!gv('f_tenant')){showToast('Please select a tenant','error');break;}
+        if(!gv('f_amount')){showToast('Amount required','error');break;}
+        endpoint='/api/rent/v2';
+        payload={tenantId:gv('f_tenant'),unitId:gv('f_unit'),amount:gv('f_amount'),expectedAmount:gv('f_expected'),month:gv('f_month'),year:gv('f_year'),paymentMethod:gv('f_method'),reference:gv('f_ref'),paymentType:gv('f_ptype')};
         break;
       case 'expense':
-        if(!gv('f_desc')){ showToast('Description required','error'); break; }
-        if(!gv('f_amount')){ showToast('Amount required','error'); break; }
+        if(!gv('f_desc')){showToast('Description required','error');break;}
+        if(!gv('f_amount')){showToast('Amount required','error');break;}
         endpoint=editingId?`/api/expenses/${editingId}`:'/api/expenses';
         method=editingId?'PUT':'POST';
         payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')};
         break;
       case 'invoice':{
-        if(!gv('f_invType')||!gv('f_entity')){ showToast('Select type and entity','error'); break; }
-        if(!gv('f_amount')){ showToast('Amount required','error'); break; }
-        const itype=gv('f_invType'), ieid=gv('f_entity');
+        if(!gv('f_invType')||!gv('f_entity')){showToast('Select type and entity','error');break;}
+        if(!gv('f_amount')){showToast('Amount required','error');break;}
+        const itype=gv('f_invType'),ieid=gv('f_entity');
         const iname=itype==='landlord'?(landlords.find(x=>ll.id(x)===ieid)||{}).Name||'':(tenants.find(x=>tn.id(x)===ieid)||{}).Name||'';
-        endpoint='/api/invoices';
+        endpoint='/api/invoices/v2';
         payload={type:itype,entityId:ieid,entityName:iname,description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
         break;
       }
+      case 'bulk_invoice':
+        if(!gv('f_month')||!gv('f_year')){showToast('Month and year required','error');break;}
+        endpoint='/api/invoices/bulk';
+        payload={month:gv('f_month'),year:gv('f_year'),description:gv('f_desc'),overrideAmount:gv('f_override')};
+        break;
       case 'user':
-        if(!gv('f_name')){ showToast('Full name required','error'); break; }
-        if(!gv('f_username')){ showToast('Username required','error'); break; }
-        if(!gv('f_password')){ showToast('Password required','error'); break; }
-        if(gv('f_password')!==gv('f_password2')){ showToast('Passwords do not match','error'); break; }
-        if(gv('f_password').length<6){ showToast('Password must be at least 6 characters','error'); break; }
+        if(!gv('f_name')){showToast('Full name required','error');break;}
+        if(!gv('f_username')){showToast('Username required','error');break;}
+        if(!editingId&&!gv('f_password')){showToast('Password required','error');break;}
+        if(!editingId&&gv('f_password')!==gv('f_password2')){showToast('Passwords do not match','error');break;}
+        if(!editingId&&gv('f_password').length<6){showToast('Password must be at least 6 characters','error');break;}
         endpoint=editingId?`/api/users/${editingId}`:'/api/users';
         method=editingId?'PUT':'POST';
         payload={username:gv('f_username'),fullName:gv('f_name'),email:gv('f_email'),role:gv('f_role'),password:gv('f_password')};
         break;
+      case 'rent_increase':
+        if(!gv('f_newrent')){showToast('New rent required','error');break;}
+        if(!gv('f_effdate')){showToast('Effective date required','error');break;}
+        endpoint='/api/rent-increase';
+        payload={unitId:editingId,newRent:gv('f_newrent'),effectiveDate:gv('f_effdate'),notes:gv('f_notes')};
+        break;
       default:
         showToast('Unknown form','error'); btn.textContent='Save'; btn.disabled=false; return;
     }
-    if(!endpoint){ btn.textContent='Save'; btn.disabled=false; return; }
+    if(!endpoint){btn.textContent='Save';btn.disabled=false;return;}
 
     const res=await fetch(endpoint,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const data=await res.json();
 
     if(data.success){
-      const sf=currentForm, sid=data.id, sp={...payload};
-      showToast(sf==='bulk_unit'?`${data.count} units created!`:'Saved successfully!','success');
+      const sf=currentForm,sid=data.id,sp={...payload};
+      showToast(sf==='bulk_unit'?`${data.count} units created!`:sf==='bulk_invoice'?`${data.count} invoices created!`:'Saved successfully!','success');
       closeModal();
       await loadAllData();
-      // After property added — prompt to bulk add units
+
       if(sf==='property'&&!editingId){
-        showPrompt('Add Units Now?',`"${sp.name}" created. Add all its units now in bulk?`,()=>{
+        showPrompt('Add Units Now?',`"${sp.name}" created. Add all its units in bulk now?`,()=>{
           openModal('bulk_unit');
-          setTimeout(()=>{ const s=document.getElementById('f_property'); if(s) s.value=sid; },80);
+          setTimeout(()=>{const s=document.getElementById('f_property');if(s)s.value=sid;},80);
         });
       }
-      // After rent recorded — auto-generate receipt
       if(sf==='rent'){
         const t=tenants.find(x=>tn.id(x)===sp.tenantId)||{};
         const u=units.find(x=>un.id(x)===sp.unitId)||{};
-        const rcpRes=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId:sid,tenantName:tn.name(t),unitNumber:un.num(u),amount:sp.amount,month:sp.month,year:sp.year,paymentMethod:sp.paymentMethod})});
+        const rcpRes=await fetch('/api/receipts/v2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId:sid,tenantName:tn.name(t),unitNumber:un.num(u),amount:sp.amount,expectedAmount:sp.expectedAmount,month:sp.month,year:sp.year,paymentMethod:sp.paymentMethod,paymentType:data.isPartial?'Partial':'Full',balanceCarried:data.balanceAfter||0})});
         const rcpData=await rcpRes.json();
-        if(rcpData.success){ await loadPage('receipts',1); showPrompt('View Receipt?','Receipt generated. Open it now?',()=>viewReceipt(rcpData.id)); }
+        if(rcpData.success){
+          await loadPage('receipts',1);
+          showPrompt('View Receipt?','Payment recorded. Open the receipt now?',()=>window.open(`/api/receipts/${rcpData.id}/pdf`,'_blank'));
+        }
       }
-      if(sf==='user'){ allUsers=await fetch('/api/users').then(r=>r.json()); renderUsers(); }
-    } else { showToast(data.error||'Failed to save','error'); }
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+      if(sf==='user'){allUsers=await fetch('/api/users').then(r=>r.json());renderUsers();}
+    } else {
+      showToast(data.error||'Failed to save','error');
+    }
+  }catch(e){showToast('Error: '+e.message,'error');}
   btn.textContent='Save'; btn.disabled=false;
 }
+
+// ── Tenant POST — extend to include new fields ───────────────────────────────
+// server.js handles these via the existing PUT/POST but we also need to update
+// the server to accept emergencyName etc. That's handled in server_v2_additions.js
+// via the existing tenant endpoints which now have the columns in PostgreSQL.
 
 // ── Edit functions ────────────────────────────────────────────────────────────
 function editLandlord(id){
@@ -1035,8 +1226,15 @@ function editTenant(id){
     document.getElementById('f_end').value=tn.end(t);
     document.getElementById('f_rent').value=tn.rent(t);
     document.getElementById('f_deposit').value=tn.deposit(t);
+    // Emergency & kin
+    if(document.getElementById('f_emname')) document.getElementById('f_emname').value=t['emergency_name']||t.EmergencyName||'';
+    if(document.getElementById('f_emphone')) document.getElementById('f_emphone').value=t['emergency_phone']||t.EmergencyPhone||'';
+    if(document.getElementById('f_nokin')) document.getElementById('f_nokin').value=t['next_of_kin_name']||t.NextOfKinName||'';
+    if(document.getElementById('f_nokinphone')) document.getElementById('f_nokinphone').value=t['next_of_kin_phone']||t.NextOfKinPhone||'';
+    if(document.getElementById('f_nokinrel')) document.getElementById('f_nokinrel').value=t['next_of_kin_rel']||t.NextOfKinRel||'';
+    // All units for edit
     const sel=document.getElementById('f_unit');
-    if(sel){ sel.innerHTML='<option value="">— Select unit —</option>'+units.map(u=>{ const p=properties.find(x=>pr.id(x)===un.prop(u))||{}; return `<option value="${un.id(u)}" ${un.id(u)===tn.unit(t)?'selected':''}>${un.num(u)} – ${pr.name(p)} (${un.status(u)})</option>`; }).join(''); }
+    if(sel) sel.innerHTML='<option value="">— Select unit —</option>'+units.map(u=>{const p=properties.find(x=>pr.id(x)===un.prop(u))||{};return `<option value="${un.id(u)}" ${un.id(u)===tn.unit(t)?'selected':''}>${un.num(u)} – ${pr.name(p)} (${un.status(u)})</option>`;}).join('');
   },60);
 }
 function editExpense(id){
@@ -1061,81 +1259,212 @@ function editUser(id){
   setTimeout(()=>{
     document.getElementById('f_name').value=u.Name||'';
     const usel=document.getElementById('f_username');
-    if(usel){ usel.value=u.Username||''; usel.readOnly=true; usel.style.background='#f8fafc'; }
+    if(usel){usel.value=u.Username||'';usel.readOnly=true;usel.style.background='#f8fafc';}
     document.getElementById('f_email').value=u.Email||'';
     document.getElementById('f_role').value=u.Role||'User';
-    // Hide password fields for edit (use Set Password button instead)
-    ['f_password','f_password2'].forEach(fid=>{ const el=document.getElementById(fid); if(el) el.closest('.form-group').style.display='none'; });
+    ['f_password','f_password2'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.closest('.form-group').style.display='none';});
   },60);
 }
-function setPassword(userId, userName){
-  showPrompt(`Set Password`, `Enter a new password for ${userName}:`,()=>{});
-  // Override prompt to be a password input
-  document.getElementById('promptMessage').innerHTML=`
-    <input id="newPwdInput" type="password" placeholder="New password (min 6 chars)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:8px">
-    <input id="newPwdInput2" type="password" placeholder="Confirm password" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px">`;
-  document.getElementById('promptYes').onclick=async()=>{
-    const p1=document.getElementById('newPwdInput')?.value||'';
-    const p2=document.getElementById('newPwdInput2')?.value||'';
-    if(p1.length<6){ showToast('Password must be at least 6 characters','error'); return; }
-    if(p1!==p2){ showToast('Passwords do not match','error'); return; }
-    closePrompt();
-    const res=await fetch(`/api/users/${userId}/password`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
-    const data=await res.json();
-    if(data.success) showToast('Password updated!','success');
-    else showToast(data.error||'Failed','error');
+
+// ── Rent increase ─────────────────────────────────────────────────────────────
+function openRentIncreaseModal(unitId){
+  const u=units.find(x=>un.id(x)===unitId);
+  const t=tenants.find(x=>tn.unit(x)===unitId&&isActive(x));
+  currentForm='rent_increase'; editingId=unitId;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className='modal';
+  document.getElementById('modalTitle').textContent='Rent Increase';
+  document.getElementById('modalBody').innerHTML=`<div class="form-grid">
+    <div class="form-group full"><label>Unit</label><input value="${u?un.num(u):unitId}" readonly style="background:#f8fafc"></div>
+    <div class="form-group full"><label>Current Tenant</label><input value="${t?tn.name(t):'No active tenant'}" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>Current Rent (UGX)</label><input value="${fmtUGX(u?un.rent(u):0)}" readonly style="background:#f8fafc"></div>
+    <div class="form-group"><label>New Monthly Rent (UGX) *</label><input id="f_newrent" type="number" required placeholder="Enter new amount"></div>
+    <div class="form-group"><label>Effective Date *</label><input id="f_effdate" type="date" value="${new Date().toISOString().split('T')[0]}" required></div>
+    <div class="form-group full"><label>Notes / Reason</label><textarea id="f_notes" placeholder="e.g. Annual review — 10% increase"></textarea></div>
+  </div>`;
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+function openReportModal(type, prefillTenantId=''){
+  currentForm='report_'+type; editingId=null;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className='modal';
+  const now=new Date();
+  const firstDay=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  const today=now.toISOString().split('T')[0];
+  const llOpts=landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
+  const tnAllOpts=tenants.map(t=>`<option value="${tn.id(t)}" ${tn.id(t)===prefillTenantId?'selected':''}>${tn.name(t)} — ${tn.unum(t)||tn.unit(t)}</option>`).join('');
+
+  if(type==='portfolio'){
+    document.getElementById('modalTitle').textContent='📊 Portfolio Report';
+    document.getElementById('modalBody').innerHTML=`<div class="form-grid">
+      <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
+      <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
+    </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Full portfolio summary — all properties, rent, expenses, occupancy and arrears.</p>`;
+    document.getElementById('modalSave').textContent='Generate Report';
+  } else if(type==='landlord'){
+    document.getElementById('modalTitle').textContent='👤 Landlord Report';
+    document.getElementById('modalBody').innerHTML=`<div class="form-grid">
+      <div class="form-group full"><label>Landlord *</label><select id="r_landlord"><option value="">— Select landlord —</option>${llOpts}</select></div>
+      <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
+      <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
+    </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Includes rent collected, management fee, expenses, arrears and net disbursement.</p>`;
+    document.getElementById('modalSave').textContent='Generate Report';
+  } else if(type==='tenant'){
+    document.getElementById('modalTitle').textContent='👥 Tenant Statement';
+    document.getElementById('modalBody').innerHTML=`<div class="form-grid">
+      <div class="form-group full"><label>Tenant *</label><select id="r_tenant"><option value="">— Select tenant —</option>${tnAllOpts}</select></div>
+      <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
+      <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
+    </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Payment history, balance carried forward and lease details for the selected tenant.</p>`;
+    document.getElementById('modalSave').textContent='Generate Statement';
+    // Pre-select if opened from tenant row
+    if(prefillTenantId){setTimeout(()=>{const s=document.getElementById('r_tenant');if(s)s.value=prefillTenantId;},60);}
+  }
+
+  // Override save button for reports
+  document.getElementById('modalSave').onclick=async()=>{
+    const from=gv('r_from')||document.getElementById('r_from')?.value;
+    const to=gv('r_to')||document.getElementById('r_to')?.value;
+    if(!from||!to){showToast('Please select a date range','error');return;}
+    if(type==='portfolio'){
+      window.open(`/api/reports/portfolio?from=${from}&to=${to}`,'_blank');
+      closeModal();
+    } else if(type==='landlord'){
+      const lid=document.getElementById('r_landlord')?.value;
+      if(!lid){showToast('Please select a landlord','error');return;}
+      window.open(`/api/reports/landlord/${lid}/pdf?from=${from}&to=${to}`,'_blank');
+      closeModal();
+    } else if(type==='tenant'){
+      const tid=document.getElementById('r_tenant')?.value;
+      if(!tid){showToast('Please select a tenant','error');return;}
+      window.open(`/api/reports/tenant/${tid}/pdf?from=${from}&to=${to}`,'_blank');
+      closeModal();
+    }
   };
 }
-function deactivateUser(id){
-  const u=allUsers.find(x=>x.ID===id);
-  showPrompt('Deactivate User?',`Deactivate "${u?u.Name:id}"? They will no longer be able to log in.`,async()=>{
-    const res=await fetch(`/api/users/${id}`,{method:'DELETE'});
+
+// ── Generate receipt and view ─────────────────────────────────────────────────
+async function generateAndViewReceipt(rentId){
+  const r=rentData.find(x=>rn.id(x)===rentId); if(!r){showToast('Rent record not found','error');return;}
+  // Check if receipt already exists for this rent ID
+  const existingRes=await fetch(`/api/receipts?page=1&limit=200`).then(r=>r.json());
+  const existingRows=Array.isArray(existingRes)?existingRes:(existingRes.data||[]);
+  const existing=existingRows.find(x=>(x['Rent ID']||x.rent_id)===rentId);
+  if(existing){window.open(`/api/receipts/${rc.id(existing)}/pdf`,'_blank');return;}
+  // Generate new receipt
+  const t=tenants.find(x=>tn.id(x)===rn.tenant(r))||{};
+  const u=units.find(x=>un.id(x)===rn.unit(r))||{};
+  const res=await fetch('/api/receipts/v2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId,tenantName:tn.name(t),unitNumber:un.num(u),amount:rn.amt(r),month:rn.month(r),year:rn.year(r),paymentMethod:rn.method(r),paymentType:rn.ptype(r)})});
+  const data=await res.json();
+  if(data.success){showToast('Receipt generated!','success');await loadPage('receipts',1);window.open(`/api/receipts/${data.id}/pdf`,'_blank');}
+  else showToast(data.error||'Failed','error');
+}
+
+// ── WhatsApp message ──────────────────────────────────────────────────────────
+async function generateWhatsApp(receiptId){
+  try{
+    const res=await fetch('/api/rent/whatsapp-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({receiptId})});
     const data=await res.json();
-    if(data.success){ showToast('User deactivated','success'); allUsers=await fetch('/api/users').then(r=>r.json()); renderUsers(); }
-    else showToast(data.error||'Failed','error');
-  });
+    if(!data.success){showToast(data.error||'Failed','error');return;}
+    document.getElementById('promptTitle').textContent='📱 WhatsApp Message';
+    document.getElementById('promptMessage').innerHTML=`<textarea id="waMsg" style="width:100%;height:180px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;resize:vertical">${data.message}</textarea><small style="color:#64748b;display:block;margin-top:6px">Copy this message and send it to the tenant via WhatsApp.</small>`;
+    document.getElementById('promptYes').textContent='📋 Copy';
+    document.getElementById('promptYes').onclick=()=>{
+      const el=document.getElementById('waMsg'); el.select(); document.execCommand('copy');
+      showToast('Copied to clipboard!','success'); closePrompt();
+    };
+    document.getElementById('promptOverlay').classList.add('active');
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
-function deleteLandlord(id){
-  const l=landlords.find(x=>ll.id(x)===id);
-  showPrompt('Delete Landlord?',`Remove "${l?ll.name(l):id}"? This marks them inactive.`,async()=>{
-    await fetch('/api/landlords/'+id,{method:'DELETE'});
-    showToast('Landlord removed','success'); loadAllData();
-  });
-}
-
-// ── Invoice / Receipt ─────────────────────────────────────────────────────────
-function viewInvoice(id){ window.open('/api/invoices/'+id+'/pdf','_blank'); }
-function viewReceipt(id){ window.open('/api/receipts/'+id+'/pdf','_blank'); }
+// ── Invoice pay ───────────────────────────────────────────────────────────────
 async function payInvoice(id){
   await fetch('/api/invoices/'+id+'/pay',{method:'PUT'});
   showToast('Invoice marked as paid','success');
   loadPage('invoices',pgState.invoices.page);
 }
-async function quickReceiptFromRent(rentId){
-  const r=rentData.find(x=>rn.id(x)===rentId); if(!r){ showToast('Rent record not found','error'); return; }
-  const t=tenants.find(x=>tn.id(x)===rn.tenant(r))||{};
-  const u=units.find(x=>un.id(x)===rn.unit(r))||{};
-  const res=await fetch('/api/receipts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId,tenantName:tn.name(t),unitNumber:un.num(u),amount:rn.amt(r),month:rn.month(r),year:rn.year(r),paymentMethod:rn.method(r)})});
-  const data=await res.json();
-  if(data.success){ showToast('Receipt generated!','success'); await loadPage('receipts',1); viewReceipt(data.id); }
-  else showToast(data.error||'Failed','error');
+
+// ── Confirm delete with 30-second undo ───────────────────────────────────────
+function confirmDelete(type,id,label){
+  const typeLabels={tenant:'Tenant',landlord:'Landlord'};
+  showPrompt(`Delete ${typeLabels[type]||type}?`,
+    `"${label}" will be permanently deleted. The record will be stored in the archive.\n\nThis cannot be undone after 30 seconds.`,
+    ()=>executeDelete(type,id,label),
+    true // danger style
+  );
+}
+async function executeDelete(type,id,label){
+  const endpoint=type==='tenant'?`/api/tenants/${id}`:`/api/landlords/${id}`;
+  try{
+    const res=await fetch(endpoint,{method:'DELETE'});
+    const data=await res.json();
+    if(data.success){
+      showUndoBar(`${label} deleted`,()=>showToast('Undo not available — record is archived','info'));
+      await loadAllData();
+    } else { showToast(data.error||'Failed to delete','error'); }
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
-// ── Prompt ────────────────────────────────────────────────────────────────────
-function showPrompt(title,msg,onYes){
-  document.getElementById('promptTitle').textContent=title;
-  document.getElementById('promptMessage').innerHTML=msg;
-  document.getElementById('promptYes').onclick=()=>{ closePrompt(); onYes(); };
+// ── User management ───────────────────────────────────────────────────────────
+function setPassword(userId,userName){
+  document.getElementById('promptTitle').textContent=`Set Password — ${userName}`;
+  document.getElementById('promptMessage').innerHTML=`
+    <input id="newPwd" type="password" placeholder="New password (min 6 chars)" style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;margin-bottom:8px">
+    <input id="newPwd2" type="password" placeholder="Confirm password" style="width:100%;padding:9px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">`;
+  document.getElementById('promptYes').textContent='Set Password';
+  document.getElementById('promptYes').onclick=async()=>{
+    const p1=document.getElementById('newPwd')?.value||'';
+    const p2=document.getElementById('newPwd2')?.value||'';
+    if(p1.length<6){showToast('Password must be at least 6 characters','error');return;}
+    if(p1!==p2){showToast('Passwords do not match','error');return;}
+    closePrompt();
+    const res=await fetch(`/api/users/${userId}/password`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+    const d=await res.json();
+    if(d.success) showToast('Password updated!','success');
+    else showToast(d.error||'Failed','error');
+  };
   document.getElementById('promptOverlay').classList.add('active');
 }
-function closePrompt(){ document.getElementById('promptOverlay').classList.remove('active'); }
+function deactivateUser(id,name){
+  showPrompt('Deactivate User?',`Deactivate "${name}"? They will no longer be able to log in.`,async()=>{
+    const res=await fetch(`/api/users/${id}`,{method:'DELETE'});
+    const d=await res.json();
+    if(d.success){showToast('User deactivated','success');allUsers=await fetch('/api/users').then(r=>r.json());renderUsers();}
+    else showToast(d.error||'Failed','error');
+  });
+}
 
-// ── Filter ────────────────────────────────────────────────────────────────────
+// ── Prompt / Confirm ──────────────────────────────────────────────────────────
+function showPrompt(title,msg,onYes,danger=false){
+  document.getElementById('promptTitle').textContent=title;
+  document.getElementById('promptMessage').textContent=msg;
+  const yBtn=document.getElementById('promptYes');
+  yBtn.textContent='Yes'; yBtn.className=danger?'btn-yes danger':'btn-yes';
+  yBtn.onclick=()=>{closePrompt();onYes();};
+  document.getElementById('promptOverlay').classList.add('active');
+}
+function closePrompt(){document.getElementById('promptOverlay').classList.remove('active');}
+
+// ── Undo bar ──────────────────────────────────────────────────────────────────
+function showUndoBar(msg,onUndo){
+  clearTimeout(undoTimer); undoAction=onUndo;
+  document.getElementById('undoMsg').textContent=msg;
+  const bar=document.getElementById('undoBar');
+  bar.classList.add('show');
+  undoTimer=setTimeout(()=>{bar.classList.remove('show');undoAction=null;},30000);
+}
+function triggerUndo(){
+  clearTimeout(undoTimer);
+  document.getElementById('undoBar').classList.remove('show');
+  if(undoAction){undoAction();undoAction=null;}
+}
+
+// ── Table filter ──────────────────────────────────────────────────────────────
 function filterTable(id,q){
   const lq=q.toLowerCase();
   document.querySelectorAll('#'+id+' tr').forEach(r=>{
-    if(r.querySelector('.empty-state')||r.classList.contains('loading-row')) return;
+    if(r.classList.contains('sk-row')) return;
     r.style.display=r.textContent.toLowerCase().includes(lq)?'':'none';
   });
 }
@@ -1145,193 +1474,6 @@ function showToast(msg,type='success'){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast '+type+' show';
   setTimeout(()=>t.classList.remove('show'),3500);
-}
-// ─────────────────────────────────────────────────────────────────────────────
-// DASHBOARD v2 PATCH — JavaScript additions only
-const fmtUGX = n => 'UGX ' + Number(n||0).toLocaleString();
-
-// ── Rent due alert on dashboard load ─────────────────────────────────────────
-async function loadRentDueStatus() {
-  try {
-    const d = await fetch('/api/rent/due-status').then(r=>r.json());
-    const bar = document.getElementById('rentDueBar');
-    if (!bar) return;
-    if (d.dueToday) {
-      bar.style.display='flex';
-      bar.style.background='#fef3c7';
-      bar.style.borderColor='#f59e0b';
-      bar.innerHTML=`<span style="font-size:18px">📅</span><strong style="color:#92400e">Rent is due today (1st).</strong><span style="color:#92400e">${d.totalUnpaid} tenant${d.totalUnpaid!==1?'s':''} have not yet paid this month.</span>`;
-    } else if (d.overdueCount > 0) {
-      bar.style.display='flex';
-      bar.style.background='#fee2e2';
-      bar.style.borderColor='#ef4444';
-      bar.innerHTML=`<span style="font-size:18px">⚠️</span><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">— rent was due on the 1st.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:6px 14px;background:#ef4444;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">View Arrears</button>`;
-    } else {
-      bar.style.display='none';
-    }
-  } catch(e) { console.error('due-status', e); }
-}
-
-// ── WhatsApp message modal ────────────────────────────────────────────────────
-async function generateWhatsApp(receiptId) {
-  try {
-    const res = await fetch('/api/rent/whatsapp-message', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ receiptId })
-    });
-    const data = await res.json();
-    if (!data.success) { showToast(data.error||'Failed','error'); return; }
-    // Show in a prompt-style modal
-    document.getElementById('promptTitle').textContent = '📱 WhatsApp Message';
-    document.getElementById('promptMessage').innerHTML = `
-      <textarea id="waMsg" style="width:100%;height:180px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-family:monospace;resize:vertical">${data.message}</textarea>
-      <small style="color:#64748b;display:block;margin-top:6px">Copy this message and send it to the tenant via WhatsApp.</small>`;
-    document.getElementById('promptYes').textContent = '📋 Copy';
-    document.getElementById('promptYes').onclick = () => {
-      const el = document.getElementById('waMsg');
-      el.select();
-      document.execCommand('copy');
-      showToast('Copied to clipboard!','success');
-      closePrompt();
-    };
-    document.getElementById('promptOverlay').classList.add('active');
-  } catch(e) { showToast('Error: '+e.message,'error'); }
-}
-
-// ── Rent increase modal ───────────────────────────────────────────────────────
-function openRentIncreaseModal(unitId) {
-  const u = units.find(x=>un.id(x)===unitId);
-  const t = tenants.find(x=>tn.unit(x)===unitId && isActive(x));
-  currentForm = 'rent_increase'; editingId = unitId;
-  document.getElementById('modalOverlay').classList.add('active');
-  document.getElementById('modalBox').className = 'modal';
-  document.getElementById('modalTitle').textContent = 'Rent Increase';
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('modalBody').innerHTML = `
-    <div class="form-grid">
-      <div class="form-group full">
-        <label>Unit</label>
-        <input value="${u ? un.num(u) : unitId}" readonly style="background:#f8fafc">
-      </div>
-      <div class="form-group full">
-        <label>Tenant</label>
-        <input value="${t ? tn.name(t) : 'No active tenant'}" readonly style="background:#f8fafc">
-      </div>
-      <div class="form-group">
-        <label>Current Rent (UGX)</label>
-        <input value="${Number(u ? un.rent(u) : 0).toLocaleString()}" readonly style="background:#f8fafc">
-      </div>
-      <div class="form-group">
-        <label>New Monthly Rent (UGX) *</label>
-        <input id="f_newrent" type="number" required placeholder="Enter new amount">
-      </div>
-      <div class="form-group">
-        <label>Effective Date *</label>
-        <input id="f_effdate" type="date" value="${today}" required>
-      </div>
-      <div class="form-group full">
-        <label>Notes / Reason</label>
-        <textarea id="f_notes" placeholder="e.g. Annual review — 10% increase"></textarea>
-      </div>
-    </div>`;
-}
-
-// ── Partial payment toggle in rent modal ──────────────────────────────────────
-function togglePartialPayment() {
-  const isPartial = document.getElementById('f_isPartial')?.checked;
-  const partialDiv = document.getElementById('partialFields');
-  if (partialDiv) partialDiv.style.display = isPartial ? 'block' : 'none';
-}
-
-// ── Reports section ───────────────────────────────────────────────────────────
-function openReportModal(type) {
-  currentForm = 'report_' + type;
-  editingId = null;
-  document.getElementById('modalOverlay').classList.add('active');
-  document.getElementById('modalBox').className = 'modal';
-  const now = new Date();
-  const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
-  const today = now.toISOString().split('T')[0];
-  const llOpts = landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
-  const tnOpts = tenants.map(t=>`<option value="${tn.id(t)}">${tn.name(t)} — ${tn.unum(t)||tn.unit(t)}</option>`).join('');
-
-  if (type === 'portfolio') {
-    document.getElementById('modalTitle').textContent = '📊 Portfolio Report';
-    document.getElementById('modalBody').innerHTML = `
-      <div class="form-grid">
-        <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstOfMonth}"></div>
-        <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
-      </div>
-      <p style="color:#64748b;font-size:13px;margin-top:12px">Generates a full portfolio summary including all properties, rent collected, expenses, occupancy and arrears across all landlords.</p>`;
-    document.getElementById('modalSave').textContent = 'Generate Report';
-  } else if (type === 'landlord') {
-    document.getElementById('modalTitle').textContent = '👤 Landlord Report';
-    document.getElementById('modalBody').innerHTML = `
-      <div class="form-grid">
-        <div class="form-group full"><label>Landlord *</label>
-          <select id="r_landlord"><option value="">— Select landlord —</option>${llOpts}</select>
-        </div>
-        <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstOfMonth}"></div>
-        <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
-      </div>
-      <p style="color:#64748b;font-size:13px;margin-top:12px">Includes property overview, rent collected, expenses, arrears, and net disbursement amount for the landlord.</p>`;
-    document.getElementById('modalSave').textContent = 'Generate Report';
-  } else if (type === 'tenant') {
-    document.getElementById('modalTitle').textContent = '👥 Tenant Statement';
-    document.getElementById('modalBody').innerHTML = `
-      <div class="form-grid">
-        <div class="form-group full"><label>Tenant *</label>
-          <select id="r_tenant"><option value="">— Select tenant —</option>${tnOpts}</select>
-        </div>
-        <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstOfMonth}"></div>
-        <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
-      </div>
-      <p style="color:#64748b;font-size:13px;margin-top:12px">Shows all payments made, outstanding balance, and lease details for the selected tenant.</p>`;
-    document.getElementById('modalSave').textContent = 'Generate Statement';
-  }
-}
-
-// ── Archive search ────────────────────────────────────────────────────────────
-async function loadArchive() {
-  const type   = document.getElementById('archiveTypeFilter')?.value || '';
-  const search = document.getElementById('archiveSearch')?.value    || '';
-  const tb     = document.getElementById('archiveTable');
-  if (!tb) return;
-  tb.innerHTML = `<tr class="loading-row"><td colspan="5"><span class="spinner"></span>Loading…</td></tr>`;
-  try {
-    const rows = await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`).then(r=>r.json());
-    if (!rows.length) { tb.innerHTML = empty(5,'🗃️','No archived records found'); return; }
-    tb.innerHTML = rows.map(r=>`<tr>
-      <td>${r.deleted_at}</td>
-      <td><span class="badge info">${r.entity_type}</span></td>
-      <td>${r.entity_id}</td>
-      <td>${r.entity_label}</td>
-      <td>${r.deleted_by||'—'}</td>
-    </tr>`).join('');
-  } catch(e) { tb.innerHTML = empty(5,'❌','Failed to load archive'); }
-}
-
-// ── Bulk invoice modal ────────────────────────────────────────────────────────
-function openBulkInvoiceModal() {
-  currentForm = 'bulk_invoice';
-  editingId = null;
-  document.getElementById('modalOverlay').classList.add('active');
-  document.getElementById('modalBox').className = 'modal';
-  document.getElementById('modalTitle').textContent = 'Bulk Management Fee Invoices';
-  const now = new Date();
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const mOpts = months.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}" ${i===now.getMonth()?'selected':''}>${m}</option>`).join('');
-  document.getElementById('modalBody').innerHTML = `
-    <div class="form-grid">
-      <div class="form-group"><label>Month *</label><select id="f_month">${mOpts}</select></div>
-      <div class="form-group"><label>Year *</label><input id="f_year" type="number" value="${now.getFullYear()}"></div>
-      <div class="form-group full"><label>Description (optional)</label>
-        <input id="f_desc" placeholder="e.g. Management fee for May 2025"></div>
-      <div class="form-group full"><label>Override Amount (leave blank to auto-calculate from commission rate)</label>
-        <input id="f_override" type="number" placeholder="Leave blank for auto-calculation per landlord"></div>
-    </div>
-    <p style="color:#64748b;font-size:13px;margin-top:12px">This will create one management fee invoice for each active landlord based on their commission rate and rent collected that month.</p>`;
-  document.getElementById('modalSave').textContent = 'Create All Invoices';
 }
 </script>
 </body>
