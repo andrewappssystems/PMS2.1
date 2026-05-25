@@ -1692,6 +1692,480 @@ app.get('/api/reports/tenant/:tenantId/pdf', requireAuth, async (req, res) => {
     res.send(html);
   } catch(e){ res.status(500).send('Error: '+e.message); }
 });
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVER FIXES 
+// Replaces / extends existing routes
+
+const crypto_hmac = require('crypto'); // already required as crypto
+
+// ── Verification helper ───────────────────────────────────────────────────────
+function makeVerifyCode(docId, type) {
+  const secret = process.env.SESSION_SECRET || 'pms-verify-secret';
+  return crypto_hmac
+    .createHmac('sha256', secret)
+    .update(`${type}:${docId}`)
+    .digest('hex')
+    .substring(0, 12)
+    .toUpperCase();
+}
+
+// ── Public verification endpoint (no auth required) ───────────────────────────
+app.get('/verify/:code', async (req, res) => {
+  const code = req.params.code.toUpperCase();
+  try {
+    // Search invoices
+    const { rows: invRows } = await pool.query(
+      `SELECT invoice_id, entity_name, description, amount, month, year, status, created_at
+       FROM invoices LIMIT 500`
+    );
+    for (const i of invRows) {
+      if (makeVerifyCode(i.invoice_id, 'INV') === code) {
+        return res.send(verifyPage('Invoice', i.invoice_id, {
+          'Entity': i.entity_name, 'Description': i.description,
+          'Amount': 'UGX ' + Number(i.amount).toLocaleString(),
+          'Period': `${i.month||''} ${i.year||''}`,
+          'Status': i.status,
+          'Issued': new Date(i.created_at).toLocaleDateString('en-GB')
+        }));
+      }
+    }
+    // Search receipts
+    const { rows: rcpRows } = await pool.query(
+      `SELECT receipt_id, tenant_name, unit_number, amount, month, year, payment_method, created_at
+       FROM receipts LIMIT 500`
+    );
+    for (const r of rcpRows) {
+      if (makeVerifyCode(r.receipt_id, 'RCP') === code) {
+        return res.send(verifyPage('Receipt', r.receipt_id, {
+          'Tenant': r.tenant_name, 'Unit': r.unit_number,
+          'Amount': 'UGX ' + Number(r.amount).toLocaleString(),
+          'Period': `${r.month||''} ${r.year||''}`,
+          'Method': r.payment_method,
+          'Issued': new Date(r.created_at).toLocaleDateString('en-GB')
+        }));
+      }
+    }
+    // Not found
+    return res.send(verifyPage('Unknown', code, {}, false));
+  } catch (e) {
+    res.status(500).send('Verification error: ' + e.message);
+  }
+});
+
+function verifyPage(docType, docId, fields, valid = true) {
+  const entries = Object.entries(fields).map(([k,v]) =>
+    `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e2e8f0">
+      <span style="color:#64748b;font-weight:600">${k}</span>
+      <span style="font-weight:600">${v}</span>
+    </div>`).join('');
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Document Verification</title>
+  <style>body{font-family:Arial,sans-serif;background:#f1f5f9;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+  .box{background:#fff;border-radius:16px;padding:40px;max-width:480px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+  h1{font-size:22px;margin-bottom:6px} p{color:#64748b;font-size:13px;margin-bottom:24px}</style></head>
+  <body><div class="box">
+  ${valid
+    ? `<div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:52px">✅</div>
+        <h1 style="color:#166534">Document Verified</h1>
+        <p>This ${docType} is authentic and was issued by this system.</p>
+       </div>
+       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:16px">
+         <div style="font-size:11px;text-transform:uppercase;font-weight:700;color:#166534;letter-spacing:.5px;margin-bottom:10px">${docType} Details</div>
+         ${entries}
+       </div>
+       <div style="background:#f8fafc;border-radius:8px;padding:12px;text-align:center;font-size:12px;color:#64748b">
+         Verification Code: <strong style="font-family:monospace;font-size:14px;color:#0f766e">${docId}</strong>
+       </div>`
+    : `<div style="text-align:center">
+        <div style="font-size:52px">❌</div>
+        <h1 style="color:#991b1b">Verification Failed</h1>
+        <p>No document found matching code <strong>${docId}</strong>.<br>This document may be forged or the code is incorrect.</p>
+       </div>`}
+  </div></body></html>`;
+}
+
+// ── Portfolio report — HTML printable version ─────────────────────────────────
+app.get('/api/reports/portfolio/pdf', requireAuth, async (req, res) => {
+  const { from, to } = req.query;
+  if (!from || !to) return res.status(400).send('Date range required');
+  try {
+    const [props, unitStats, rentStats, expStats, arrStats, llStats] = await Promise.all([
+      pool.query(`SELECT p.*, l.name AS landlord_name FROM properties p LEFT JOIN landlords l ON l.landlord_id=p.landlord_id WHERE LOWER(p.status)='active'`),
+      pool.query(`SELECT COUNT(*) FILTER (WHERE LOWER(status)='occupied') AS occupied, COUNT(*) FILTER (WHERE LOWER(status)='vacant') AS vacant, COUNT(*) AS total FROM units`),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM rent_collection WHERE created_at BETWEEN $1 AND $2`, [from, to+' 23:59:59']),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE created_at BETWEEN $1 AND $2`, [from, to+' 23:59:59']),
+      pool.query(`SELECT COUNT(DISTINCT t.tenant_id) AS cnt, COALESCE(SUM(rb.carried_balance),0) AS total FROM rent_balances rb JOIN tenants t ON t.tenant_id=rb.tenant_id WHERE rb.carried_balance>0 AND LOWER(t.status)='active'`),
+      pool.query(`SELECT COUNT(*) FROM landlords WHERE LOWER(status)='active'`)
+    ]);
+    // Per-property breakdown
+    const { rows: propBreakdown } = await pool.query(`
+      SELECT p.property_id, p.name, l.name AS landlord_name,
+        COUNT(u.unit_id) AS total_units,
+        COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='occupied') AS occupied,
+        COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='vacant') AS vacant,
+        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $2 AND $3),0) AS collected,
+        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $2 AND $3),0) AS expenses
+      FROM properties p
+      LEFT JOIN landlords l ON l.landlord_id=p.landlord_id
+      LEFT JOIN units u ON u.property_id=p.property_id
+      LEFT JOIN rent_collection rc ON rc.unit_id=u.unit_id
+      LEFT JOIN expenses e ON e.property_id=p.property_id
+      GROUP BY p.property_id, p.name, l.name ORDER BY collected DESC`,
+      ['', from, to+' 23:59:59']
+    );
+    const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
+    const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
+    const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
+    const us = unitStats.rows[0];
+    const rs = rentStats.rows[0];
+    const es = expStats.rows[0];
+    const ar = arrStats.rows[0];
+    const occRate = us.total > 0 ? Math.round((us.occupied/us.total)*100) : 0;
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:52px;object-fit:contain">` : `<div style="font-size:30px">🏢</div>`;
+    const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Portfolio Report</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
+.page{max-width:960px;margin:0 auto;padding:32px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:24px}
+.company{display:flex;align-items:center;gap:12px}
+.company h1{color:#0f766e;font-size:22px;margin-bottom:4px}
+.company p{color:#64748b;font-size:12px}
+.report-meta{text-align:right}
+.report-meta h2{font-size:20px;color:#0f172a}
+.report-meta p{color:#64748b;font-size:12px;margin-top:4px}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:#f8fafc;border-radius:8px;padding:14px;border-left:3px solid #0f766e}
+.kpi.red{border-color:#ef4444} .kpi.green{border-color:#22c55e} .kpi.yellow{border-color:#f59e0b}
+.kpi .lbl{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.5px}
+.kpi .val{font-size:15px;font-weight:700;margin-top:4px;color:#0f172a}
+.kpi.green .val{color:#16a34a} .kpi.red .val{color:#dc2626}
+h3{font-size:13px;font-weight:700;color:#0f766e;text-transform:uppercase;letter-spacing:.4px;margin:20px 0 10px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+th{background:#0f766e;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase}
+td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}
+tr:hover{background:#f8fafc}
+.right{text-align:right}
+.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase}
+.badge.green{background:#dcfce7;color:#166534} .badge.yellow{background:#fef3c7;color:#92400e} .badge.red{background:#fee2e2;color:#991b1b}
+.summary-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;margin:20px 0}
+.footer{margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
+@media print{.no-print{display:none!important}body{font-size:11px}.page{padding:20px}}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div class="company">${logoHtml}<div><h1>${cfg.company_name||'Property Management'}</h1><p>${cfg.company_address||''} | ${cfg.company_phone||''}</p></div></div>
+    <div class="report-meta"><h2>Portfolio Report</h2><p><strong>Period:</strong> ${fromFmt} — ${toFmt}</p><p>Generated: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi"><div class="lbl">Active Landlords</div><div class="val">${llStats.rows[0].count}</div></div>
+    <div class="kpi"><div class="lbl">Properties</div><div class="val">${props.rows.length}</div></div>
+    <div class="kpi"><div class="lbl">Total Units</div><div class="val">${us.total}</div></div>
+    <div class="kpi green"><div class="lbl">Occupied (${occRate}%)</div><div class="val">${us.occupied}</div></div>
+    <div class="kpi yellow"><div class="lbl">Vacant</div><div class="val">${us.vacant}</div></div>
+    <div class="kpi green"><div class="lbl">Rent Collected</div><div class="val" style="font-size:12px">${fmt(rs.total)}</div></div>
+    <div class="kpi red"><div class="lbl">Expenses</div><div class="val" style="font-size:12px">${fmt(es.total)}</div></div>
+    <div class="kpi green"><div class="lbl">Net Income</div><div class="val" style="font-size:12px">${fmt(Number(rs.total)-Number(es.total))}</div></div>
+    <div class="kpi red"><div class="lbl">Total Arrears</div><div class="val" style="font-size:12px">${fmt(ar.total)}</div></div>
+    <div class="kpi red"><div class="lbl">Tenants in Arrears</div><div class="val">${ar.cnt}</div></div>
+  </div>
+
+  <h3>Property Breakdown</h3>
+  <table>
+    <thead><tr><th>Property</th><th>Landlord</th><th>Units</th><th>Occupied</th><th>Vacant</th><th class="right">Rent Collected</th><th class="right">Expenses</th><th class="right">Net</th></tr></thead>
+    <tbody>
+    ${propBreakdown.map(p => {
+      const occ = Number(p.occupied), tot = Number(p.total_units);
+      const occPct = tot > 0 ? Math.round((occ/tot)*100) : 0;
+      const net = Number(p.collected) - Number(p.expenses);
+      return `<tr>
+        <td><strong>${p.name}</strong></td>
+        <td>${p.landlord_name||'—'}</td>
+        <td>${tot}</td>
+        <td>${occ} <span class="badge ${occPct>=80?'green':occPct>=50?'yellow':'red'}">${occPct}%</span></td>
+        <td>${Number(p.vacant)>0?`<span class="badge yellow">${p.vacant}</span>`:'0'}</td>
+        <td class="right"><strong>${fmt(p.collected)}</strong></td>
+        <td class="right">${fmt(p.expenses)}</td>
+        <td class="right" style="color:${net>=0?'#16a34a':'#dc2626'}"><strong>${fmt(net)}</strong></td>
+      </tr>`;
+    }).join('')}
+    <tr style="font-weight:700;background:#f0fdf4">
+      <td colspan="5"><strong>TOTAL</strong></td>
+      <td class="right">${fmt(rs.total)}</td>
+      <td class="right">${fmt(es.total)}</td>
+      <td class="right" style="color:${Number(rs.total)-Number(es.total)>=0?'#16a34a':'#dc2626'}">${fmt(Number(rs.total)-Number(es.total))}</td>
+    </tr>
+    </tbody>
+  </table>
+
+  <div class="summary-box">
+    <h3 style="margin-top:0;color:#166534">Portfolio Summary</h3>
+    <table style="margin:0">
+      <tr><td>Total Rent Collected</td><td class="right"><strong>${fmt(rs.total)}</strong></td></tr>
+      <tr><td>Total Expenses</td><td class="right" style="color:#dc2626">- ${fmt(es.total)}</td></tr>
+      <tr style="font-size:15px;font-weight:700;border-top:2px solid #22c55e">
+        <td style="padding-top:10px">NET PORTFOLIO INCOME</td>
+        <td class="right" style="padding-top:10px;color:#16a34a">${fmt(Number(rs.total)-Number(es.total))}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="footer"><p>${cfg.company_name||'PMS'} | Portfolio Report | Generated ${new Date().toLocaleDateString('en-GB')} | Confidential</p></div>
+</div>
+<div class="no-print" style="text-align:center;padding:24px">
+  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+</div>
+</body></html>`;
+    res.setHeader('Content-Type','text/html');
+    res.send(html);
+  } catch(e) { console.error('[portfolio pdf]',e.message); res.status(500).send('Error: '+e.message); }
+});
+
+// ── Landlord portfolio view ───────────────────────────────────────────────────
+app.get('/api/landlords/:id/portfolio', requireAuth, async (req, res) => {
+  try {
+    const { rows: llRows } = await pool.query(`SELECT * FROM landlords WHERE landlord_id=$1`, [req.params.id]);
+    if (!llRows.length) return res.status(404).json({ error: 'Landlord not found' });
+    const l = llRows[0];
+    const { rows: propRows } = await pool.query(`
+      SELECT p.*,
+        COUNT(u.unit_id)::int AS total_units,
+        COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='occupied')::int AS occupied,
+        COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='vacant')::int AS vacant,
+        COALESCE(SUM(u.rent) FILTER (WHERE LOWER(u.status)='occupied'),0) AS monthly_rent_roll
+      FROM properties p
+      LEFT JOIN units u ON u.property_id=p.property_id
+      WHERE p.landlord_id=$1
+      GROUP BY p.property_id ORDER BY p.name`, [req.params.id]
+    );
+    const { rows: arrearsRows } = await pool.query(`
+      SELECT COALESCE(SUM(rb.carried_balance),0) AS total
+      FROM rent_balances rb
+      JOIN tenants t ON t.tenant_id=rb.tenant_id
+      JOIN units u ON u.unit_id=t.unit_id
+      JOIN properties p ON p.property_id=u.property_id
+      WHERE p.landlord_id=$1 AND rb.carried_balance>0`, [req.params.id]
+    );
+    const totalUnits    = propRows.reduce((s,p)=>s+p.total_units,0);
+    const totalOccupied = propRows.reduce((s,p)=>s+p.occupied,0);
+    const totalVacant   = propRows.reduce((s,p)=>s+p.vacant,0);
+    const monthlyRoll   = propRows.reduce((s,p)=>s+parseFloat(p.monthly_rent_roll||0),0);
+    res.json({
+      landlord: l, properties: propRows,
+      summary: { totalProperties: propRows.length, totalUnits, totalOccupied, totalVacant, monthlyRoll, totalArrears: parseFloat(arrearsRows[0].total||0) }
+    });
+  } catch(e) { console.error('[landlord portfolio]',e.message); res.status(500).json({ error: e.message }); }
+});
+
+// ── General / custom invoice ──────────────────────────────────────────────────
+app.post('/api/invoices/custom', requireAuth, async (req, res) => {
+  const err = validate([['clientName','Client name'],['serviceTitle','Service title'],['amount','Amount']], req.body);
+  if (err) return res.status(400).json({ error: err });
+  try {
+    const { clientName, clientEmail='', clientAddress='', serviceTitle, lineItems=[], amount, month='', year='', notes='' } = req.body;
+    const id = await getNextYearId('invoices', 'invoice_id', 'INV');
+    const desc = lineItems.length
+      ? lineItems.map(li=>li.description).join('; ')
+      : serviceTitle;
+    await pool.query(
+      `INSERT INTO invoices (invoice_id,type,entity_id,entity_name,description,amount,month,year,status,created_by)
+       VALUES ($1,'custom',$2,$3,$4,$5,$6,$7,'Unpaid',$8)`,
+      [id, clientEmail||'custom', clientName.trim(), desc, parseFloat(amount), month, year?parseInt(year):null, actor(req)]
+    );
+    clearCachePrefix('invoices_');
+    res.json({ success: true, id });
+  } catch(e) { console.error('[custom invoice]',e.message); res.status(500).json({ error: e.message }); }
+});
+
+// ── Custom invoice PDF (richer layout with line items) ────────────────────────
+app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
+  try {
+    const [{ rows:invRows }, { rows:sRows }] = await Promise.all([
+      pool.query(`SELECT * FROM invoices WHERE invoice_id=$1`, [req.params.id]),
+      pool.query('SELECT key,value FROM settings')
+    ]);
+    if (!invRows.length) return res.status(404).send('Invoice not found');
+    const item = invRows[0];
+    const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
+    const verifyCode = makeVerifyCode(item.invoice_id, 'INV');
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:52px;object-fit:contain">` : '';
+    const statusCls = (item.status||'unpaid').toLowerCase();
+    const fmt = n => (cfg.currency||'UGX') + ' ' + Number(n||0).toLocaleString();
+    const host = `${req.protocol}://${req.get('host')}`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${item.invoice_id}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
+.page{max-width:800px;margin:0 auto;padding:40px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:28px}
+.company h1{color:#0f766e;font-size:22px;margin-bottom:4px}
+.company p{color:#64748b;font-size:12px;margin-top:2px}
+.inv-meta{text-align:right}
+.inv-meta h2{font-size:28px;color:#0f172a;letter-spacing:1px}
+.inv-meta .inv-id{font-size:13px;color:#64748b;margin-top:4px}
+.inv-meta .status-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:700;font-size:11px;text-transform:uppercase;margin-top:6px}
+.paid{background:#dcfce7;color:#166534} .unpaid{background:#fee2e2;color:#991b1b}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
+.party{background:#f8fafc;border-radius:8px;padding:16px}
+.party h3{font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:.5px;margin-bottom:8px}
+.party p{font-size:13px;margin-top:3px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+th{background:#0f766e;color:#fff;padding:10px 14px;text-align:left;font-size:12px}
+td{padding:10px 14px;border-bottom:1px solid #e2e8f0}
+.right{text-align:right}
+.total-row{background:#f0fdf4;font-weight:700;font-size:15px}
+.verify{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px}
+.verify .code{font-family:monospace;font-size:16px;font-weight:700;color:#0f766e;letter-spacing:2px}
+.verify small{font-size:11px;color:#94a3b8;display:block;margin-top:2px}
+.footer{margin-top:24px;text-align:center;color:#94a3b8;font-size:11px;border-top:1px solid #e2e8f0;padding-top:16px}
+@media print{.no-print{display:none!important}body{font-size:12px}.page{padding:24px}}
+</style></head><body>
+<div class="page">
+  <div class="header">
+    <div class="company" style="display:flex;align-items:center;gap:12px">
+      ${logoHtml}
+      <div><h1>${cfg.company_name||'Property Management'}</h1>
+      <p>${cfg.company_address||''}</p>
+      <p>${cfg.company_phone||''} ${cfg.company_email?'| '+cfg.company_email:''}</p></div>
+    </div>
+    <div class="inv-meta">
+      <h2>INVOICE</h2>
+      <div class="inv-id">No. ${item.invoice_id}</div>
+      <div class="inv-id">Date: ${new Date(item.created_at).toLocaleDateString('en-GB')}</div>
+      <div><span class="status-badge ${statusCls}">${item.status||'Unpaid'}</span></div>
+    </div>
+  </div>
+
+  <div class="parties">
+    <div class="party">
+      <h3>From</h3>
+      <p><strong>${cfg.company_name||'Property Management'}</strong></p>
+      <p>${cfg.company_address||''}</p>
+      <p>${cfg.company_phone||''}</p>
+      <p>${cfg.company_email||''}</p>
+    </div>
+    <div class="party">
+      <h3>Bill To</h3>
+      <p><strong>${item.entity_name||'N/A'}</strong></p>
+      ${item.type==='custom'&&item.entity_id&&item.entity_id!=='custom'?`<p>${item.entity_id}</p>`:''}
+      <p>Period: ${item.month||''} ${item.year||''}</p>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Description</th><th class="right">Amount (${cfg.currency||'UGX'})</th></tr></thead>
+    <tbody>
+      <tr><td>${item.description||'Service Fee'}</td><td class="right">${Number(item.amount||0).toLocaleString()}</td></tr>
+      <tr class="total-row"><td><strong>TOTAL</strong></td><td class="right"><strong>${fmt(item.amount)}</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="verify">
+    <div>
+      <strong style="font-size:12px;color:#374151">Document Verification</strong>
+      <small>Scan or visit the link below to verify this document is authentic</small>
+      <small style="margin-top:4px"><a href="${host}/verify/${verifyCode}" style="color:#0f766e">${host}/verify/${verifyCode}</a></small>
+    </div>
+    <div style="text-align:right">
+      <div class="code">${verifyCode}</div>
+      <small>Verification Code</small>
+    </div>
+  </div>
+
+  <div class="footer"><p>Thank you for your business &nbsp;|&nbsp; ${cfg.company_name||'PMS'} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB')}</p></div>
+</div>
+<div class="no-print" style="text-align:center;padding:24px">
+  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+</div>
+</body></html>`;
+    res.setHeader('Content-Type','text/html');
+    res.send(html);
+  } catch(e) { console.error('[invoice pdf]',e.message); res.status(500).send('Error: '+e.message); }
+});
+
+// ── Receipt PDF — with logo and verification ──────────────────────────────────
+app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
+  try {
+    const [{ rows:rcpRows }, { rows:sRows }] = await Promise.all([
+      pool.query(`SELECT * FROM receipts WHERE receipt_id=$1`, [req.params.id]),
+      pool.query('SELECT key,value FROM settings')
+    ]);
+    if (!rcpRows.length) return res.status(404).send('Receipt not found');
+    const r = rcpRows[0];
+    const cfg = {}; sRows.forEach(s => { cfg[s.key]=s.value; });
+    const verifyCode = makeVerifyCode(r.receipt_id, 'RCP');
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:44px;object-fit:contain">` : '';
+    const balCarried = parseFloat(r.balance_carried||0);
+    const expected  = parseFloat(r.expected_amount||0);
+    const paid      = parseFloat(r.amount||0);
+    const balAfter  = expected > 0 ? Math.max(0, expected - paid + balCarried) : 0;
+    const fmt = n => (cfg.currency||'UGX') + ' ' + Number(n||0).toLocaleString();
+    const host = `${req.protocol}://${req.get('host')}`;
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${r.receipt_id}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
+.wrap{max-width:580px;margin:0 auto;padding:40px}
+.receipt{border:2px solid #0f766e;border-radius:12px;padding:36px}
+.hdr{text-align:center;border-bottom:2px dashed #0f766e;padding-bottom:18px;margin-bottom:22px}
+.hdr .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
+.hdr h1{color:#0f766e;font-size:24px;margin-bottom:4px}
+.stamp{display:inline-block;background:#0f766e;color:#fff;padding:6px 22px;border-radius:20px;font-weight:700;margin:6px 0}
+.hdr small{color:#64748b;font-size:12px}
+.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e2e8f0}
+.lbl{color:#64748b;font-weight:600;font-size:12px}
+.val{font-weight:600;font-size:13px}
+.amt-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:18px;text-align:center;margin:20px 0}
+.amt-box .lbl{color:#166534;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.amt-box .val{color:#0f766e;font-size:30px;font-weight:700;margin-top:4px}
+.bal-box{background:#fff7ed;border:1px solid #f59e0b;border-radius:8px;padding:12px;text-align:center;margin-bottom:16px}
+.verify{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.code{font-family:monospace;font-size:14px;font-weight:700;color:#0f766e;letter-spacing:2px}
+.footer{text-align:center;margin-top:20px;color:#94a3b8;font-size:11px}
+@media print{.no-print{display:none!important}body{font-size:12px}.wrap{padding:20px}}
+</style></head><body>
+<div class="wrap"><div class="receipt">
+  <div class="hdr">
+    <div class="logo-row">${logoHtml}<strong style="font-size:15px">${cfg.company_name||'Property Management'}</strong></div>
+    <h1>RENT RECEIPT</h1>
+    <div class="stamp">✔ PAID</div>
+    <div><small>Receipt No: <strong>${r.receipt_id}</strong> &nbsp;|&nbsp; ${new Date(r.created_at).toLocaleDateString('en-GB')}</small></div>
+  </div>
+  <div class="row"><span class="lbl">Received From</span><span class="val">${r.tenant_name||'N/A'}</span></div>
+  <div class="row"><span class="lbl">Unit</span><span class="val">${r.unit_number||'N/A'}</span></div>
+  <div class="row"><span class="lbl">Period</span><span class="val">${r.month||''} ${r.year||''}</span></div>
+  <div class="row"><span class="lbl">Payment Method</span><span class="val">${r.payment_method||'Cash'}</span></div>
+  <div class="row"><span class="lbl">Payment Type</span><span class="val">${r.payment_type||'Full'}</span></div>
+  ${expected>0?`<div class="row"><span class="lbl">Expected This Month</span><span class="val">${fmt(expected)}</span></div>`:''}
+  ${balCarried>0?`<div class="row"><span class="lbl">Balance Carried Forward</span><span class="val" style="color:#dc2626">${fmt(balCarried)}</span></div>`:''}
+  <div class="amt-box">
+    <div class="lbl">Amount Received</div>
+    <div class="val">${fmt(r.amount)}</div>
+  </div>
+  ${balAfter>0?`<div class="bal-box"><strong style="color:#92400e">⚠️ Outstanding Balance: ${fmt(balAfter)}</strong><br><small style="color:#92400e">This amount will be carried to the next payment period.</small></div>`:''}
+  <div class="verify">
+    <div>
+      <strong style="font-size:11px">Document Verification</strong>
+      <div style="font-size:10px;color:#94a3b8;margin-top:2px"><a href="${host}/verify/${verifyCode}" style="color:#0f766e">${host}/verify/${verifyCode}</a></div>
+    </div>
+    <div style="text-align:right"><div class="code">${verifyCode}</div><div style="font-size:10px;color:#94a3b8">Verify Code</div></div>
+  </div>
+  <div class="footer"><p>Thank you for your payment &nbsp;|&nbsp; ${cfg.company_name||'PMS'} &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB')}</p></div>
+</div></div>
+<div class="no-print" style="text-align:center;padding:24px">
+  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+</div>
+</body></html>`;
+    res.setHeader('Content-Type','text/html');
+    res.send(html);
+  } catch(e) { console.error('[receipt pdf]',e.message); res.status(500).send('Error: '+e.message); }
+});
 // ── 404 & Error Handler ───────────────────────────────────────────────────────
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) return res.status(404).json({ error: `Not found: ${req.method} ${req.path}` });
