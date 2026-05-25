@@ -8,7 +8,7 @@ const helmet     = require('helmet');
 const pool       = require('./db');
 const path       = require('path');
 const crypto     = require('crypto');
-
+const QRCode     = require('qrcode');
 const app          = express();
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -1708,7 +1708,16 @@ function makeVerifyCode(docId, type) {
     .substring(0, 12)
     .toUpperCase();
 }
-
+async function makeVerifyQR(docId, type, req) {
+  const code = makeVerifyCode(docId, type);
+  const url  = `${req.protocol}://${req.get('host')}/verify/${code}`;
+  const qrDataUrl = await QRCode.toDataURL(url, {
+    width: 90,
+    margin: 1,
+    color: { dark: '#0f766e', light: '#ffffff' }
+  });
+  return { qrDataUrl, code, url };
+}
 // ── Public verification endpoint (no auth required) ───────────────────────────
 app.get('/verify/:code', async (req, res) => {
   const code = req.params.code.toUpperCase();
@@ -1991,7 +2000,7 @@ app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
     if (!invRows.length) return res.status(404).send('Invoice not found');
     const item = invRows[0];
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
-    const verifyCode = makeVerifyCode(item.invoice_id, 'INV');
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(item.invoice_id, 'INV', req);
     const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:52px;object-fit:contain">` : '';
     const statusCls = (item.status||'unpaid').toLowerCase();
     const fmt = n => (cfg.currency||'UGX') + ' ' + Number(n||0).toLocaleString();
@@ -2065,17 +2074,18 @@ td{padding:10px 14px;border-bottom:1px solid #e2e8f0}
     </tbody>
   </table>
 
-  <div class="verify">
-    <div>
-      <strong style="font-size:12px;color:#374151">Document Verification</strong>
-      <small>Scan or visit the link below to verify this document is authentic</small>
-      <small style="margin-top:4px"><a href="${host}/verify/${verifyCode}" style="color:#0f766e">${host}/verify/${verifyCode}</a></small>
-    </div>
-    <div style="text-align:right">
-      <div class="code">${verifyCode}</div>
-      <small>Verification Code</small>
-    </div>
+ <div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:16px">
+  <div>
+    <strong style="font-size:12px;color:#374151">Document Verification</strong>
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">Scan the QR code or visit the link to verify this document is authentic</div>
+    <div style="margin-top:4px"><a href="${verifyUrl}" style="color:#0f766e;font-size:11px;word-break:break-all">${verifyUrl}</a></div>
+    <div style="font-family:monospace;font-size:15px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:6px">${verifyCode}</div>
   </div>
+  <div style="flex-shrink:0;text-align:center">
+    <img src="${qrDataUrl}" style="width:80px;height:80px;display:block">
+    <div style="font-size:10px;color:#94a3b8;margin-top:3px">Scan to verify</div>
+  </div>
+</div>
 
   <div class="footer"><p>Thank you for your business &nbsp;|&nbsp; ${cfg.company_name||'PMS'} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB')}</p></div>
 </div>
@@ -2098,7 +2108,7 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
     if (!rcpRows.length) return res.status(404).send('Receipt not found');
     const r = rcpRows[0];
     const cfg = {}; sRows.forEach(s => { cfg[s.key]=s.value; });
-    const verifyCode = makeVerifyCode(r.receipt_id, 'RCP');
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(r.receipt_id, 'RCP', req);
     const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:44px;object-fit:contain">` : '';
     const balCarried = parseFloat(r.balance_carried||0);
     const expected  = parseFloat(r.expected_amount||0);
@@ -2150,16 +2160,17 @@ body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
   </div>
   ${balAfter>0?`<div class="bal-box"><strong style="color:#92400e">⚠️ Outstanding Balance: ${fmt(balAfter)}</strong><br><small style="color:#92400e">This amount will be carried to the next payment period.</small></div>`:''}
   <div class="verify">
-    <div>
-      <strong style="font-size:11px">Document Verification</strong>
-      <div style="font-size:10px;color:#94a3b8;margin-top:2px"><a href="${host}/verify/${verifyCode}" style="color:#0f766e">${host}/verify/${verifyCode}</a></div>
-    </div>
-    <div style="text-align:right"><div class="code">${verifyCode}</div><div style="font-size:10px;color:#94a3b8">Verify Code</div></div>
+   <div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;margin-top:16px;gap:12px">
+  <div style="flex:1">
+    <strong style="font-size:11px;color:#374151">Document Verification</strong>
+    <div style="font-size:10px;color:#94a3b8;margin-top:2px">Scan QR or visit link to verify authenticity</div>
+    <div style="font-size:10px;margin-top:3px"><a href="${verifyUrl}" style="color:#0f766e;word-break:break-all">${verifyUrl}</a></div>
+    <div style="font-family:monospace;font-size:13px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:4px">${verifyCode}</div>
   </div>
-  <div class="footer"><p>Thank you for your payment &nbsp;|&nbsp; ${cfg.company_name||'PMS'} &nbsp;|&nbsp; ${new Date().toLocaleDateString('en-GB')}</p></div>
-</div></div>
-<div class="no-print" style="text-align:center;padding:24px">
-  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+  <div style="flex-shrink:0;text-align:center">
+    <img src="${qrDataUrl}" style="width:72px;height:72px;display:block">
+    <div style="font-size:10px;color:#94a3b8;margin-top:2px">Scan to verify</div>
+  </div>
 </div>
 </body></html>`;
     res.setHeader('Content-Type','text/html');
