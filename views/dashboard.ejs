@@ -649,6 +649,7 @@ function renderLandlords(){
     <td>${ll.comm(l)}%</td>
     <td><span class="badge ${isActive(l)?'success':'danger'}">${ll.status(l)}</span></td>
     <td class="actions">
+      <button class="btn-view" onclick="viewLandlordPortfolio('${ll.id(l)}')">View</button>
       <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
       <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')">Delete</button>
     </td></tr>`).join('');
@@ -953,7 +954,16 @@ function openModal(type,e,prefillTenantId=null){
       <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
     </div>`; },
-
+    custom_invoice:()=>{ title.textContent='Custom Service Invoice'; return `<div class="form-grid">
+      <div class="form-group full"><label>Client / Company Name *</label><input id="f_clientname" required placeholder="e.g. Acme Ltd, John Mukasa"></div>
+      <div class="form-group"><label>Client Email</label><input id="f_clientemail" type="email" placeholder="client@email.com"></div>
+      <div class="form-group"><label>Client Address</label><input id="f_clientaddr" placeholder="Physical / postal address"></div>
+      <div class="form-group full"><label>Service Title *</label><input id="f_servicetitle" required placeholder="e.g. Property Advisory Fee, Inspection Fee"></div>
+      <div class="form-group full"><label>Service Description</label><textarea id="f_desc" placeholder="Details of the service provided…"></textarea></div>
+      <div class="form-group"><label>Total Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
+      <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
+      <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
+    </div>`; },
     bulk_invoice:()=>{ title.textContent='Bulk Management Fee Invoices'; return `<div class="form-grid">
       <div class="form-group"><label>Month *</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year *</label><input id="f_year" type="number" value="${yr}"></div>
@@ -1036,8 +1046,12 @@ function updateInvoiceEntity(){
 
 function closeModal(){
   document.getElementById('modalOverlay').classList.remove('active');
-  const b=document.getElementById('modalSave'); b.textContent='Save'; b.disabled=false;
-  currentForm=''; editingId=null;
+  const b=document.getElementById('modalSave');
+  b.textContent='Save';
+  b.disabled=false;
+  b.onclick=saveForm;       
+  currentForm='';
+  editingId=null;
 }
 const gv=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
 
@@ -1111,6 +1125,13 @@ async function saveForm(){
         payload={type:itype,entityId:ieid,entityName:iname,description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
         break;
       }
+      case 'custom_invoice':
+        if(!gv('f_clientname')){showToast('Client name required','error');break;}
+        if(!gv('f_servicetitle')){showToast('Service title required','error');break;}
+        if(!gv('f_amount')){showToast('Amount required','error');break;}
+        endpoint='/api/invoices/custom';
+        payload={clientName:gv('f_clientname'),clientEmail:gv('f_clientemail'),clientAddress:gv('f_clientaddr'),serviceTitle:gv('f_servicetitle'),description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
+        break;
       case 'bulk_invoice':
         if(!gv('f_month')||!gv('f_year')){showToast('Month and year required','error');break;}
         endpoint='/api/invoices/bulk';
@@ -1289,19 +1310,28 @@ function openReportModal(type, prefillTenantId=''){
   currentForm='report_'+type; editingId=null;
   document.getElementById('modalOverlay').classList.add('active');
   document.getElementById('modalBox').className='modal';
+  document.getElementById('modalSave').style.display='block';
   const now=new Date();
   const firstDay=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
   const today=now.toISOString().split('T')[0];
   const llOpts=landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
   const tnAllOpts=tenants.map(t=>`<option value="${tn.id(t)}" ${tn.id(t)===prefillTenantId?'selected':''}>${tn.name(t)} — ${tn.unum(t)||tn.unit(t)}</option>`).join('');
-
+  const saveBtn=document.getElementById('modalSave');
+ 
   if(type==='portfolio'){
     document.getElementById('modalTitle').textContent='📊 Portfolio Report';
     document.getElementById('modalBody').innerHTML=`<div class="form-grid">
       <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
       <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
     </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Full portfolio summary — all properties, rent, expenses, occupancy and arrears.</p>`;
-    document.getElementById('modalSave').textContent='Generate Report';
+    saveBtn.textContent='Generate Report';
+    saveBtn.onclick=()=>{
+      const from=document.getElementById('r_from')?.value;
+      const to=document.getElementById('r_to')?.value;
+      if(!from||!to){showToast('Please select a date range','error');return;}
+      window.open(`/api/reports/portfolio/pdf?from=${from}&to=${to}`,'_blank');
+      closeModal();
+    };
   } else if(type==='landlord'){
     document.getElementById('modalTitle').textContent='👤 Landlord Report';
     document.getElementById('modalBody').innerHTML=`<div class="form-grid">
@@ -1309,18 +1339,36 @@ function openReportModal(type, prefillTenantId=''){
       <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
       <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
     </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Includes rent collected, management fee, expenses, arrears and net disbursement.</p>`;
-    document.getElementById('modalSave').textContent='Generate Report';
+    saveBtn.textContent='Generate Report';
+    saveBtn.onclick=()=>{
+      const from=document.getElementById('r_from')?.value;
+      const to=document.getElementById('r_to')?.value;
+      const lid=document.getElementById('r_landlord')?.value;
+      if(!from||!to){showToast('Please select a date range','error');return;}
+      if(!lid){showToast('Please select a landlord','error');return;}
+      window.open(`/api/reports/landlord/${lid}/pdf?from=${from}&to=${to}`,'_blank');
+      closeModal();
+    };
   } else if(type==='tenant'){
     document.getElementById('modalTitle').textContent='👥 Tenant Statement';
     document.getElementById('modalBody').innerHTML=`<div class="form-grid">
       <div class="form-group full"><label>Tenant *</label><select id="r_tenant"><option value="">— Select tenant —</option>${tnAllOpts}</select></div>
       <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
       <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
-    </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Payment history, balance carried forward and lease details for the selected tenant.</p>`;
-    document.getElementById('modalSave').textContent='Generate Statement';
-    // Pre-select if opened from tenant row
-    if(prefillTenantId){setTimeout(()=>{const s=document.getElementById('r_tenant');if(s)s.value=prefillTenantId;},60);}
+    </div><p style="color:var(--text-light);font-size:12px;margin-top:12px">Payment history, balance and lease details for the selected tenant.</p>`;
+    saveBtn.textContent='Generate Statement';
+    saveBtn.onclick=()=>{
+      const from=document.getElementById('r_from')?.value;
+      const to=document.getElementById('r_to')?.value;
+      const tid=document.getElementById('r_tenant')?.value;
+      if(!from||!to){showToast('Please select a date range','error');return;}
+      if(!tid){showToast('Please select a tenant','error');return;}
+      window.open(`/api/reports/tenant/${tid}/pdf?from=${from}&to=${to}`,'_blank');
+      closeModal();
+    };
+    if(prefillTenantId) setTimeout(()=>{const s=document.getElementById('r_tenant');if(s)s.value=prefillTenantId;},60);
   }
+}
 
   // Override save button for reports
   document.getElementById('modalSave').onclick=async()=>{
@@ -1474,6 +1522,74 @@ function showToast(msg,type='success'){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className='toast '+type+' show';
   setTimeout(()=>t.classList.remove('show'),3500);
+}
+async function viewLandlordPortfolio(landlordId){
+  const l=landlords.find(x=>ll.id(x)===landlordId);
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className='modal wide';
+  document.getElementById('modalTitle').textContent=`Portfolio — ${l?ll.name(l):landlordId}`;
+  document.getElementById('modalBody').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-light)">Loading portfolio…</div>`;
+  document.getElementById('modalSave').style.display='none';
+  try{
+    const d=await fetch(`/api/landlords/${landlordId}/portfolio`).then(r=>r.json());
+    if(d.error){document.getElementById('modalBody').innerHTML=`<p style="color:var(--danger)">${d.error}</p>`;return;}
+    const s=d.summary;
+    document.getElementById('modalBody').innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="background:#f0fdf4;border-radius:8px;padding:14px;border-left:3px solid #22c55e">
+          <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase">Properties</div>
+          <div style="font-size:22px;font-weight:700;color:#0f766e">${s.totalProperties}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:8px;padding:14px;border-left:3px solid #0f766e">
+          <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase">Total Units</div>
+          <div style="font-size:22px;font-weight:700;color:#0f766e">${s.totalUnits}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:8px;padding:14px;border-left:3px solid #0f766e">
+          <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase">Occupied</div>
+          <div style="font-size:22px;font-weight:700;color:#0f766e">${s.totalOccupied} / ${s.totalUnits}</div>
+        </div>
+        <div style="background:#fef3c7;border-radius:8px;padding:14px;border-left:3px solid #f59e0b">
+          <div style="font-size:11px;color:#92400e;font-weight:600;text-transform:uppercase">Vacant</div>
+          <div style="font-size:22px;font-weight:700;color:#f59e0b">${s.totalVacant}</div>
+        </div>
+        <div style="background:#f0fdf4;border-radius:8px;padding:14px;border-left:3px solid #22c55e">
+          <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase">Monthly Rent Roll</div>
+          <div style="font-size:16px;font-weight:700;color:#16a34a">${fmtUGX(s.monthlyRoll)}</div>
+        </div>
+        <div style="background:#fee2e2;border-radius:8px;padding:14px;border-left:3px solid #ef4444">
+          <div style="font-size:11px;color:#991b1b;font-weight:600;text-transform:uppercase">Arrears</div>
+          <div style="font-size:16px;font-weight:700;color:#dc2626">${fmtUGX(s.totalArrears)}</div>
+        </div>
+      </div>
+      <h3 style="font-size:13px;font-weight:700;color:#0f766e;text-transform:uppercase;margin-bottom:10px">Properties</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f8fafc">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b">Property</th>
+          <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b">Address</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b">Units</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b">Occ.</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b">Vacant</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#64748b">Monthly Rent</th>
+        </tr></thead>
+        <tbody>
+          ${d.properties.map(p=>`<tr style="border-bottom:1px solid #e2e8f0">
+            <td style="padding:10px 12px"><strong>${p.name}</strong></td>
+            <td style="padding:10px 12px;color:#64748b;font-size:12px">${p.address||'—'}</td>
+            <td style="padding:10px 12px;text-align:center">${p.total_units}</td>
+            <td style="padding:10px 12px;text-align:center"><span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p.occupied}</span></td>
+            <td style="padding:10px 12px;text-align:center">${Number(p.vacant)>0?`<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">${p.vacant}</span>`:'0'}</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:600">${fmtUGX(p.monthly_rent_roll)}</td>
+          </tr>`).join('')}
+          <tr style="background:#f0fdf4;font-weight:700">
+            <td colspan="5" style="padding:10px 12px">TOTAL MONTHLY RENT ROLL</td>
+            <td style="padding:10px 12px;text-align:right;color:#16a34a">${fmtUGX(s.monthlyRoll)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button onclick="openReportModal('landlord')" style="padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer">📊 Generate Full Report</button>
+      </div>`;
+  }catch(e){document.getElementById('modalBody').innerHTML=`<p style="color:var(--danger)">Error: ${e.message}</p>`;}
 }
 </script>
 </body>
