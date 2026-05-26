@@ -467,7 +467,7 @@ tr:hover td{background:#f8fafc;}
 <div class="toast" id="toast"></div>
 
 <script>
-const USER = <%- JSON.stringify(user || {}) %>;
+const USER = JSON.parse('<%- JSON.stringify(user || {}).replace(/</g, "\\u003c") %>');
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let landlords=[], properties=[], units=[], tenants=[], rentData=[], allUsers=[], settings={};
