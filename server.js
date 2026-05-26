@@ -643,7 +643,7 @@ app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(i.invoice_id, 'INV', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${i.invoice_id}</title>
-<style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.hdr{text-align:center;border-bottom:3px solid #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:32px}.hdr p{color:#666;margin:4px 0;font-size:13px}.row{display:flex;gap:20px;margin-bottom:30px}.box{background:#f8fafc;padding:20px;border-radius:8px;flex:1}.box h3{margin:0 0 10px;color:#0f766e;font-size:12px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#0f766e;color:#fff;padding:12px;text-align:left}td{padding:12px;border-bottom:1px solid #e2e8f0}.total{text-align:right;font-size:22px;font-weight:700;color:#0f766e;margin-top:20px}.badge{padding:6px 16px;border-radius:20px;font-weight:700;font-size:12px;text-transform:uppercase}.paid{background:#dcfce7;color:#166534}.unpaid{background:#fee2e2;color:#991b1b}.footer{margin-top:50px;text-align:center;color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:20px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
+<style>body{font-family:'Mona Sans','Inter',system-ui,sans-serif;margin:40px;color:#010101;background:#FFFFFF}.hdr{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid rgba(33,147,119,0.16);padding-bottom:26px;margin-bottom:32px}.hdr h1{color:#219377;margin:0;font-size:34px;font-weight:900}.hdr p{color:#525252;margin:6px 0;font-size:13px}.row{display:flex;gap:20px;margin-bottom:30px}.box{background:#F4FBF8;padding:22px;border-radius:20px;flex:1}.box h3{margin:0 0 10px;color:#219377;font-size:12px;text-transform:uppercase;letter-spacing:.18em}table{width:100%;border-collapse:collapse;margin:20px 0;border-radius:20px;overflow:hidden;box-shadow:0 14px 30px rgba(1,1,1,0.06)}th{background:#F4FBF8;color:#525252;padding:18px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.16em}td{padding:18px;border-bottom:1px solid rgba(1,1,1,0.06);color:#010101}.total{text-align:right;font-size:22px;font-weight:900;color:#219377;margin-top:20px}.badge{padding:8px 18px;border-radius:999px;font-weight:800;font-size:12px;text-transform:uppercase}.paid{background:rgba(34,197,94,0.14);color:#166534}.unpaid{background:rgba(255,189,89,0.18);color:#B76E00}.footer{margin-top:44px;text-align:center;color:#525252;font-size:13px;border-top:1px solid rgba(1,1,1,0.08);padding-top:22px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
   <div class="hdr" style="display:flex;align-items:center;gap:16px"><div>${logoHtml}</div><div><h1>INVOICE</h1><p><strong>${s.company_name||'Property Management System'}</strong></p><p>${s.company_address||''} | ${s.company_phone||''}</p><p>Invoice #: <strong>${i.invoice_id}</strong></p></div></div>
 <div class="row"><div class="box"><h3>Bill To</h3><p><strong>${i.entity_name||'N/A'}</strong></p><p>Ref: ${i.entity_id||'—'}</p></div>
 <div class="box"><h3>Details</h3><p><strong>Date:</strong> ${i.date}</p><p><strong>Period:</strong> ${i.month||''} ${i.year||''}</p><p><strong>Status:</strong> <span class="badge ${(i.status||'unpaid').toLowerCase()}">${i.status||'Unpaid'}</span></p></div></div>
@@ -672,7 +672,7 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(r.receipt_id, 'RCP', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${r.receipt_id}</title>
-<style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.receipt{max-width:580px;margin:0 auto;border:2px solid #0f766e;border-radius:12px;padding:40px}.hdr{text-align:center;border-bottom:2px dashed #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:28px}.stamp{display:inline-block;background:#0f766e;color:#fff;padding:8px 24px;border-radius:20px;font-weight:700;margin-top:8px}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0}.lbl{color:#64748b;font-weight:600;font-size:13px}.val{font-weight:700;font-size:14px}.amt{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;text-align:center;margin:28px 0}.amt .lbl{color:#166534;font-size:12px;text-transform:uppercase}.amt .val{color:#0f766e;font-size:34px;font-weight:700;margin-top:6px}.footer{text-align:center;margin-top:28px;color:#94a3b8;font-size:12px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
+<style>body{font-family:'Mona Sans','Inter',system-ui,sans-serif;margin:40px;color:#010101;background:#FFFFFF}.receipt{max-width:620px;margin:0 auto;background:#FFFFFF;border-radius:24px;padding:42px;box-shadow:0 30px 80px rgba(1,1,1,0.08);border:1px solid rgba(1,1,1,0.08)}.hdr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;text-align:left;border-bottom:1px solid rgba(33,147,119,0.16);padding-bottom:26px;margin-bottom:32px}.hdr h1{color:#219377;margin:0;font-size:32px;font-weight:900}.stamp{display:inline-flex;align-items:center;justify-content:center;background:#FFBD59;color:#010101;padding:10px 24px;border-radius:16px;font-weight:800;margin-top:0}.row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(1,1,1,0.08)}.lbl{color:#525252;font-weight:700;font-size:13px}.val{font-weight:900;font-size:14px}.amt{background:var(--accent-soft);border:1px solid rgba(255,189,89,0.3);border-radius:20px;padding:22px;text-align:center;margin:28px 0}.amt .lbl{color:#B76E00;font-size:12px;text-transform:uppercase}.amt .val{color:#010101;font-size:34px;font-weight:900;margin-top:6px}.footer{text-align:center;margin-top:32px;color:#525252;font-size:13px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
   <div class="receipt"><div class="hdr" style="display:flex;align-items:center;gap:12px"><div>${logoHtml}</div><div><h1>RENT RECEIPT</h1><p>${s.company_name||'Property Management System'}</p><p>${s.company_address||''}</p></div><div class="stamp">✔ PAID</div><p style="margin-top:10px">Receipt #: <strong>${r.receipt_id}</strong></p></div>
 <div class="row"><span class="lbl">Date</span><span class="val">${r.date}</span></div>
 <div class="row"><span class="lbl">Received From</span><span class="val">${r.tenant_name||'N/A'}</span></div>
@@ -1916,31 +1916,31 @@ app.get('/api/reports/portfolio/pdf', requireAuth, async (req, res) => {
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Portfolio Report</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
+body{font-family:'Mona Sans','Inter',system-ui,sans-serif;color:#010101;font-size:13px;background:#FFFFFF}
 .page{max-width:960px;margin:0 auto;padding:32px}
-.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:24px}
-.company{display:flex;align-items:center;gap:12px}
-.company h1{color:#0f766e;font-size:22px;margin-bottom:4px}
-.company p{color:#64748b;font-size:12px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:24px;border-bottom:1px solid rgba(33,147,119,0.16);margin-bottom:30px}
+.company{display:flex;align-items:center;gap:16px}
+.company h1{color:#219377;font-size:24px;margin-bottom:4px;font-weight:900}
+.company p{color:#525252;font-size:13px}
 .report-meta{text-align:right}
-.report-meta h2{font-size:20px;color:#0f172a}
-.report-meta p{color:#64748b;font-size:12px;margin-top:4px}
-.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
-.kpi{background:#f8fafc;border-radius:8px;padding:14px;border-left:3px solid #0f766e}
-.kpi.red{border-color:#ef4444} .kpi.green{border-color:#22c55e} .kpi.yellow{border-color:#f59e0b}
-.kpi .lbl{font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;letter-spacing:.5px}
-.kpi .val{font-size:15px;font-weight:700;margin-top:4px;color:#0f172a}
-.kpi.green .val{color:#16a34a} .kpi.red .val{color:#dc2626}
-h3{font-size:13px;font-weight:700;color:#0f766e;text-transform:uppercase;letter-spacing:.4px;margin:20px 0 10px}
-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-th{background:#0f766e;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase}
-td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}
-tr:hover{background:#f8fafc}
+.report-meta h2{font-size:22px;color:#010101}
+.report-meta p{color:#525252;font-size:13px;margin-top:6px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:30px}
+.kpi{background:#F4FBF8;border-radius:20px;padding:18px;border-left:4px solid #219377;box-shadow:0 18px 50px rgba(1,1,1,0.06)}
+.kpi.red{border-color:#ef4444} .kpi.green{border-color:#22c55e} .kpi.yellow{border-color:#ffbd59}
+.kpi .lbl{font-size:11px;color:#525252;text-transform:uppercase;font-weight:800;letter-spacing:.18em}
+.kpi .val{font-size:18px;font-weight:900;margin-top:8px;color:#010101}
+.kpi.green .val{color:#16a34a} .kpi.red .val{color:#dc2626} .kpi.yellow .val{color:#B76E00}
+h3{font-size:14px;font-weight:900;color:#219377;text-transform:uppercase;letter-spacing:.14em;margin:28px 0 12px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px;border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(1,1,1,0.06)}
+th{background:#F4FBF8;color:#525252;padding:16px 18px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.16em}
+td{padding:16px 18px;border-bottom:1px solid rgba(1,1,1,0.08);font-size:13px;color:#010101}
+tr:hover{background:#FAFCFB}
 .right{text-align:right}
-.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase}
-.badge.green{background:#dcfce7;color:#166534} .badge.yellow{background:#fef3c7;color:#92400e} .badge.red{background:#fee2e2;color:#991b1b}
-.summary-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;margin:20px 0}
-.footer{margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
+.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase}
+.badge.green{background:rgba(34,197,94,0.12);color:#166534} .badge.yellow{background:rgba(255,189,89,0.18);color:#B76E00} .badge.red{background:rgba(239,68,68,0.12);color:#991b1b}
+.summary-box{background:#FFF4DC;border:2px solid rgba(255,189,89,0.35);border-radius:20px;padding:24px;margin:26px 0}
+.footer{margin-top:32px;padding-top:20px;border-top:1px solid rgba(1,1,1,0.08);text-align:center;color:#525252;font-size:12px}
 @media print{.no-print{display:none!important}body{font-size:11px}.page{padding:20px}}
 </style></head><body>
 <div class="page">
