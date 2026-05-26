@@ -54,3 +54,14 @@ CREATE TABLE IF NOT EXISTS archive (
 CREATE INDEX IF NOT EXISTS idx_archive_type  ON archive(entity_type);
 CREATE INDEX IF NOT EXISTS idx_archive_label ON archive(entity_label);
 CREATE INDEX IF NOT EXISTS idx_archive_date  ON archive(deleted_at);
+
+-- Verifications table: store generated verification codes for documents/reports
+CREATE TABLE IF NOT EXISTS verifications (
+  code        VARCHAR(32) PRIMARY KEY,
+  doc_id      VARCHAR(200) NOT NULL,
+  doc_type    VARCHAR(50),
+  meta        JSONB,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_verifications_doc_id   ON verifications(doc_id);
+CREATE INDEX IF NOT EXISTS idx_verifications_doc_type ON verifications(doc_type);
