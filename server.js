@@ -640,7 +640,7 @@ app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
     const logoHtml = cfg.company_logo
       ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
       : `<div style="font-size:28px">🏢</div>`;
-    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(item.invoice_id, 'INV', req);
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(i.invoice_id, 'INV', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${i.invoice_id}</title>
 <style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.hdr{text-align:center;border-bottom:3px solid #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:32px}.hdr p{color:#666;margin:4px 0;font-size:13px}.row{display:flex;gap:20px;margin-bottom:30px}.box{background:#f8fafc;padding:20px;border-radius:8px;flex:1}.box h3{margin:0 0 10px;color:#0f766e;font-size:12px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#0f766e;color:#fff;padding:12px;text-align:left}td{padding:12px;border-bottom:1px solid #e2e8f0}.total{text-align:right;font-size:22px;font-weight:700;color:#0f766e;margin-top:20px}.badge{padding:6px 16px;border-radius:20px;font-weight:700;font-size:12px;text-transform:uppercase}.paid{background:#dcfce7;color:#166534}.unpaid{background:#fee2e2;color:#991b1b}.footer{margin-top:50px;text-align:center;color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:20px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
@@ -1759,7 +1759,7 @@ async function makeVerifyQR(docId, type, req) {
     margin: 1,
     color: { dark: '#0f766e', light: '#ffffff' }
   });
-  return { qrDataUrl, code, url };
+  return { qrDataUrl, verifyCode: code, verifyUrl: url, code, url };
 }
 // ── Public verification endpoint (no auth required) ───────────────────────────
 app.get('/verify/:code', async (req, res) => {
