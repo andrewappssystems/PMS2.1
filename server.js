@@ -637,6 +637,7 @@ app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
     if (!inv.length) return res.status(404).send('Invoice not found');
     const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
     const i = inv[0];
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(item.invoice_id, 'INV', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${i.invoice_id}</title>
 <style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.hdr{text-align:center;border-bottom:3px solid #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:32px}.hdr p{color:#666;margin:4px 0;font-size:13px}.row{display:flex;gap:20px;margin-bottom:30px}.box{background:#f8fafc;padding:20px;border-radius:8px;flex:1}.box h3{margin:0 0 10px;color:#0f766e;font-size:12px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#0f766e;color:#fff;padding:12px;text-align:left}td{padding:12px;border-bottom:1px solid #e2e8f0}.total{text-align:right;font-size:22px;font-weight:700;color:#0f766e;margin-top:20px}.badge{padding:6px 16px;border-radius:20px;font-weight:700;font-size:12px;text-transform:uppercase}.paid{background:#dcfce7;color:#166534}.unpaid{background:#fee2e2;color:#991b1b}.footer{margin-top:50px;text-align:center;color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:20px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
@@ -1574,6 +1575,18 @@ app.get('/api/reports/landlord/:landlordId/pdf', requireAuth, async (req, res) =
 <div class="no-print" style="text-align:center;padding:24px">
   <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
 </div>
+<div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:16px">
+  <div>
+    <strong style="font-size:12px;color:#374151">Document Verification</strong>
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">Scan the QR code or visit the link to verify this document is authentic</div>
+    <div style="margin-top:4px"><a href="${verifyUrl}" style="color:#0f766e;font-size:11px;word-break:break-all">${verifyUrl}</a></div>
+    <div style="font-family:monospace;font-size:15px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:6px">${verifyCode}</div>
+  </div>
+  <div style="flex-shrink:0;text-align:center">
+    <img src="${qrDataUrl}" style="width:80px;height:80px;display:block">
+    <div style="font-size:10px;color:#94a3b8;margin-top:3px">Scan to verify</div>
+  </div>
+</div>
 </body></html>`;
     res.setHeader('Content-Type','text/html');
     res.send(html);
@@ -1686,6 +1699,18 @@ app.get('/api/reports/tenant/:tenantId/pdf', requireAuth, async (req, res) => {
 </div>
 <div class="no-print" style="text-align:center;padding:24px">
   <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+</div>
+<div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:16px">
+  <div>
+    <strong style="font-size:12px;color:#374151">Document Verification</strong>
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">Scan the QR code or visit the link to verify this document is authentic</div>
+    <div style="margin-top:4px"><a href="${verifyUrl}" style="color:#0f766e;font-size:11px;word-break:break-all">${verifyUrl}</a></div>
+    <div style="font-family:monospace;font-size:15px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:6px">${verifyCode}</div>
+  </div>
+  <div style="flex-shrink:0;text-align:center">
+    <img src="${qrDataUrl}" style="width:80px;height:80px;display:block">
+    <div style="font-size:10px;color:#94a3b8;margin-top:3px">Scan to verify</div>
+  </div>
 </div>
 </body></html>`;
     res.setHeader('Content-Type','text/html');
@@ -2092,6 +2117,7 @@ td{padding:10px 14px;border-bottom:1px solid #e2e8f0}
 <div class="no-print" style="text-align:center;padding:24px">
   <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
 </div>
+
 </body></html>`;
     res.setHeader('Content-Type','text/html');
     res.send(html);
