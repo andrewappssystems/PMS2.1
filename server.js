@@ -637,14 +637,14 @@ app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
     if (!inv.length) return res.status(404).send('Invoice not found');
     const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
     const i = inv[0];
-    const logoHtml = cfg.company_logo
-      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
+    const logoHtml = s.company_logo
+      ? `<img src="${s.company_logo}" style="height:48px;object-fit:contain">`
       : `<div style="font-size:28px">🏢</div>`;
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(i.invoice_id, 'INV', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${i.invoice_id}</title>
 <style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.hdr{text-align:center;border-bottom:3px solid #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:32px}.hdr p{color:#666;margin:4px 0;font-size:13px}.row{display:flex;gap:20px;margin-bottom:30px}.box{background:#f8fafc;padding:20px;border-radius:8px;flex:1}.box h3{margin:0 0 10px;color:#0f766e;font-size:12px;text-transform:uppercase}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#0f766e;color:#fff;padding:12px;text-align:left}td{padding:12px;border-bottom:1px solid #e2e8f0}.total{text-align:right;font-size:22px;font-weight:700;color:#0f766e;margin-top:20px}.badge{padding:6px 16px;border-radius:20px;font-weight:700;font-size:12px;text-transform:uppercase}.paid{background:#dcfce7;color:#166534}.unpaid{background:#fee2e2;color:#991b1b}.footer{margin-top:50px;text-align:center;color:#94a3b8;font-size:12px;border-top:1px solid #e2e8f0;padding-top:20px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
-<div class="hdr"><h1>INVOICE</h1><p><strong>${s.company_name||'Property Management System'}</strong></p><p>${s.company_address||''} | ${s.company_phone||''}</p><p>Invoice #: <strong>${i.invoice_id}</strong></p></div>
+  <div class="hdr" style="display:flex;align-items:center;gap:16px"><div>${logoHtml}</div><div><h1>INVOICE</h1><p><strong>${s.company_name||'Property Management System'}</strong></p><p>${s.company_address||''} | ${s.company_phone||''}</p><p>Invoice #: <strong>${i.invoice_id}</strong></p></div></div>
 <div class="row"><div class="box"><h3>Bill To</h3><p><strong>${i.entity_name||'N/A'}</strong></p><p>Ref: ${i.entity_id||'—'}</p></div>
 <div class="box"><h3>Details</h3><p><strong>Date:</strong> ${i.date}</p><p><strong>Period:</strong> ${i.month||''} ${i.year||''}</p><p><strong>Status:</strong> <span class="badge ${(i.status||'unpaid').toLowerCase()}">${i.status||'Unpaid'}</span></p></div></div>
 <table><thead><tr><th>Description</th><th style="text-align:right">Amount (${s.currency||'UGX'})</th></tr></thead>
@@ -664,16 +664,16 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
       pool.query('SELECT key,value FROM settings')
     ]);
     if (!rcp.length) return res.status(404).send('Receipt not found');
-    const logoHtml = cfg.company_logo
-      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
-      : `<div style="font-size:28px">🏢</div>`;
     const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
     const r = rcp[0];
+    const logoHtml = s.company_logo
+      ? `<img src="${s.company_logo}" style="height:48px;object-fit:contain">`
+      : `<div style="font-size:28px">🏢</div>`;
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(r.receipt_id, 'RCP', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${r.receipt_id}</title>
 <style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.receipt{max-width:580px;margin:0 auto;border:2px solid #0f766e;border-radius:12px;padding:40px}.hdr{text-align:center;border-bottom:2px dashed #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:28px}.stamp{display:inline-block;background:#0f766e;color:#fff;padding:8px 24px;border-radius:20px;font-weight:700;margin-top:8px}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0}.lbl{color:#64748b;font-weight:600;font-size:13px}.val{font-weight:700;font-size:14px}.amt{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;text-align:center;margin:28px 0}.amt .lbl{color:#166534;font-size:12px;text-transform:uppercase}.amt .val{color:#0f766e;font-size:34px;font-weight:700;margin-top:6px}.footer{text-align:center;margin-top:28px;color:#94a3b8;font-size:12px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
-<div class="receipt"><div class="hdr"><h1>RENT RECEIPT</h1><p>${s.company_name||'Property Management System'}</p><p>${s.company_address||''}</p><div class="stamp">✔ PAID</div><p style="margin-top:10px">Receipt #: <strong>${r.receipt_id}</strong></p></div>
+  <div class="receipt"><div class="hdr" style="display:flex;align-items:center;gap:12px"><div>${logoHtml}</div><div><h1>RENT RECEIPT</h1><p>${s.company_name||'Property Management System'}</p><p>${s.company_address||''}</p></div><div class="stamp">✔ PAID</div><p style="margin-top:10px">Receipt #: <strong>${r.receipt_id}</strong></p></div>
 <div class="row"><span class="lbl">Date</span><span class="val">${r.date}</span></div>
 <div class="row"><span class="lbl">Received From</span><span class="val">${r.tenant_name||'N/A'}</span></div>
 <div class="row"><span class="lbl">Unit</span><span class="val">${r.unit_number||'N/A'}</span></div>
