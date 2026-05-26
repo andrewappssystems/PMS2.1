@@ -669,6 +669,7 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
       : `<div style="font-size:28px">🏢</div>`;
     const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
     const r = rcp[0];
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(r.receipt_id, 'RCP', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${r.receipt_id}</title>
 <style>body{font-family:Arial,sans-serif;margin:40px;color:#333}.receipt{max-width:580px;margin:0 auto;border:2px solid #0f766e;border-radius:12px;padding:40px}.hdr{text-align:center;border-bottom:2px dashed #0f766e;padding-bottom:20px;margin-bottom:30px}.hdr h1{color:#0f766e;margin:0;font-size:28px}.stamp{display:inline-block;background:#0f766e;color:#fff;padding:8px 24px;border-radius:20px;font-weight:700;margin-top:8px}.row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0}.lbl{color:#64748b;font-weight:600;font-size:13px}.val{font-weight:700;font-size:14px}.amt{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;text-align:center;margin:28px 0}.amt .lbl{color:#166534;font-size:12px;text-transform:uppercase}.amt .val{color:#0f766e;font-size:34px;font-weight:700;margin-top:6px}.footer{text-align:center;margin-top:28px;color:#94a3b8;font-size:12px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
@@ -1436,6 +1437,7 @@ app.get('/api/reports/landlord/:landlordId/pdf', requireAuth, async (req, res) =
     const logoHtml = company.company_logo
       ? `<img src="${company.company_logo}" style="height:56px;object-fit:contain">`
       : `<div style="font-size:32px">🏢</div>`;
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(`LREP-${req.params.landlordId}-${from}-${to}`, 'RPT', req);
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Landlord Report — ${ll.name}</title>
@@ -1641,6 +1643,7 @@ app.get('/api/reports/tenant/:tenantId/pdf', requireAuth, async (req, res) => {
     const logoHtml = cfg.company_logo
       ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
       : `<div style="font-size:28px">🏢</div>`;
+    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(`TST-${req.params.tenantId}-${from}-${to}`, 'RPT', req);
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Tenant Statement — ${t.name}</title>
@@ -1759,12 +1762,45 @@ async function makeVerifyQR(docId, type, req) {
     margin: 1,
     color: { dark: '#0f766e', light: '#ffffff' }
   });
+  // Persist verification record so /verify/:code can look it up directly
+  try {
+    const meta = {
+      docId: docId,
+      type: type,
+      host: req.get('host'),
+      ip: req.ip || null,
+      user: (req.session && req.session.user) ? req.session.user.username || req.session.user : null
+    };
+    await pool.query(
+      `INSERT INTO verifications(code, doc_id, doc_type, meta)
+       VALUES($1,$2,$3,$4)
+       ON CONFLICT (code) DO UPDATE SET meta = verifications.meta`,
+      [code, String(docId), type, meta]
+    );
+  } catch (e) {
+    // Non-fatal: if persistence fails, verification will still work via code recomputation
+    console.error('Failed to persist verification record', e.message || e);
+  }
   return { qrDataUrl, verifyCode: code, verifyUrl: url, code, url };
 }
 // ── Public verification endpoint (no auth required) ───────────────────────────
 app.get('/verify/:code', async (req, res) => {
   const code = req.params.code.toUpperCase();
   try {
+    // Check persisted verifications first
+    const { rows: vRows } = await pool.query(
+      'SELECT code, doc_id, doc_type, meta, created_at FROM verifications WHERE code = $1 LIMIT 1',
+      [code]
+    );
+    if (vRows.length) {
+      const v = vRows[0];
+      const meta = v.meta || {};
+      return res.send(verifyPage('Document', v.doc_id, {
+        'Type': v.doc_type || 'Document',
+        'Generated': new Date(v.created_at).toLocaleString(),
+        'Meta': typeof meta === 'object' ? JSON.stringify(meta) : String(meta)
+      }));
+    }
     // Search invoices
     const { rows: invRows } = await pool.query(
       `SELECT invoice_id, entity_name, description, amount, month, year, status, created_at
