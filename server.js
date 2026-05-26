@@ -637,6 +637,9 @@ app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
     if (!inv.length) return res.status(404).send('Invoice not found');
     const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
     const i = inv[0];
+    const logoHtml = cfg.company_logo
+      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
+      : `<div style="font-size:28px">🏢</div>`;
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(item.invoice_id, 'INV', req);
     res.setHeader('Content-Type','text/html');
     res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${i.invoice_id}</title>
@@ -661,6 +664,9 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
       pool.query('SELECT key,value FROM settings')
     ]);
     if (!rcp.length) return res.status(404).send('Receipt not found');
+    const logoHtml = cfg.company_logo
+      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
+      : `<div style="font-size:28px">🏢</div>`;
     const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
     const r = rcp[0];
     res.setHeader('Content-Type','text/html');
@@ -672,6 +678,18 @@ app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
 <div class="row"><span class="lbl">Unit</span><span class="val">${r.unit_number||'N/A'}</span></div>
 <div class="row"><span class="lbl">Period</span><span class="val">${r.month||''} ${r.year||''}</span></div>
 <div class="row"><span class="lbl">Payment Method</span><span class="val">${r.payment_method||'Cash'}</span></div>
+<div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:16px">
+  <div>
+    <strong style="font-size:12px;color:#374151">Document Verification</strong>
+    <div style="font-size:11px;color:#94a3b8;margin-top:3px">Scan the QR code or visit the link to verify this document is authentic</div>
+    <div style="margin-top:4px"><a href="${verifyUrl}" style="color:#0f766e;font-size:11px;word-break:break-all">${verifyUrl}</a></div>
+    <div style="font-family:monospace;font-size:15px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:6px">${verifyCode}</div>
+  </div>
+  <div style="flex-shrink:0;text-align:center">
+    <img src="${qrDataUrl}" style="width:80px;height:80px;display:block">
+    <div style="font-size:10px;color:#94a3b8;margin-top:3px">Scan to verify</div>
+  </div>
+</div>
 <div class="amt"><div class="lbl">Amount Received</div><div class="val">${s.currency||'UGX'} ${Number(r.amount||0).toLocaleString()}</div></div>
 <div class="footer"><p>Thank you for your payment.</p><p>${s.company_name||'PMS'} | ${new Date().toLocaleDateString('en-GB')}</p></div>
 <div class="no-print" style="text-align:center;margin-top:28px"><button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer">🖨️ Print / Save as PDF</button></div>
