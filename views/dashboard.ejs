@@ -1376,7 +1376,7 @@ function openReportModal(type, prefillTenantId=''){
     const to=gv('r_to')||document.getElementById('r_to')?.value;
     if(!from||!to){showToast('Please select a date range','error');return;}
     if(type==='portfolio'){
-      window.open(`/api/reports/portfolio?from=${from}&to=${to}`,'_blank');
+      window.open(`/api/reports/portfolio/pdf?from=${from}&to=${to}`,'_blank');
       closeModal();
     } else if(type==='landlord'){
       const lid=document.getElementById('r_landlord')?.value;
