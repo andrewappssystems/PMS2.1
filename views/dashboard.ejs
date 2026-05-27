@@ -324,7 +324,6 @@ tr:hover td{background:var(--surface-soft);}
 </head>
 <body>
 <div class="app">
-  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
 <div class="logo" id="sidebarLogo">
   <span class="logo-text">Manage<span class="logo-dot">Mate</span></span>
@@ -352,11 +351,9 @@ tr:hover td{background:var(--surface-soft);}
       <a onclick="showSection('settings',event)" id="navSettings"><span class="nav-icon green">⚙️</span> Settings</a>
     </nav>
     <div class="user-info">
-      <button class="logout" onclick="logout()">🚪 Sign Out</button>
     </div>
   </aside>
-
-  <div class="main">
+<div class="main">
 <div class="topbar">
   <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
   <div class="topbar-left">
@@ -664,7 +661,7 @@ const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('userName').textContent=USER.name||USER.username;
   document.getElementById('userRole').textContent=USER.role;
-  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dashDate').ftextContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if(USER.role==='Admin'){
     document.getElementById('usersActionsBar').style.display='flex';
     document.getElementById('saveSettingsBtn').style.display='block';
