@@ -1,37 +1,424 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PMS — Login</title>
-<style>
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; background:linear-gradient(135deg,#0f766e,#0d9488); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
-.login-box { background:#fff; padding:48px; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.3); width:100%; max-width:400px; }
-.login-box .logo { text-align:center; font-size:48px; margin-bottom:16px; }
-.login-box h1 { color:#0f172a; font-size:24px; margin-bottom:8px; text-align:center; }
-.login-box p { color:#64748b; text-align:center; margin-bottom:32px; font-size:14px; }
-.field { margin-bottom:20px; }
-.field label { display:block; font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; margin-bottom:6px; }
-.field input { width:100%; padding:12px; border:2px solid #e2e8f0; border-radius:8px; font-size:15px; outline:none; }
-.field input:focus { border-color:#14b8a6; }
-.btn { width:100%; padding:14px; background:#0f766e; color:#fff; border:none; border-radius:8px; font-size:16px; font-weight:700; cursor:pointer; transition:.2s; }
-.btn:hover { background:#0d9488; }
-.error { color:#ef4444; font-size:13px; text-align:center; margin-top:16px; }
-@media (max-width:480px) { .login-box { padding:32px 24px; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ManageMate — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    :root {
+      --color-primary: #219377;
+      --color-primary-dark: #1a6f63;
+      --color-accent: #FFBD59;
+      --color-text: #010101;
+      --color-text-muted: #525252;
+      --color-white: #FFFFFF;
+      --color-surface: #F9FAFB;
+      --color-border: #E5E7EB;
+      --color-error: #EF4444;
+      --font-family: 'Mona Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: linear-gradient(135deg, var(--color-primary) 0%, #1a6f63 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      display: flex;
+      width: 100%;
+      max-width: 1000px;
+      background: var(--color-white);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    }
+
+    .login-left {
+      flex: 1;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+      padding: 60px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: var(--color-white);
+      min-height: 500px;
+    }
+
+    .login-left h2 {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .login-left p {
+      font-size: 16px;
+      opacity: 0.9;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .feature {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .feature-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .feature-text {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .login-right {
+      flex: 1;
+      padding: 60px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--color-white);
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--color-text);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--color-text-muted);
+      margin-bottom: 40px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    input {
+      width: 100%;
+      height: 48px;
+      padding: 12px 16px;
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      background: var(--color-white);
+      color: var(--color-text);
+      font-family: var(--font-family);
+      font-size: 14px;
+      transition: all 0.25s ease;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 4px rgba(33, 147, 119, 0.15);
+      background: var(--color-white);
+    }
+
+    .form-error {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      color: var(--color-error);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .error-icon {
+      font-size: 18px;
+    }
+
+    .btn {
+      width: 100%;
+      height: 48px;
+      padding: 0 24px;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+      color: var(--color-white);
+      border: none;
+      border-radius: 12px;
+      font-family: var(--font-family);
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      outline: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(33, 147, 119, 0.2);
+      background: linear-gradient(135deg, var(--color-primary-dark), #1a6f63);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .footer-text {
+      font-size: 12px;
+      color: var(--color-text-muted);
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      .login-container {
+        flex-direction: column;
+      }
+
+      .login-left {
+        padding: 40px 32px;
+        min-height: auto;
+        text-align: center;
+      }
+
+      .login-left h2 {
+        font-size: 24px;
+      }
+
+      .login-left p {
+        font-size: 14px;
+      }
+
+      .features {
+        display: none;
+      }
+
+      .login-right {
+        padding: 40px 32px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .logo-section {
+        justify-content: center;
+        margin-bottom: 32px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .login-container {
+        border-radius: 16px;
+      }
+
+      .login-left {
+        padding: 32px 24px;
+      }
+
+      .login-right {
+        padding: 32px 24px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+      }
+    }
+
+    /* Loading state */
+    .btn.loading {
+      position: relative;
+      color: transparent;
+    }
+
+    .btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      top: 50%;
+      left: 50%;
+      margin-left: -8px;
+      margin-top: -8px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--color-white);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="login-box">
-  <div class="logo">🏢</div>
-  <h1>Property Management</h1>
-  <p>Sign in to your account</p>
-  <form method="POST" action="/login">
-    <div class="field"><label>Username</label><input type="text" name="username" placeholder="Enter username" required autocomplete="username"></div>
-    <div class="field"><label>Password</label><input type="password" name="password" placeholder="Enter password" required autocomplete="current-password"></div>
-    <button type="submit" class="btn">Sign In</button>
-    <% if (error) { %><div class="error"><%= error %></div><% } %>
-  </form>
-</div>
+  <div class="login-container">
+    <!-- Left Side: Branding -->
+    <div class="login-left">
+      <h2>Welcome to ManageMate</h2>
+      <p>The modern platform for property managers. Streamline operations, manage properties, and maximize returns.</p>
+      
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">📊</div>
+          <div class="feature-text">Real-time analytics and reporting</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏘️</div>
+          <div class="feature-text">Manage unlimited properties</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💰</div>
+          <div class="feature-text">Automated rent collection</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📱</div>
+          <div class="feature-text">Works on desktop and mobile</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side: Login Form -->
+    <div class="login-right">
+      <div class="logo-section">
+        <div class="logo-icon">🏢</div>
+        <div class="logo-text">ManageMate</div>
+      </div>
+
+      <h1>Sign In</h1>
+      <p class="subtitle">Access your property management dashboard</p>
+
+      <form method="POST" action="/login">
+        <% if (error) { %>
+          <div class="form-error">
+            <span class="error-icon">⚠️</span>
+            <span><%= error %></span>
+          </div>
+        <% } %>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input 
+            type="text" 
+            id="username"
+            name="username" 
+            placeholder="Enter your username" 
+            required 
+            autocomplete="username"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            id="password"
+            name="password" 
+            placeholder="Enter your password" 
+            required 
+            autocomplete="current-password"
+          >
+        </div>
+
+        <button type="submit" class="btn">Sign In</button>
+      </form>
+
+      <p class="footer-text">
+        Property Management Made Simple • ManageMate 2026
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Simple loading state
+    document.querySelector('form').addEventListener('submit', function() {
+      const btn = document.querySelector('.btn');
+      btn.disabled = true;
+      btn.classList.add('loading');
+    });
+  </script>
 </body>
 </html>
