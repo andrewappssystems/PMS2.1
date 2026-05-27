@@ -822,7 +822,7 @@ function renderMcArrears() {
 async function loadPage(type,page){
   const urls={rent:'/api/rent',expenses:'/api/expenses',invoices:'/api/invoices',receipts:'/api/receipts'};
   try{
-    const res=await fetch(`${urls[type]}?page=${page}&limit=50`).then(r=>r.json());
+    const res=await fetch(`${urls[type]}?page=${page}&limit=50`,{credentials:'include'}).then(r=>r.json());
     const rows=Array.isArray(res)?res:(res.data||[]);
     const pages=Array.isArray(res)?1:(res.pages||1);
     pgState[type]={page:Array.isArray(res)?1:(res.page||1),pages};
@@ -1920,7 +1920,7 @@ function confirmDelete(type,id,label){
 async function executeDelete(type,id,label){
   const endpoint=type==='tenant'?`/api/tenants/${id}`:`/api/landlords/${id}`;
   try{
-    const res=await fetch(endpoint,{method:'DELETE'});
+    const res=await fetch(endpoint,{method:'DELETE',credentials:'include'});
     const data=await res.json();
     if(data.success){
       showUndoBar(`${label} deleted`,()=>showToast('Undo not available — record is archived','info'));
