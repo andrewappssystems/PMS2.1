@@ -664,7 +664,7 @@ const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('userName').textContent=USER.name||USER.username;
   document.getElementById('userRole').textContent=USER.role;
-  .textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if(USER.role==='Admin'){
     document.getElementById('usersActionsBar').style.display='flex';
     document.getElementById('saveSettingsBtn').style.display='block';
