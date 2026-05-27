@@ -165,7 +165,7 @@ app.post('/login', loginLimiter, async (req, res) => {
 });
 
 app.get('/logout', (req, res) => req.session.destroy(() => res.redirect('/login')));
-app.get('/', requireAuth, (req, res) => res.render('dashboard-new', { user: req.session.user }));
+app.get('/', requireAuth, (req, res) => res.render('dashboard', { user: req.session.user }));
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 app.get('/api/stats', requireAuth, async (req, res) => {
