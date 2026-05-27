@@ -1,7 +1,7 @@
 {
-  "name": "property-management-system",
-  "version": "2.0.0",
-  "description": "PMS - Property Management System",
+  "name": "managemate",
+  "version": "1.0.0",
+  "description": "ManageMate - Modern Property Management SaaS Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
