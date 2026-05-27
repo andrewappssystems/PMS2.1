@@ -31,9 +31,27 @@ button,input,select,textarea{font:inherit;}
 button{cursor:pointer;}
 .app{display:flex;min-height:100vh;background:var(--bg);}
 .sidebar{width:210px;position:fixed;inset:0;background:linear-gradient(180deg,#219377 0%,#1f8c7a 100%);color:#fff;overflow-y:auto;padding:18px 14px;box-shadow:0 24px 72px rgba(1,1,1,0.12);}
-.sidebar .logo{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
-.sidebar .logo-icon{width:32px;height:32px;border-radius:12px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center;font-size:15px;}
-.sidebar .logo h1{font-size:15px;font-weight:800;letter-spacing:-0.02em;}
+.sidebar .logo {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar .logo .logo-text {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+.sidebar .logo .logo-dot {
+  color: #FFBD59;
+}
+.sidebar .logo img,
+.sidebar .logo .logo-icon,
+.sidebar .logo .logo-img {
+  display: none !important;
+}
 .sidebar nav{display:grid;gap:6px;}
 .sidebar nav .nav-section{margin-top:16px;margin-bottom:6px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.26em;opacity:.75;}
 .sidebar nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;text-decoration:none;color:#fff;font-size:12px;font-weight:700;transition:transform .2s,background .2s;}
@@ -44,24 +62,123 @@ button{cursor:pointer;}
 .nav-icon.yellow{color:#fde68a;}
 .sidebar .user-info{display:none;}
 .main{flex:1;margin-left:210px;display:flex;flex-direction:column;}
-.topbar{position:sticky;top:0;z-index:20;background:var(--surface-strong);border-bottom:1px solid rgba(1,1,1,0.06);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.topbar-left{display:flex;flex-wrap:wrap;align-items:center;gap:14px;min-width:0;}
-.topbar .title-group{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.topbar h1{font-size:20px;font-weight:900;letter-spacing:-0.03em;margin:0;}
-.topbar .topbar-subtitle{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.24em;}
-.topbar .topbar-user{font-size:13px;font-weight:800;color:var(--text);}
-.topbar .topbar-role{font-size:11px;color:var(--muted);}
-.topbar .date{color:var(--muted);font-size:11px;}
-.topbar .mobile-menu{display:none;background:none;border:none;color:var(--text);font-size:24px;}
-.content{padding:20px 22px 24px;max-width:1440px;width:100%;}
+.topbar {
+  background: #fff;
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f1f1;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar .topbar-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.topbar .topbar-left .greeting {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 400;
+}
+.topbar .topbar-left .username {
+  font-size: 16px;
+  font-weight: 700;
+  color: #010101;
+}
+.topbar .topbar-left .role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(33,147,119,.1);
+  color: #219377;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-left: 4px;
+}
+.topbar .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.topbar .topbar-right .datetime {
+  text-align: right;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+.topbar .topbar-right .datetime strong {
+  display: block;
+  font-size: 13px;
+  color: #010101;
+  font-weight: 600;
+}
+.topbar .signout-btn {
+  padding: 0 18px;
+  height: 38px;
+  border-radius: 50px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.topbar .signout-btn:hover {
+  border-color: #219377;
+  color: #219377;
+}
+.topbar .mobile-menu {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+@media(max-width:768px){
+  .topbar .mobile-menu { display: block; }
+  .topbar .topbar-left .greeting { display: none; }
+}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
-.stat-card{background:var(--surface-strong);border-radius:18px;padding:18px;box-shadow:var(--shadow);border:1px solid rgba(1,1,1,0.06);}
-.stat-card .label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.28em;margin-bottom:10px;}
-.stat-card .value{font-size:28px;font-weight:900;color:var(--text);line-height:1;}
-.stat-card .meta{margin-top:10px;font-size:13px;color:var(--muted);}
-.stat-card.accent .value{color:var(--accent);}
-.stat-card.success .value{color:#22c55e;}
-.stat-card.warning .value{color:#B76E00;}
+.stat-card {
+  background: #EAF8F4;
+  border-radius: 16px;
+  padding: 24px;
+  border-left: 4px solid #219377;
+  box-shadow: none;
+}
+.stat-card .label {
+  font-size: 11px;
+  color: #219377;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: .6px;
+  margin-bottom: 10px;
+}
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #010101;
+}
+.stat-card.warning {
+  background: #FFF4DE;
+  border-left-color: #FFBD59;
+}
+.stat-card.warning .label { color: #B87D00; }
+.stat-card.warning .value { color: #B87D00; }
+.stat-card.danger {
+  background: #FFE5E5;
+  border-left-color: #ef4444;
+}
+.stat-card.danger .label { color: #991b1b; }
+.stat-card.danger .value { color: #dc2626; }
+.stat-card.green-value .value { color: #219377; }
 .alert-bar{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:22px;border:1px solid rgba(33,147,119,0.2);background:rgba(33,147,119,0.08);color:var(--text);margin-bottom:22px;}
 .arrears-widget{background:var(--surface);border-radius:var(--radius-card);padding:24px;box-shadow:var(--shadow);margin-bottom:22px;}
 .arrears-widget h3{font-size:20px;font-weight:900;margin-bottom:18px;}
@@ -70,13 +187,47 @@ button{cursor:pointer;}
 .ai-info{font-size:14px;font-weight:800;color:var(--text);}
 .ai-sub{font-size:13px;color:var(--muted);}
 .ai-amt{font-size:15px;font-weight:900;color:#B91C1C;}
-.quick-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:18px;}
-.quick-actions button{border-radius:14px;border:none;padding:10px 12px;font-size:11px;font-weight:800;transition:transform .15s,box-shadow .15s;box-shadow:none;width:100%;min-width:0;}
-.quick-actions button:hover{transform:translateY(-1px);}
-.quick-actions button.primary{background:rgba(33,147,119,0.14);color:#166A5D;}
-.quick-actions button.secondary{background:rgba(255,255,255,0.95);color:var(--text);border:1px solid rgba(1,1,1,0.08);}
-.quick-actions button.accent{background:rgba(255,189,89,0.18);color:#B76E00;}
-.quick-actions button.danger{background:rgba(239,68,68,0.12);color:#991b1b;}
+.quick-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.quick-actions button {
+  padding: 0 24px;
+  height: 44px;
+  border-radius: 50px;
+  border: none;
+  background: #219377;
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(33, 147, 119, 0.35);
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+.quick-actions button:hover {
+  background: #1a7660;
+  box-shadow: 0 6px 18px rgba(33, 147, 119, 0.45);
+  transform: translateY(-1px);
+}
+.quick-actions button.secondary {
+  background: #FFBD59;
+  color: #010101;
+  box-shadow: 0 4px 12px rgba(255, 189, 89, 0.4);
+}
+.quick-actions button.secondary:hover {
+  background: #f0ad45;
+  box-shadow: 0 6px 18px rgba(255, 189, 89, 0.5);
+  transform: translateY(-1px);
+}
+.quick-actions button.danger {
+  background: #fee2e2;
+  color: #991b1b;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
 .data-table{background:var(--surface);border-radius:var(--radius-card);overflow:hidden;border:1px solid rgba(1,1,1,0.06);box-shadow:var(--shadow);}
 .table-header{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:1px solid rgba(1,1,1,0.06);}
 .table-header h3{font-size:17px;font-weight:900;}
@@ -175,9 +326,9 @@ tr:hover td{background:var(--surface-soft);}
 <div class="app">
   <!-- Sidebar -->
   <aside class="sidebar" id="sidebar">
-    <div class="logo" id="sidebarLogo">
-      <span class="logo-icon">🏢</span>
-      <span id="logoCompanyName">ManageMate</span>
+<div class="logo" id="sidebarLogo">
+  <span class="logo-text">Manage<span class="logo-dot">Mate</span></span>
+</div>
     </div>
     <nav>
       <a class="active" onclick="showSection('dashboard',event)"><span class="nav-icon green">📊</span> Dashboard</a>
@@ -206,49 +357,55 @@ tr:hover td{background:var(--surface-soft);}
   </aside>
 
   <div class="main">
-    <div class="topbar">
-      <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
-      <div class="topbar-left">
-        <div class="topbar-subtitle">Welcome back</div>
-        <div class="title-group"><h1 id="pageTitle">Dashboard</h1></div>
-        <div class="topbar-user" id="userName">Loading...</div>
-        <div class="topbar-role" id="userRole">...</div>
-      </div>
-      <div class="date" id="dashDate"></div>
+<div class="topbar">
+  <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
+  <div class="topbar-left">
+    <span class="greeting">Welcome back,</span>
+    <span class="username" id="userName">—</span>
+    <span class="role-badge" id="userRole">—</span>
+  </div>
+  <div class="topbar-right">
+    <div class="datetime">
+      <strong id="topbarTime">—</strong>
+      <span id="dashDate">—</span>
     </div>
-    <div class="content">
+    <button class="signout-btn" onclick="logout()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </button>
+  </div>
+</div>
 
       <!-- ══ DASHBOARD ══ -->
       <div class="section active" id="sec-dashboard">
         <div class="alert-bar" id="rentDueBar"></div>
         <div class="stats-grid">
-          <div class="stat-card"><div class="label">Landlords</div><div class="value" id="statLandlords">—</div></div>
-          <div class="stat-card"><div class="label">Properties</div><div class="value" id="statProperties">—</div></div>
-          <div class="stat-card"><div class="label">Units</div><div class="value" id="statUnits">—</div></div>
-          <div class="stat-card"><div class="label">Active Tenants</div><div class="value" id="statTenants">—</div></div>
-          <div class="stat-card"><div class="label">Occupied</div><div class="value" id="statOccupied">—</div></div>
-          <div class="stat-card warning"><div class="label">Vacant</div><div class="value" id="statVacant">—</div></div>
-          <div class="stat-card"><div class="label">Rent Collected</div><div class="value" id="statRent" style="font-size:16px">—</div></div>
-          <div class="stat-card"><div class="label">Total Expenses</div><div class="value" id="statExpenses" style="font-size:16px">—</div></div>
-          <div class="stat-card danger"><div class="label">Total Arrears</div><div class="value" id="statArrears" style="font-size:16px">—</div></div>
-          <div class="stat-card danger"><div class="label">Tenants in Arrears</div><div class="value" id="statArrearsCount">—</div></div>
-        </div>
+  <div class="stat-card"><div class="label">Landlords</div><div class="value" id="statLandlords">—</div></div>
+  <div class="stat-card"><div class="label">Properties</div><div class="value" id="statProperties">—</div></div>
+  <div class="stat-card"><div class="label">Units</div><div class="value" id="statUnits">—</div></div>
+  <div class="stat-card"><div class="label">Active Tenants</div><div class="value" id="statTenants">—</div></div>
+  <div class="stat-card"><div class="label">Occupied</div><div class="value" id="statOccupied">—</div></div>
+  <div class="stat-card warning"><div class="label">Vacant</div><div class="value" id="statVacant">—</div></div>
+  <div class="stat-card green-value"><div class="label">Rent Collected</div><div class="value" id="statRent" style="font-size:18px">—</div></div>
+  <div class="stat-card"><div class="label">Total Expenses</div><div class="value" id="statExpenses" style="font-size:18px">—</div></div>
+  <div class="stat-card danger"><div class="label">Total Arrears</div><div class="value" id="statArrears" style="font-size:18px">—</div></div>
+  <div class="stat-card danger"><div class="label">Tenants in Arrears</div><div class="value" id="statArrearsCount">—</div></div>
+</div>
         <div class="arrears-widget" id="criticalWidget" style="display:none">
           <h3>🚨 Critical Arrears <span id="criticalSub" style="font-size:12px;font-weight:400;color:var(--text-light)"></span></h3>
           <div class="arrears-list" id="criticalList"></div>
           <div style="margin-top:12px"><button class="secondary" style="padding:9px 16px;border-radius:14px;border:1px solid rgba(33,147,119,0.16);background:var(--card);color:var(--primary);font-weight:700;font-size:13px;cursor:pointer" onclick="showSection('arrears',event)">View All Arrears →</button></div>
         </div>
         <div class="quick-actions">
-          <button onclick="openModal('landlord')">+ Landlord</button>
-          <button onclick="openModal('property')">+ Property</button>
-          <button onclick="openModal('unit')">+ Unit</button>
-          <button onclick="openModal('tenant')">+ Tenant</button>
-          <button class="secondary" onclick="openModal('rent')">+ Record Rent</button>
-          <button class="secondary" onclick="openModal('expense')">+ Expense</button>
-          <button class="secondary" onclick="openModal('invoice')">+ Invoice</button>
-          <button class="secondary" onclick="openModal('custom_invoice')">+ Custom Invoice</button>
-        </div>
-      </div>
+  <button onclick="openModal('landlord')">+ Landlord</button>
+  <button onclick="openModal('property')">+ Property</button>
+  <button onclick="openModal('unit')">+ Unit</button>
+  <button onclick="openModal('tenant')">+ Tenant</button>
+  <button class="secondary" onclick="openModal('rent')">+ Record Rent</button>
+  <button class="secondary" onclick="openModal('expense')">+ Expense</button>
+  <button class="secondary" onclick="openModal('invoice')">+ Invoice</button>
+  <button class="secondary" onclick="openModal('custom_invoice')">+ Custom Invoice</button>
+</div>
 
       <!-- ══ LANDLORDS ══ -->
       <div class="section" id="sec-landlords">
@@ -258,6 +415,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Landlords</h3><input class="search" placeholder="Search..." oninput="filterTable('tLandlords',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Commission</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tLandlords"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcLandlords"></div>
         </div>
       </div>
 
@@ -283,6 +441,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Units</h3><input class="search" placeholder="Search..." oninput="filterTable('tUnits',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Property</th><th>Unit No.</th><th>Type</th><th>Rent (UGX)</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tUnits"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcUnits"></div>
         </div>
       </div>
 
@@ -294,6 +453,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Tenants</h3><input class="search" placeholder="Search..." oninput="filterTable('tTenants',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Unit</th><th>Monthly Rent</th><th>Lease End</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tTenants"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcTenants"></div>
         </div>
       </div>
 
@@ -305,6 +465,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>Payment History</h3><input class="search" placeholder="Search..." oninput="filterTable('tRent',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Type</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="tRent"><tr class="sk-row"><td colspan="9"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcRent"></div>
           <div class="pagination" id="pgRent" style="display:none"></div>
         </div>
       </div>
@@ -316,6 +477,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>Outstanding Rent</h3></div>
           <table><thead><tr><th>Tenant</th><th>Unit</th><th>Property</th><th>Monthly Rent</th><th>Months Due</th><th>Balance (UGX)</th><th>Level</th><th>Actions</th></tr></thead>
           <tbody id="tArrears"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcArrears"></div>
         </div>
       </div>
 
@@ -327,6 +489,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Expenses</h3><input class="search" placeholder="Search..." oninput="filterTable('tExpenses',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Property</th><th>Category</th><th>Description</th><th>Amount (UGX)</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="tExpenses"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcExpenses"></div>
           <div class="pagination" id="pgExpenses" style="display:none"></div>
         </div>
       </div>
@@ -342,6 +505,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Invoices</h3><input class="search" placeholder="Search..." oninput="filterTable('tInvoices',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Type</th><th>Entity</th><th>Description</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tInvoices"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcInvoices"></div>
           <div class="pagination" id="pgInvoices" style="display:none"></div>
         </div>
       </div>
@@ -353,6 +517,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Receipts</h3><input class="search" placeholder="Search..." oninput="filterTable('tReceipts',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Type</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="tReceipts"><tr class="sk-row"><td colspan="9"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcReceipts"></div>
           <div class="pagination" id="pgReceipts" style="display:none"></div>
         </div>
       </div>
@@ -499,7 +664,7 @@ const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('userName').textContent=USER.name||USER.username;
   document.getElementById('userRole').textContent=USER.role;
-  document.getElementById('dashDate').textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  .textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if(USER.role==='Admin'){
     document.getElementById('usersActionsBar').style.display='flex';
     document.getElementById('saveSettingsBtn').style.display='block';
@@ -509,6 +674,18 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   loadAllData();
 });
+// Live clock
+function updateClock(){
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+  const date = now.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  const el = document.getElementById('topbarTime');
+  const de = document.getElementById('dashDate');
+  if(el) el.textContent = time;
+  if(de) de.textContent = date;
+}
+updateClock();
+setInterval(updateClock, 60000);
 function logout(){window.location.href='/logout';}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
 
@@ -614,6 +791,37 @@ function renderArrears(){
     </tr>`;
   }).join('');
 }
+function renderMcArrears() {
+  const mc = document.getElementById('mcArrears');
+  if (!mc) return;
+  const arr = computeArrearsAll();
+  if (!arr.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = arr.map(a => {
+    const lv = a.months >= 3 ? 'danger' : a.months >= 2 ? 'warning' : 'info';
+    const lb = a.months >= 3 ? 'Critical' : a.months >= 2 ? 'High' : 'Overdue';
+    const p  = a.u ? properties.find(x => pr.id(x) === un.prop(a.u)) : null;
+    return `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${tn.name(a.t)}</div>
+        <div class="mc-sub">
+          Unit: ${a.u ? un.num(a.u) : 'N/A'}
+          ${p ? ` &nbsp;·&nbsp; ${pr.name(p)}` : ''}
+        </div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span class="badge ${lv}">${lb}</span>
+          <span>${a.months} month${a.months !== 1 ? 's' : ''} overdue</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-amount" style="color:#dc2626">${fmtUGX(a.total)}</div>
+        <div class="mc-actions" style="margin-top:6px">
+          <button class="btn-edit" onclick="openModal('rent',null,'${tn.id(a.t)}')">Pay</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 
 // ── Paginated loader ──────────────────────────────────────────────────────────
 async function loadPage(type,page){
@@ -660,6 +868,54 @@ function renderLandlords(){
       <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')">Delete</button>
     </td></tr>`).join('');
 }
+function renderMcLandlords() {
+  const mc = document.getElementById('mcLandlords');
+  if (!mc) return;
+  if (!landlords.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = landlords.map(l => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${ll.name(l)}</div>
+        <div class="mc-sub">${ll.phone(l) || '—'} &nbsp;·&nbsp; ${ll.email(l) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          Commission: <strong>${ll.comm(l)}%</strong>
+          <span class="badge ${isActive(l) ? 'success' : 'danger'}">${ll.status(l)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-actions">
+          <button class="btn-view" onclick="viewLandlordPortfolio('${ll.id(l)}')">View</button>
+          <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
+        </div>
+        <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')"
+          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
+          Delete
+        </button>
+      </div>
+    </div>`).join('');
+}
+// Mobile card render
+const mc = document.getElementById('mcLandlords');
+if(mc){
+  mc.innerHTML = landlords.map(l=>`
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${ll.name(l)}</div>
+        <div class="mc-sub">${ll.phone(l)} · ${ll.email(l)}</div>
+        <div class="mc-sub" style="margin-top:4px">
+          Commission: ${ll.comm(l)}% &nbsp;
+          <span class="badge ${isActive(l)?'success':'danger'}" style="font-size:10px">${ll.status(l)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-actions">
+          <button class="btn-view" onclick="viewLandlordPortfolio('${ll.id(l)}')">View</button>
+          <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
+        </div>
+        <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')" style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b">Delete</button>
+      </div>
+    </div>`).join('');
+}
 function renderProperties(){
   const tb=document.getElementById('tProperties');
   if(!properties.length){tb.innerHTML=empty(8,'🏘️','No properties yet');return;}
@@ -670,6 +926,33 @@ function renderProperties(){
     <td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td>
     <td class="actions"><button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button></td>
   </tr>`).join('');
+}
+function renderMcProperties() {
+  const mc = document.getElementById('mcProperties');
+  if (!mc) return;
+  if (!properties.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = properties.map(p => {
+    const l = landlords.find(x => ll.id(x) === pr.llid(p)) || {};
+    return `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${pr.name(p)}</div>
+        <div class="mc-sub">Landlord: ${ll.name(l) || pr.llid(p) || '—'}</div>
+        <div class="mc-sub">${pr.addr(p) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span>${pr.type(p)}</span>
+          &nbsp;·&nbsp;
+          <span>${pr.units(p)} units</span>
+          <span class="badge ${isActive(p) ? 'success' : 'danger'}">${pr.status(p)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-actions">
+          <button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 function renderUnits(){
   const tb=document.getElementById('tUnits');
@@ -683,6 +966,31 @@ function renderUnits(){
       <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
       <button class="btn-increase" onclick="openRentIncreaseModal('${un.id(u)}')">↑ Rent</button>
     </td></tr>`).join('');
+}
+function renderMcUnits() {
+  const mc = document.getElementById('mcUnits');
+  if (!mc) return;
+  if (!units.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = units.map(u => {
+    const p = properties.find(x => pr.id(x) === un.prop(u)) || {};
+    return `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${un.num(u)}</div>
+        <div class="mc-sub">${pr.name(p) || un.prop(u) || '—'} &nbsp;·&nbsp; ${un.type(u)}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <strong style="color:#219377">${fmtUGX(un.rent(u))}</strong>
+          <span class="badge ${isVacant(u) ? 'warning' : 'success'}">${un.status(u)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-actions">
+          <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
+          <button class="btn-increase" onclick="openRentIncreaseModal('${un.id(u)}')">↑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 function renderTenants(){
   const tb=document.getElementById('tTenants');
@@ -698,6 +1006,33 @@ function renderTenants(){
       <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')">Delete</button>
     </td></tr>`).join('');
 }
+function renderMcTenants() {
+  const mc = document.getElementById('mcTenants');
+  if (!mc) return;
+  if (!tenants.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = tenants.map(t => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${tn.name(t)}</div>
+        <div class="mc-sub">${tn.phone(t) || '—'} &nbsp;·&nbsp; Unit: ${tn.unum(t) || tn.unit(t) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <strong style="color:#219377">${fmtUGX(tn.rent(t))}/mo</strong>
+          ${tn.end(t) ? `<span>Ends ${tn.end(t)}</span>` : ''}
+          <span class="badge ${isActive(t) ? 'success' : 'danger'}">${tn.status(t)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-actions">
+          <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
+          <button class="btn-view" onclick="openReportModal('tenant','${tn.id(t)}')">Stmt</button>
+        </div>
+        <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')"
+          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
+          Delete
+        </button>
+      </div>
+    </div>`).join('');
+}
 function renderRent(){
   const tb=document.getElementById('tRent');
   if(!rentData.length){tb.innerHTML=empty(9,'💰','No payments recorded');return;}
@@ -712,6 +1047,29 @@ function renderRent(){
       <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
     </td></tr>`).join('');
 }
+function renderMcRent() {
+  const mc = document.getElementById('mcRent');
+  if (!mc) return;
+  if (!rentData.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = rentData.map(r => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${rn.tname(r) || rn.tenant(r) || '—'}</div>
+        <div class="mc-sub">Unit: ${rn.unum(r) || rn.unit(r) || '—'} &nbsp;·&nbsp; ${rn.month(r)} ${rn.year(r)}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span class="badge ${rn.ptype(r) === 'Full' ? 'success' : 'warning'}">${rn.ptype(r)}</span>
+          <span>${rn.method(r)}</span>
+          <span style="color:#64748b;font-size:11px">${rn.date(r)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-amount">${fmtUGX(rn.amt(r))}</div>
+        <div class="mc-actions" style="margin-top:6px">
+          <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
 function renderExpData(rows){
   const tb=document.getElementById('tExpenses');
   if(!rows.length){tb.innerHTML=empty(7,'📑','No expenses recorded');return;}
@@ -721,6 +1079,25 @@ function renderExpData(rows){
     <td>${fmtUGX(ex.amt(e))}</td><td>${ex.date(e)}</td>
     <td class="actions"><button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button></td>
   </tr>`).join('');
+}
+function renderMcExpenses(rows) {
+  const mc = document.getElementById('mcExpenses');
+  if (!mc) return;
+  if (!rows.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = rows.map(e => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${ex.desc(e)}</div>
+        <div class="mc-sub">${ex.pname(e) || 'General'} &nbsp;·&nbsp; ${ex.cat(e)}</div>
+        <div class="mc-sub" style="margin-top:4px;color:#64748b;font-size:11px">${ex.date(e)}</div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-amount">${fmtUGX(ex.amt(e))}</div>
+        <div class="mc-actions" style="margin-top:6px">
+          <button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button>
+        </div>
+      </div>
+    </div>`).join('');
 }
 function renderInvData(rows){
   const tb=document.getElementById('tInvoices');
@@ -734,6 +1111,31 @@ function renderInvData(rows){
       <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
       ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
     </td></tr>`).join('');
+}
+function renderMcInvoices(rows) {
+  const mc = document.getElementById('mcInvoices');
+  if (!mc) return;
+  if (!rows.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = rows.map(i => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${inv.ename(i) || '—'}</div>
+        <div class="mc-sub">${inv.desc(i) || inv.type(i)} &nbsp;·&nbsp; ${inv.month(i)} ${inv.year(i)}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span class="badge ${inv.status(i).toLowerCase() === 'paid' ? 'success' : 'danger'}">${inv.status(i)}</span>
+          <span style="font-size:11px;color:#64748b">${inv.id(i)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-amount">${fmtUGX(inv.amt(i))}</div>
+        <div class="mc-actions" style="margin-top:6px">
+          <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+          ${inv.status(i) !== 'Paid'
+            ? `<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`
+            : ''}
+        </div>
+      </div>
+    </div>`).join('');
 }
 function renderRcpData(rows){
   const tb=document.getElementById('tReceipts');
@@ -749,6 +1151,30 @@ function renderRcpData(rows){
       <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱 WA</button>
     </td></tr>`).join('');
 }
+function renderMcReceipts(rows) {
+  const mc = document.getElementById('mcReceipts');
+  if (!mc) return;
+  if (!rows.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = rows.map(r => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${rc.tenant(r) || '—'}</div>
+        <div class="mc-sub">Unit: ${rc.unit(r) || '—'} &nbsp;·&nbsp; ${rc.month(r)} ${rc.year(r)}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span class="badge ${rc.ptype(r) === 'Full' ? 'success' : 'warning'}">${rc.ptype(r)}</span>
+          <span>${rc.method(r)}</span>
+          <span style="font-size:11px;color:#64748b">${rc.date(r)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-amount">${fmtUGX(rc.amt(r))}</div>
+        <div class="mc-actions" style="margin-top:6px">
+          <button class="btn-view" onclick="window.open('/api/receipts/${rc.id(r)}/pdf','_blank')">View</button>
+          <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
 function renderUsers(){
   const tb=document.getElementById('tUsers');
   if(!allUsers.length){tb.innerHTML=empty(7,'🔐','No users found');return;}
@@ -762,6 +1188,33 @@ function renderUsers(){
       <button class="btn-pwd" onclick="setPassword('${u.ID||''}','${u.Name||u.Username||''}')">Set Pwd</button>
       <button class="btn-delete" onclick="deactivateUser('${u.ID||''}','${u.Name||''}')">Deactivate</button>`:'—'}
     </td></tr>`).join('');
+}
+function renderMcUsers() {
+  const mc = document.getElementById('mcUsers');
+  if (!mc) return;
+  if (!allUsers.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = allUsers.map(u => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${u.Name || '—'}</div>
+        <div class="mc-sub">@${u.Username || '—'} &nbsp;·&nbsp; ${u.Email || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span class="badge info">${u.Role || 'User'}</span>
+          <span class="badge ${(u.Status || '').toLowerCase() === 'active' ? 'success' : 'danger'}">${u.Status || 'Active'}</span>
+        </div>
+      </div>
+      ${USER.role === 'Admin' ? `
+      <div class="mc-right">
+        <div class="mc-actions">
+          <button class="btn-edit" onclick="editUser('${u.ID || ''}')">Edit</button>
+          <button class="btn-pwd" onclick="setPassword('${u.ID || ''}','${u.Name || ''}')">Pwd</button>
+        </div>
+        <button class="btn-delete" onclick="deactivateUser('${u.ID || ''}','${u.Name || ''}')"
+          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
+          Deactivate
+        </button>
+      </div>` : ''}
+    </div>`).join('');
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
@@ -841,7 +1294,24 @@ async function loadArchive(){
     </tr>`).join('');
   }catch(e){tb.innerHTML=empty(5,'❌','Failed to load archive');}
 }
-
+function renderMcArchive(rows) {
+  const mc = document.getElementById('mcArchive');
+  if (!mc) return;
+  if (!rows || !rows.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = rows.map(r => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${r.entity_label || '—'}</div>
+        <div class="mc-sub">
+          <span class="badge info">${r.entity_type}</span>
+          &nbsp; ${r.entity_id}
+        </div>
+        <div class="mc-sub" style="margin-top:4px;font-size:11px;color:#64748b">
+          Deleted ${r.deleted_at} by ${r.deleted_by || '—'}
+        </div>
+      </div>
+    </div>`).join('');
+}
 // ── Modal opener ──────────────────────────────────────────────────────────────
 function openModal(type,e,prefillTenantId=null){
   currentForm=type; editingId=null;
@@ -1590,6 +2060,8 @@ async function viewLandlordPortfolio(landlordId){
             <td style="padding:14px 16px;text-align:right;color:#16a34a">${fmtUGX(s.monthlyRoll)}</td>
           </tr>
         </tbody>
+        <!-- Mobile cards — shown on small screens instead of table rows -->
+<div class="mobile-cards" id="mcLandlords"></div>
       </table>
       <div style="margin-top:20px;display:flex;gap:10px">
         <button onclick="openReportModal('landlord')" style="padding:11px 20px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer">📊 Generate Full Report</button>
