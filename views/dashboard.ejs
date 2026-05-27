@@ -690,7 +690,6 @@ function showSection(id,e){
   document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   if(e&&e.target) e.target.classList.add('active');
-  document.getElementById('pageTitle').textContent=id.charAt(0).toUpperCase()+id.slice(1);
   document.getElementById('sidebar').classList.remove('open');
   if(id==='arrears') renderArrears();
 }
@@ -698,7 +697,7 @@ function showSection(id,e){
 // ── Data loading ──────────────────────────────────────────────────────────────
 async function loadAllData(){
   try{
-    const s=await fetch('/api/stats').then(r=>r.json());
+    const s=await fetch('/api/stats',{credentials:'include'}).then(r=>r.json());
     document.getElementById('statLandlords').textContent=s.landlords||0;
     document.getElementById('statProperties').textContent=s.properties||0;
     document.getElementById('statUnits').textContent=s.units||0;
@@ -708,7 +707,7 @@ async function loadAllData(){
     document.getElementById('statRent').textContent=fmtUGX(s.totalRent);
     document.getElementById('statExpenses').textContent=fmtUGX(s.totalExpenses);
   }catch(e){console.error('stats',e);}
-  const load=async(url,fb=[])=>{try{return await fetch(url).then(r=>r.json());}catch(e){return fb;}};
+  const load=async(url,fb=[])=>{try{return await fetch(url,{credentials:'include'}).then(r=>r.json());}catch(e){return fb;}};
   landlords =await load('/api/landlords');  renderLandlords();
   properties=await load('/api/properties'); renderProperties();
   units     =await load('/api/units');      renderUnits();
@@ -723,7 +722,7 @@ async function loadAllData(){
 // ── Rent due alert ────────────────────────────────────────────────────────────
 async function loadRentDueStatus(){
   try{
-    const d=await fetch('/api/rent/due-status').then(r=>r.json());
+    const d=await fetch('/api/rent/due-status',{credentials:'include'}).then(r=>r.json());
     const bar=document.getElementById('rentDueBar');
     if(!bar) return;
     if(d.dueToday){
@@ -1246,15 +1245,15 @@ async function saveSettings(){
   try{
     const payload={};
     ['company_name','company_address','company_phone','company_email','currency','vat_rate'].forEach(k=>{const el=document.getElementById('s_'+k);if(el)payload[k]=el.value;});
-    const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const r=await fetch('/api/settings',{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
     const d=await r.json();
     if(d.success){
       if(pendingLogoBase64){
-        await fetch('/api/settings/logo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({logoBase64:pendingLogoBase64})});
+        await fetch('/api/settings/logo',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({logoBase64:pendingLogoBase64})});
         pendingLogoBase64=null;
       }
       showToast('Settings saved!','success');
-      settings=await fetch('/api/settings').then(r=>r.json());
+      settings=await fetch('/api/settings',{credentials:'include'}).then(r=>r.json());
       applyBranding();
     } else showToast(d.error||'Failed','error');
   }catch(e){showToast('Error: '+e.message,'error');}
@@ -1279,7 +1278,7 @@ async function loadArchive(){
   const tb=document.getElementById('tArchive');
   tb.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
   try{
-    const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`).then(r=>r.json());
+    const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`,{credentials:'include'}).then(r=>r.json());
     if(!rows.length){tb.innerHTML=empty(5,'🗃️','No archived records found');return;}
     tb.innerHTML=rows.map(r=>`<tr>
       <td>${r.deleted_at}</td>
@@ -1421,7 +1420,7 @@ function openModal(type,e,prefillTenantId=null){
     invoice:()=>{ title.textContent='Create Invoice'; return `<div class="form-grid">
       <div class="form-group full"><label>Invoice Type *</label><select id="f_invType" onchange="updateInvoiceEntity()"><option value="">— Select type —</option><option value="landlord">Landlord Management Fee</option><option value="tenant">Tenant Rent Invoice</option></select></div>
       <div class="form-group full"><label>Bill To *</label><select id="f_entity" disabled><option value="">Select type first…</option></select></div>
-      <div class="form-group full"><label>Description</label><input id="f_desc" placeholder="e.g. Management fee for June 2025"></div>
+      <div class="form-group full"><label>Description</label><input id="f_desc" maxlength="255" placeholder="e.g. Management fee for June 2025"></div>
       <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
       <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
@@ -1431,7 +1430,7 @@ function openModal(type,e,prefillTenantId=null){
       <div class="form-group"><label>Client Email</label><input id="f_clientemail" type="email" placeholder="client@email.com"></div>
       <div class="form-group"><label>Client Address</label><input id="f_clientaddr" placeholder="Physical / postal address"></div>
       <div class="form-group full"><label>Service Title *</label><input id="f_servicetitle" required placeholder="e.g. Property Advisory Fee, Inspection Fee"></div>
-      <div class="form-group full"><label>Service Description</label><textarea id="f_desc" placeholder="Details of the service provided…"></textarea></div>
+      <div class="form-group full"><label>Service Description</label><textarea id="f_desc" maxlength="500" placeholder="Details of the service provided…"></textarea></div>
       <div class="form-group"><label>Total Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
       <div class="form-group"><label>Month</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year</label><input id="f_year" type="number" value="${yr}"></div>
@@ -1439,7 +1438,7 @@ function openModal(type,e,prefillTenantId=null){
     bulk_invoice:()=>{ title.textContent='Bulk Management Fee Invoices'; return `<div class="form-grid">
       <div class="form-group"><label>Month *</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year *</label><input id="f_year" type="number" value="${yr}"></div>
-      <div class="form-group full"><label>Description (optional)</label><input id="f_desc" placeholder="e.g. Management fee for May 2025"></div>
+      <div class="form-group full"><label>Description (optional)</label><input id="f_desc" maxlength="255" placeholder="e.g. Management fee for May 2025"></div>
       <div class="form-group full"><label>Override Amount per Landlord (leave blank to auto-calculate)</label><input id="f_override" type="number" placeholder="Leave blank for auto-calculation per commission rate"></div>
     </div>
     <p style="color:var(--text-light);font-size:12px;margin-top:12px">Creates one management fee invoice per active landlord based on their commission rate and rent collected in the selected month.</p>`; },
@@ -1630,7 +1629,7 @@ async function saveForm(){
     }
     if(!endpoint){btn.textContent='Save';btn.disabled=false;return;}
 
-    const res=await fetch(endpoint,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res=await fetch(endpoint,{method,headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
     const data=await res.json();
 
     if(data.success){
@@ -1648,18 +1647,23 @@ async function saveForm(){
       if(sf==='rent'){
         const t=tenants.find(x=>tn.id(x)===sp.tenantId)||{};
         const u=units.find(x=>un.id(x)===sp.unitId)||{};
-        const rcpRes=await fetch('/api/receipts/v2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId:sid,tenantName:tn.name(t),unitNumber:un.num(u),amount:sp.amount,expectedAmount:sp.expectedAmount,month:sp.month,year:sp.year,paymentMethod:sp.paymentMethod,paymentType:data.isPartial?'Partial':'Full',balanceCarried:data.balanceAfter||0})});
+        const rcpRes=await fetch('/api/receipts/v2',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({rentId:sid,tenantName:tn.name(t),unitNumber:un.num(u),amount:sp.amount,expectedAmount:sp.expectedAmount,month:sp.month,year:sp.year,paymentMethod:sp.paymentMethod,paymentType:data.isPartial?'Partial':'Full',balanceCarried:data.balanceAfter||0})});
         const rcpData=await rcpRes.json();
         if(rcpData.success){
           await loadPage('receipts',1);
           showPrompt('View Receipt?','Payment recorded. Open the receipt now?',()=>window.open(`/api/receipts/${rcpData.id}/pdf`,'_blank'));
         }
       }
-      if(sf==='user'){allUsers=await fetch('/api/users').then(r=>r.json());renderUsers();}
+      if(sf==='user'){allUsers=await fetch('/api/users',{credentials:'include'}).then(r=>r.json());renderUsers();}
     } else {
-      showToast(data.error||'Failed to save','error');
+      const errMsg=data.error||'Failed to save';
+      console.error('Save error:',data);
+      showToast(errMsg,'error');
     }
-  }catch(e){showToast('Error: '+e.message,'error');}
+  }catch(e){
+    console.error('Save exception:',e);
+    showToast('Error: '+e.message,'error');
+  }
   btn.textContent='Save'; btn.disabled=false;
 }
 
@@ -1731,7 +1735,7 @@ function editTenant(id){
   },60);
 }
 function editExpense(id){
-  fetch('/api/expenses?page=1&limit=200').then(r=>r.json()).then(res=>{
+  fetch('/api/expenses?page=1&limit=200',{credentials:'include'}).then(r=>r.json()).then(res=>{
     const rows=Array.isArray(res)?res:(res.data||[]);
     const e=rows.find(x=>ex.id(x)===id); if(!e) return;
     openModal('expense'); editingId=id;
@@ -1867,14 +1871,14 @@ function openReportModal(type, prefillTenantId=''){
 async function generateAndViewReceipt(rentId){
   const r=rentData.find(x=>rn.id(x)===rentId); if(!r){showToast('Rent record not found','error');return;}
   // Check if receipt already exists for this rent ID
-  const existingRes=await fetch(`/api/receipts?page=1&limit=200`).then(r=>r.json());
+  const existingRes=await fetch(`/api/receipts?page=1&limit=200`,{credentials:'include'}).then(r=>r.json());
   const existingRows=Array.isArray(existingRes)?existingRes:(existingRes.data||[]);
   const existing=existingRows.find(x=>(x['Rent ID']||x.rent_id)===rentId);
   if(existing){window.open(`/api/receipts/${rc.id(existing)}/pdf`,'_blank');return;}
   // Generate new receipt
   const t=tenants.find(x=>tn.id(x)===rn.tenant(r))||{};
   const u=units.find(x=>un.id(x)===rn.unit(r))||{};
-  const res=await fetch('/api/receipts/v2',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rentId,tenantName:tn.name(t),unitNumber:un.num(u),amount:rn.amt(r),month:rn.month(r),year:rn.year(r),paymentMethod:rn.method(r),paymentType:rn.ptype(r)})});
+  const res=await fetch('/api/receipts/v2',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({rentId,tenantName:tn.name(t),unitNumber:un.num(u),amount:rn.amt(r),month:rn.month(r),year:rn.year(r),paymentMethod:rn.method(r),paymentType:rn.ptype(r)})});
   const data=await res.json();
   if(data.success){showToast('Receipt generated!','success');await loadPage('receipts',1);window.open(`/api/receipts/${data.id}/pdf`,'_blank');}
   else showToast(data.error||'Failed','error');
@@ -1883,7 +1887,7 @@ async function generateAndViewReceipt(rentId){
 // ── WhatsApp message ──────────────────────────────────────────────────────────
 async function generateWhatsApp(receiptId){
   try{
-    const res=await fetch('/api/rent/whatsapp-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({receiptId})});
+    const res=await fetch('/api/rent/whatsapp-message',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({receiptId})});
     const data=await res.json();
     if(!data.success){showToast(data.error||'Failed','error');return;}
     document.getElementById('promptTitle').textContent='📱 WhatsApp Message';
@@ -1899,7 +1903,7 @@ async function generateWhatsApp(receiptId){
 
 // ── Invoice pay ───────────────────────────────────────────────────────────────
 async function payInvoice(id){
-  await fetch('/api/invoices/'+id+'/pay',{method:'PUT'});
+  await fetch('/api/invoices/'+id+'/pay',{method:'PUT',credentials:'include'});
   showToast('Invoice marked as paid','success');
   loadPage('invoices',pgState.invoices.page);
 }
@@ -1938,7 +1942,7 @@ function setPassword(userId,userName){
     if(p1.length<6){showToast('Password must be at least 6 characters','error');return;}
     if(p1!==p2){showToast('Passwords do not match','error');return;}
     closePrompt();
-    const res=await fetch(`/api/users/${userId}/password`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+    const res=await fetch(`/api/users/${userId}/password`,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({password:p1})});
     const d=await res.json();
     if(d.success) showToast('Password updated!','success');
     else showToast(d.error||'Failed','error');
@@ -1947,9 +1951,9 @@ function setPassword(userId,userName){
 }
 function deactivateUser(id,name){
   showPrompt('Deactivate User?',`Deactivate "${name}"? They will no longer be able to log in.`,async()=>{
-    const res=await fetch(`/api/users/${id}`,{method:'DELETE'});
+    const res=await fetch(`/api/users/${id}`,{method:'DELETE',credentials:'include'});
     const d=await res.json();
-    if(d.success){showToast('User deactivated','success');allUsers=await fetch('/api/users').then(r=>r.json());renderUsers();}
+    if(d.success){showToast('User deactivated','success');allUsers=await fetch('/api/users',{credentials:'include'}).then(r=>r.json());renderUsers();}
     else showToast(d.error||'Failed','error');
   });
 }
@@ -2002,7 +2006,7 @@ async function viewLandlordPortfolio(landlordId){
   document.getElementById('modalBody').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-light)">Loading portfolio…</div>`;
   document.getElementById('modalSave').style.display='none';
   try{
-    const d=await fetch(`/api/landlords/${landlordId}/portfolio`).then(r=>r.json());
+    const d=await fetch(`/api/landlords/${landlordId}/portfolio`,{credentials:'include'}).then(r=>r.json());
     if(d.error){document.getElementById('modalBody').innerHTML=`<p style="color:var(--danger)">${d.error}</p>`;return;}
     const s=d.summary;
     document.getElementById('modalBody').innerHTML=`
