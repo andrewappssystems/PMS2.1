@@ -1179,3 +1179,254 @@ tbody tr:last-child td {
     background-color: var(--color-white);
   }
 }
+/* ── TABLE CONTAINER ───────────────────────────────── */
+.data-table {
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.04);
+  border: 1px solid #f1f1f1;
+}
+.table-header {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f1f1;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.table-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #010101;
+}
+.search {
+  padding: 0 16px;
+  height: 40px;
+  border: 1px solid #eaeaea;
+  border-radius: 50px;
+  font-size: 13px;
+  width: 220px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search:focus {
+  border-color: #219377;
+  box-shadow: 0 0 0 3px rgba(33,147,119,.12);
+}
+
+/* ── TABLE ITSELF ──────────────────────────────────── */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+th {
+  text-align: left;
+  padding: 0 16px;
+  height: 48px;
+  background: #f7fbfa;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: .5px;
+  white-space: nowrap;
+  border-bottom: 1px solid #eaf0ee;
+}
+td {
+  padding: 0 16px;
+  height: 52px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f5f5f5;
+  color: #010101;
+  white-space: nowrap;
+}
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #f7fbfa; }
+
+/* ── ACTION BUTTONS — inline, compact, pill ────────── */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.actions button {
+  padding: 0 14px;
+  height: 32px;
+  border-radius: 50px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+.actions button:hover { transform: translateY(-1px); }
+.btn-view    { background: #eaf8f4; color: #219377; }
+.btn-view:hover { background: #d4f0e8; }
+.btn-edit    { background: #dbeafe; color: #1e40af; }
+.btn-edit:hover { background: #bfdbfe; }
+.btn-delete  { background: #fee2e2; color: #991b1b; }
+.btn-delete:hover { background: #fecaca; }
+.btn-receipt { background: #eaf8f4; color: #219377; }
+.btn-receipt:hover { background: #d4f0e8; }
+.btn-wa      { background: #dcfce7; color: #166534; }
+.btn-wa:hover { background: #bbf7d0; }
+.btn-pwd     { background: #fef3c7; color: #92400e; }
+.btn-pwd:hover { background: #fde68a; }
+.btn-increase { background: #ede9fe; color: #6d28d9; }
+.btn-increase:hover { background: #ddd6fe; }
+
+/* ── BADGES ────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  height: 24px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.badge.success { background: #eaf8f4; color: #219377; }
+.badge.danger  { background: #fee2e2; color: #991b1b; }
+.badge.warning { background: #fff4de; color: #92400e; }
+.badge.info    { background: #dbeafe; color: #1e40af; }
+
+/* ── PAGINATION ────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-top: 1px solid #f1f1f1;
+  font-size: 13px;
+  color: #64748b;
+}
+.pg-btns { display: flex; gap: 6px; }
+.pg-btns button {
+  padding: 0 14px;
+  height: 34px;
+  border: 1px solid #eaeaea;
+  border-radius: 50px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #64748b;
+  transition: all .15s;
+}
+.pg-btns button:hover:not(:disabled) {
+  background: #219377;
+  color: #fff;
+  border-color: #219377;
+}
+.pg-btns button.active {
+  background: #219377;
+  color: #fff;
+  border-color: #219377;
+}
+.pg-btns button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── EMPTY STATE ───────────────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 60px 24px;
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 12px; }
+.empty-state h3 { font-size: 15px; color: #64748b; font-weight: 500; }
+
+/* ── SKELETON ROWS ─────────────────────────────────── */
+.sk-row td { padding: 16px; }
+.sk-row td div {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 200% 0 }
+  100% { background-position: -200% 0 }
+}
+
+/* ── MOBILE — cards instead of tables ─────────────── */
+@media (max-width: 767px) {
+  .data-table { border-radius: 16px; }
+  .data-table table { display: none; }
+  .mobile-cards { display: flex; flex-direction: column; gap: 0; }
+  .mobile-card {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .mobile-card:last-child { border-bottom: none; }
+  .mobile-card .mc-main { flex: 1; min-width: 0; }
+  .mobile-card .mc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #010101;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobile-card .mc-sub {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .mobile-card .mc-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .mobile-card .mc-amount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #219377;
+  }
+  .mobile-card .mc-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .mobile-card .mc-actions button {
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 50px;
+    border: none;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  /* Hide desktop-only columns on tablet */
+  th:nth-child(1), td:nth-child(1) { display: none; } /* hide ID column on mobile */
+  .data-table { overflow-x: auto; }
+}
+
+@media (min-width: 768px) {
+  .mobile-cards { display: none; }
+  .data-table table { display: table; }
+}
+
+/* ── TABLET — horizontal scroll ────────────────────── */
+@media (max-width: 1024px) {
+  .data-table { overflow-x: auto; }
+  table { min-width: 600px; }
+  .table-header { flex-direction: column; align-items: flex-start; }
+  .search { width: 100%; }
+}
