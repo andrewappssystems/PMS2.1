@@ -137,14 +137,6 @@ html {
   scroll-behavior: smooth;
 }
 
-body {
-  font-family: var(--font-family);
-  background-color: var(--color-background);
-  color: var(--color-text);
-  line-height: var(--line-height-normal);
-  font-size: var(--font-size-sm);
-  min-height: 100vh;
-}
 
 img, picture, video, canvas, svg {
   display: block;
@@ -635,10 +627,12 @@ tbody tr:last-child td {
   gap: var(--space-4);
 }
 
-.content {
+
+  .content {
+  padding: 24px 32px;
   flex: 1;
-  overflow-y: auto;
-  padding: var(--page-padding);
+  min-height: 0;       
+  overflow-y: auto;   
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -1440,7 +1434,9 @@ tbody tr:hover td { background: #f7fbfa; }
   top: 0;
   z-index: 50;
   flex-shrink: 0;
+  max-height: 64px; 
 }
+
 .topbar .title {
   font-size: 20px;
   font-weight: 700;
