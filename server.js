@@ -1198,12 +1198,12 @@ app.get('/api/reports/portfolio', requireAuth, async (req, res) => {
       pool.query(
         `SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count
          FROM rent_collection
-         WHERE created_at BETWEEN $1 AND $2`, [from, to + ' 23:59:59']
+         WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]
       ),
       pool.query(
         `SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count
          FROM expenses
-         WHERE created_at BETWEEN $1 AND $2`, [from, to + ' 23:59:59']
+         WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]
       ),
       pool.query(
         `SELECT COUNT(DISTINCT t.tenant_id) AS tenants_in_arrears,
@@ -1265,10 +1265,10 @@ app.get('/api/reports/landlord/:landlordId', requireAuth, async (req, res) => {
        LEFT JOIN units u ON u.property_id = p.property_id
        LEFT JOIN rent_collection rc
          ON rc.unit_id = u.unit_id
-         AND rc.created_at BETWEEN $2 AND $3
+         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
        WHERE p.landlord_id = $1
        GROUP BY p.property_id, p.name`,
-      [req.params.landlordId, from, to + ' 23:59:59']
+      [req.params.landlordId, from, to]
     );
 
     // Expenses per property
@@ -1278,10 +1278,10 @@ app.get('/api/reports/landlord/:landlordId', requireAuth, async (req, res) => {
        FROM properties p
        LEFT JOIN expenses e
          ON e.property_id = p.property_id
-         AND e.created_at BETWEEN $2 AND $3
+         AND e.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
        WHERE p.landlord_id = $1
        GROUP BY p.property_id, p.name`,
-      [req.params.landlordId, from, to + ' 23:59:59']
+      [req.params.landlordId, from, to]
     );
 
     // Arrears per tenant under this landlord
@@ -1311,9 +1311,9 @@ app.get('/api/reports/landlord/:landlordId', requireAuth, async (req, res) => {
        JOIN properties p ON p.property_id = u.property_id
        LEFT JOIN tenants t ON t.tenant_id = rc.tenant_id
        WHERE p.landlord_id=$1
-         AND rc.created_at BETWEEN $2 AND $3
+         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
        ORDER BY rc.created_at DESC`,
-      [req.params.landlordId, from, to + ' 23:59:59']
+      [req.params.landlordId, from, to]
     );
 
     // Totals
@@ -1560,9 +1560,9 @@ app.get('/api/reports/tenant/:tenantId/pdf', requireAuth, async (req, res) => {
     const { rows: payments } = await pool.query(`
       SELECT rc.*, TO_CHAR(rc.created_at,'YYYY-MM-DD') AS date
       FROM rent_collection rc
-      WHERE rc.tenant_id=$1 AND rc.created_at BETWEEN $2 AND $3
+      WHERE rc.tenant_id=$1 AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
       ORDER BY rc.created_at ASC`,
-      [req.params.tenantId, from, to + ' 23:59:59']);
+      [req.params.tenantId, from, to]);
     const balance = await getTenantBalance(req.params.tenantId);
     const totalPaid = payments.reduce((s,p)=>s+parseFloat(p.amount||0),0);
     const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
@@ -1805,8 +1805,8 @@ app.get('/api/reports/portfolio/pdf', requireAuth, async (req, res) => {
     const [props, unitStats, rentStats, expStats, arrStats, llStats] = await Promise.all([
       pool.query(`SELECT p.*, l.name AS landlord_name FROM properties p LEFT JOIN landlords l ON l.landlord_id=p.landlord_id WHERE LOWER(p.status)='active'`),
       pool.query(`SELECT COUNT(*) FILTER (WHERE LOWER(status)='occupied') AS occupied, COUNT(*) FILTER (WHERE LOWER(status)='vacant') AS vacant, COUNT(*) AS total FROM units`),
-      pool.query(`SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM rent_collection WHERE created_at BETWEEN $1 AND $2`, [from, to+' 23:59:59']),
-      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE created_at BETWEEN $1 AND $2`, [from, to+' 23:59:59']),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM rent_collection WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]),
       pool.query(`SELECT COUNT(DISTINCT t.tenant_id) AS cnt, COALESCE(SUM(rb.carried_balance),0) AS total FROM rent_balances rb JOIN tenants t ON t.tenant_id=rb.tenant_id WHERE rb.carried_balance>0 AND LOWER(t.status)='active'`),
       pool.query(`SELECT COUNT(*) FROM landlords WHERE LOWER(status)='active'`)
     ]);
@@ -1816,15 +1816,15 @@ app.get('/api/reports/portfolio/pdf', requireAuth, async (req, res) => {
         COUNT(u.unit_id) AS total_units,
         COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='occupied') AS occupied,
         COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='vacant') AS vacant,
-        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $2 AND $3),0) AS collected,
-        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $2 AND $3),0) AS expenses
+        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp),0) AS collected,
+        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp),0) AS expenses
       FROM properties p
       LEFT JOIN landlords l ON l.landlord_id=p.landlord_id
       LEFT JOIN units u ON u.property_id=p.property_id
       LEFT JOIN rent_collection rc ON rc.unit_id=u.unit_id
       LEFT JOIN expenses e ON e.property_id=p.property_id
       GROUP BY p.property_id, p.name, l.name ORDER BY collected DESC`,
-      ['', from, to+' 23:59:59']
+      ['', from, to]
     );
     const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
