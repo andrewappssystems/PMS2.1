@@ -73,6 +73,9 @@ button{cursor:pointer;}
   position: sticky;
   top: 0;
   z-index: 50;
+  flex-shrink: 0; 
+  height: 64px;
+  max-height: 64px; 
 }
 .topbar .topbar-left {
   display: flex;
@@ -145,6 +148,7 @@ button{cursor:pointer;}
   .topbar .mobile-menu { display: block; }
   .topbar .topbar-left .greeting { display: none; }
 }
+
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
 .stat-card {
   background: #EAF8F4;
@@ -179,7 +183,7 @@ button{cursor:pointer;}
 .stat-card.danger .label { color: #991b1b; }
 .stat-card.danger .value { color: #dc2626; }
 .stat-card.green-value .value { color: #219377; }
-.alert-bar{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:22px;border:1px solid rgba(33,147,119,0.2);background:rgba(33,147,119,0.08);color:var(--text);margin-bottom:22px;}
+.alert-bar{display:none;align-items:center;gap:12px;padding:16px 18px;border-radius:22px;border:1px solid rgba(33,147,119,0.2);background:rgba(33,147,119,0.08);color:var(--text);margin-bottom:22px;}
 .arrears-widget{background:var(--surface);border-radius:var(--radius-card);padding:24px;box-shadow:var(--shadow);margin-bottom:22px;}
 .arrears-widget h3{font-size:20px;font-weight:900;margin-bottom:18px;}
 .arrears-list{display:grid;gap:16px;}
@@ -374,6 +378,8 @@ tr:hover td{background:var(--surface-soft);}
   </div>
   </div>
 <div class="content">
+    <div class="alert-bar" id="rentDueBar"></div>
+  <div class="section active" id="sec-dashboard">
 </div><!-- Content -->
 
       <!-- ══ DASHBOARD ══ -->
@@ -408,7 +414,7 @@ tr:hover td{background:var(--surface-soft);}
 </div>
 </div>
         <div class="report-cards"></div>
-      </div>
+</div>
 
       <!-- ══ LANDLORDS ══ -->
       <div class="section" id="sec-landlords">
@@ -430,6 +436,7 @@ tr:hover td{background:var(--surface-soft);}
           <div class="table-header"><h3>All Properties</h3><input class="search" placeholder="Search..." oninput="filterTable('tProperties',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Name</th><th>Landlord</th><th>Address</th><th>Type</th><th>Units</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tProperties"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcProperties"></div>
         </div>
       </div>
 
@@ -637,7 +644,9 @@ tr:hover td{background:var(--surface-soft);}
   <button onclick="triggerUndo()">↩ Undo</button>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast"> 
+
+</div>
 
 <script>
 const USER = JSON.parse('<%- JSON.stringify(user || {}).replace(/</g, "\\u003c") %>');
@@ -700,11 +709,11 @@ function showSection(id,e){
   const sec=document.getElementById('sec-'+id); if(sec) sec.classList.add('active');
   if(e&&e.target) e.target.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
-  if(id==='arrears') renderArrears();
-  if(id==='landlords') renderLandlords();
-  if(id==='properties') renderProperties();
-  if(id==='units') renderUnits();
-  if(id==='tenants') renderTenants();
+  if(id==='arrears') {renderArrears(); renderMcArrears();}
+  if(id==='landlords') {renderLandlords(); renderMcLandlords();}
+  if(id==='properties') {renderProperties(); renderMcProperties();}
+  if(id==='units') {renderUnits(); renderMcUnits();}
+  if(id==='tenants') {renderTenants(); renderMcTenants();}
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────────
@@ -721,12 +730,12 @@ async function loadAllData(){
     document.getElementById('statExpenses').textContent=fmtUGX(s.totalExpenses);
   }catch(e){console.error('stats',e);}
   const load=async(url,fb=[])=>{try{return await fetch(url,{credentials:'include'}).then(r=>r.json());}catch(e){return fb;}};
-  landlords =await load('/api/landlords');  renderLandlords();
-  properties=await load('/api/properties'); renderProperties();
-  units     =await load('/api/units');      renderUnits();
-  tenants   =await load('/api/tenants');    renderTenants();
+  landlords =await load('/api/landlords');  renderLandlords(); renderMcLandlords();
+  properties=await load('/api/properties'); renderProperties(); renderMcProperties();
+  units     =await load('/api/units');      renderUnits(); renderMcUnits();
+  tenants   =await load('/api/tenants');    renderTenants(); renderMcTenants();
   settings  =await load('/api/settings',{}); renderSettings(); applyBranding();
-  if(USER.role==='Admin'){allUsers=await load('/api/users',[]); renderUsers();}
+  if(USER.role==='Admin'){allUsers=await load('/api/users',[]); renderUsers(); renderMcUsers();}
   await Promise.all([loadPage('rent',1),loadPage('expenses',1),loadPage('invoices',1),loadPage('receipts',1)]);
   computeDashboardArrears();
   loadRentDueStatus();
@@ -902,6 +911,44 @@ function renderMcLandlords() {
       </div>
     </div>`).join('');
 }
+function renderProperties(){
+  const tb=document.getElementById('tProperties');
+  if(!properties.length){tb.innerHTML=empty(8,'🏠','No properties yet');return;}
+  tb.innerHTML=properties.map(p=>`<tr>
+    <td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td>
+    <td>${pr.llname(p)}</td><td>${pr.addr(p)}</td>
+    <td>${pr.type(p)}</td><td>${pr.units(p)}</td>
+    <td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button>
+      <button class="btn-delete" onclick="confirmDelete('property','${pr.id(p)}','${pr.name(p)}')">Delete</button>
+    </td></tr>`).join('');
+}
+function renderUnits(){
+  const tb=document.getElementById('tUnits');
+  if(!units.length){tb.innerHTML=empty(7,'🚪','No units yet');return;}
+  tb.innerHTML=units.map(u=>`<tr>
+    <td>${un.id(u)}</td><td>${un.pname(u)}</td><td>${un.num(u)}</td>
+    <td>${un.type(u)}</td><td>${fmtUGX(un.rent(u))}</td>
+    <td><span class="badge ${isVacant(u)?'warning':'success'}">${un.status(u)}</span></td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
+      <button class="btn-delete" onclick="confirmDelete('unit','${un.id(u)}','${un.num(u)}')">Delete</button>
+    </td></tr>`).join('');
+}
+function renderTenants(){
+  const tb=document.getElementById('tTenants');
+  if(!tenants.length){tb.innerHTML=empty(8,'👥','No tenants yet');return;}
+  tb.innerHTML=tenants.map(t=>`<tr>
+    <td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td>
+    <td>${tn.phone(t)}</td><td>${tn.unum(t)||'—'}</td>
+    <td>${fmtUGX(tn.rent(t))}</td><td>${tn.end(t)||'—'}</td>
+    <td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
+      <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')">Delete</button>
+    </td></tr>`).join('');
+}
 function renderUsers(){
   const tb=document.getElementById('tUsers');
   if(!allUsers.length){tb.innerHTML=empty(7,'🔐','No users found');return;}
@@ -941,6 +988,77 @@ function renderMcUsers() {
           Deactivate
         </button>
       </div>` : ''}
+    </div>`).join('');
+}
+function renderMcProperties() {
+  const mc = document.getElementById('mcProperties');
+  if (!mc) return;
+  if (!properties.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = properties.map(p => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${pr.name(p)}</div>
+        <div class="mc-sub">${pr.llname(p) || '—'} &nbsp;·&nbsp; ${pr.type(p) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px">${pr.addr(p) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          Units: <strong>${pr.units(p)}</strong>
+          <span class="badge ${isActive(p) ? 'success' : 'danger'}">${pr.status(p)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('property','${pr.id(p)}','${pr.name(p)}')"
+          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
+          Delete
+        </button>
+      </div>
+    </div>`).join('');
+}
+function renderMcUnits() {
+  const mc = document.getElementById('mcUnits');
+  if (!mc) return;
+  if (!units.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = units.map(u => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${un.num(u)}</div>
+        <div class="mc-sub">${un.pname(u) || '—'} &nbsp;·&nbsp; ${un.type(u) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px">Rent: <strong>${fmtUGX(un.rent(u))}</strong></div>
+        <div class="mc-sub" style="margin-top:6px">
+          <span class="badge ${isVacant(u) ? 'warning' : 'success'}">${un.status(u)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('unit','${un.id(u)}','${un.num(u)}')"
+          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
+          Delete
+        </button>
+      </div>
+    </div>`).join('');
+}
+function renderMcTenants() {
+  const mc = document.getElementById('mcTenants');
+  if (!mc) return;
+  if (!tenants.length) { mc.innerHTML = ''; return; }
+  mc.innerHTML = tenants.map(t => `
+    <div class="mobile-card">
+      <div class="mc-main">
+        <div class="mc-title">${tn.name(t)}</div>
+        <div class="mc-sub">${tn.phone(t) || '—'} &nbsp;·&nbsp; ${tn.email(t) || '—'}</div>
+        <div class="mc-sub" style="margin-top:6px">Unit: <strong>${tn.unum(t) || '—'}</strong></div>
+        <div class="mc-sub" style="margin-top:6px">Rent: <strong>${fmtUGX(tn.rent(t))}</strong></div>
+        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+          <span class="badge ${isActive(t) ? 'success' : 'danger'}">${tn.status(t)}</span>
+        </div>
+      </div>
+      <div class="mc-right">
+        <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
+        <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')"
+          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
+          Delete
+        </button>
+      </div>
     </div>`).join('');
 }
 
