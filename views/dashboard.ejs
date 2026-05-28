@@ -353,7 +353,9 @@ tr:hover td{background:var(--surface-soft);}
     </div>
   </aside>
 <div class="main">
+  </div><!-- Main -->
 <div class="topbar">
+  </div><!-- Topbar -->
   <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
   <div class="topbar-left">
     <span class="greeting">Welcome back,</span>
@@ -370,7 +372,9 @@ tr:hover td{background:var(--surface-soft);}
       Sign Out
     </button>
   </div>
-</div>
+  </div>
+<div class="content">
+</div><!-- Content -->
 
       <!-- ══ DASHBOARD ══ -->
       <div class="section active" id="sec-dashboard">
@@ -402,6 +406,9 @@ tr:hover td{background:var(--surface-soft);}
   <button class="secondary" onclick="openModal('invoice')">+ Invoice</button>
   <button class="secondary" onclick="openModal('custom_invoice')">+ Custom Invoice</button>
 </div>
+</div>
+        <div class="report-cards"></div>
+      </div>
 
       <!-- ══ LANDLORDS ══ -->
       <div class="section" id="sec-landlords">
@@ -895,287 +902,6 @@ function renderMcLandlords() {
       </div>
     </div>`).join('');
 }
-// Mobile card render
-const mc = document.getElementById('mcLandlords');
-if(mc){
-  mc.innerHTML = landlords.map(l=>`
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${ll.name(l)}</div>
-        <div class="mc-sub">${ll.phone(l)} · ${ll.email(l)}</div>
-        <div class="mc-sub" style="margin-top:4px">
-          Commission: ${ll.comm(l)}% &nbsp;
-          <span class="badge ${isActive(l)?'success':'danger'}" style="font-size:10px">${ll.status(l)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-actions">
-          <button class="btn-view" onclick="viewLandlordPortfolio('${ll.id(l)}')">View</button>
-          <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
-        </div>
-        <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')" style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b">Delete</button>
-      </div>
-    </div>`).join('');
-}
-function renderProperties(){
-  const tb=document.getElementById('tProperties');
-  if(!properties.length){tb.innerHTML=empty(8,'🏘️','No properties yet');return;}
-  tb.innerHTML=properties.map(p=>`<tr>
-    <td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td>
-    <td>${pr.llname(p)||pr.llid(p)}</td><td>${pr.addr(p)}</td>
-    <td>${pr.type(p)}</td><td>${pr.units(p)}</td>
-    <td><span class="badge ${isActive(p)?'success':'danger'}">${pr.status(p)}</span></td>
-    <td class="actions"><button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button></td>
-  </tr>`).join('');
-}
-function renderMcProperties() {
-  const mc = document.getElementById('mcProperties');
-  if (!mc) return;
-  if (!properties.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = properties.map(p => {
-    const l = landlords.find(x => ll.id(x) === pr.llid(p)) || {};
-    return `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${pr.name(p)}</div>
-        <div class="mc-sub">Landlord: ${ll.name(l) || pr.llid(p) || '—'}</div>
-        <div class="mc-sub">${pr.addr(p) || '—'}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <span>${pr.type(p)}</span>
-          &nbsp;·&nbsp;
-          <span>${pr.units(p)} units</span>
-          <span class="badge ${isActive(p) ? 'success' : 'danger'}">${pr.status(p)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-actions">
-          <button class="btn-edit" onclick="editProperty('${pr.id(p)}')">Edit</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-function renderUnits(){
-  const tb=document.getElementById('tUnits');
-  if(!units.length){tb.innerHTML=empty(7,'🚪','No units yet');return;}
-  tb.innerHTML=units.map(u=>`<tr>
-    <td>${un.id(u)}</td><td>${un.pname(u)||un.prop(u)}</td>
-    <td><strong>${un.num(u)}</strong></td><td>${un.type(u)}</td>
-    <td>${fmtUGX(un.rent(u))}</td>
-    <td><span class="badge ${isVacant(u)?'warning':'success'}">${un.status(u)}</span></td>
-    <td class="actions">
-      <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
-      <button class="btn-increase" onclick="openRentIncreaseModal('${un.id(u)}')">↑ Rent</button>
-    </td></tr>`).join('');
-}
-function renderMcUnits() {
-  const mc = document.getElementById('mcUnits');
-  if (!mc) return;
-  if (!units.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = units.map(u => {
-    const p = properties.find(x => pr.id(x) === un.prop(u)) || {};
-    return `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${un.num(u)}</div>
-        <div class="mc-sub">${pr.name(p) || un.prop(u) || '—'} &nbsp;·&nbsp; ${un.type(u)}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <strong style="color:#219377">${fmtUGX(un.rent(u))}</strong>
-          <span class="badge ${isVacant(u) ? 'warning' : 'success'}">${un.status(u)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-actions">
-          <button class="btn-edit" onclick="editUnit('${un.id(u)}')">Edit</button>
-          <button class="btn-increase" onclick="openRentIncreaseModal('${un.id(u)}')">↑</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-function renderTenants(){
-  const tb=document.getElementById('tTenants');
-  if(!tenants.length){tb.innerHTML=empty(8,'👥','No tenants yet');return;}
-  tb.innerHTML=tenants.map(t=>`<tr>
-    <td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td>
-    <td>${tn.phone(t)}</td><td>${tn.unum(t)||tn.unit(t)}</td>
-    <td>${fmtUGX(tn.rent(t))}</td><td>${tn.end(t)||'—'}</td>
-    <td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td>
-    <td class="actions">
-      <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
-      <button class="btn-view" onclick="openReportModal('tenant','${tn.id(t)}')">Statement</button>
-      <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')">Delete</button>
-    </td></tr>`).join('');
-}
-function renderMcTenants() {
-  const mc = document.getElementById('mcTenants');
-  if (!mc) return;
-  if (!tenants.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = tenants.map(t => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${tn.name(t)}</div>
-        <div class="mc-sub">${tn.phone(t) || '—'} &nbsp;·&nbsp; Unit: ${tn.unum(t) || tn.unit(t) || '—'}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <strong style="color:#219377">${fmtUGX(tn.rent(t))}/mo</strong>
-          ${tn.end(t) ? `<span>Ends ${tn.end(t)}</span>` : ''}
-          <span class="badge ${isActive(t) ? 'success' : 'danger'}">${tn.status(t)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-actions">
-          <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
-          <button class="btn-view" onclick="openReportModal('tenant','${tn.id(t)}')">Stmt</button>
-        </div>
-        <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')"
-          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
-          Delete
-        </button>
-      </div>
-    </div>`).join('');
-}
-function renderRent(){
-  const tb=document.getElementById('tRent');
-  if(!rentData.length){tb.innerHTML=empty(9,'💰','No payments recorded');return;}
-  tb.innerHTML=rentData.map(r=>`<tr>
-    <td>${rn.id(r)}</td><td>${rn.tname(r)||rn.tenant(r)}</td>
-    <td>${rn.unum(r)||rn.unit(r)}</td>
-    <td><strong>${fmtUGX(rn.amt(r))}</strong></td>
-    <td>${rn.month(r)} ${rn.year(r)}</td>
-    <td><span class="badge ${rn.ptype(r)==='Full'?'success':'warning'}">${rn.ptype(r)}</span></td>
-    <td>${rn.method(r)}</td><td>${rn.date(r)}</td>
-    <td class="actions">
-      <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
-    </td></tr>`).join('');
-}
-function renderMcRent() {
-  const mc = document.getElementById('mcRent');
-  if (!mc) return;
-  if (!rentData.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = rentData.map(r => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${rn.tname(r) || rn.tenant(r) || '—'}</div>
-        <div class="mc-sub">Unit: ${rn.unum(r) || rn.unit(r) || '—'} &nbsp;·&nbsp; ${rn.month(r)} ${rn.year(r)}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <span class="badge ${rn.ptype(r) === 'Full' ? 'success' : 'warning'}">${rn.ptype(r)}</span>
-          <span>${rn.method(r)}</span>
-          <span style="color:#64748b;font-size:11px">${rn.date(r)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-amount">${fmtUGX(rn.amt(r))}</div>
-        <div class="mc-actions" style="margin-top:6px">
-          <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
-        </div>
-      </div>
-    </div>`).join('');
-}
-function renderExpData(rows){
-  const tb=document.getElementById('tExpenses');
-  if(!rows.length){tb.innerHTML=empty(7,'📑','No expenses recorded');return;}
-  tb.innerHTML=rows.map(e=>`<tr>
-    <td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td>
-    <td>${ex.cat(e)}</td><td>${ex.desc(e)}</td>
-    <td>${fmtUGX(ex.amt(e))}</td><td>${ex.date(e)}</td>
-    <td class="actions"><button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button></td>
-  </tr>`).join('');
-}
-function renderMcExpenses(rows) {
-  const mc = document.getElementById('mcExpenses');
-  if (!mc) return;
-  if (!rows.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = rows.map(e => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${ex.desc(e)}</div>
-        <div class="mc-sub">${ex.pname(e) || 'General'} &nbsp;·&nbsp; ${ex.cat(e)}</div>
-        <div class="mc-sub" style="margin-top:4px;color:#64748b;font-size:11px">${ex.date(e)}</div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-amount">${fmtUGX(ex.amt(e))}</div>
-        <div class="mc-actions" style="margin-top:6px">
-          <button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button>
-        </div>
-      </div>
-    </div>`).join('');
-}
-function renderInvData(rows){
-  const tb=document.getElementById('tInvoices');
-  if(!rows.length){tb.innerHTML=empty(8,'📄','No invoices yet');return;}
-  tb.innerHTML=rows.map(i=>`<tr>
-    <td>${inv.id(i)}</td><td>${inv.type(i)}</td><td>${inv.ename(i)}</td>
-    <td>${inv.desc(i)}</td><td>${fmtUGX(inv.amt(i))}</td>
-    <td>${inv.month(i)} ${inv.year(i)}</td>
-    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
-    <td class="actions">
-      <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
-      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
-    </td></tr>`).join('');
-}
-function renderMcInvoices(rows) {
-  const mc = document.getElementById('mcInvoices');
-  if (!mc) return;
-  if (!rows.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = rows.map(i => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${inv.ename(i) || '—'}</div>
-        <div class="mc-sub">${inv.desc(i) || inv.type(i)} &nbsp;·&nbsp; ${inv.month(i)} ${inv.year(i)}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <span class="badge ${inv.status(i).toLowerCase() === 'paid' ? 'success' : 'danger'}">${inv.status(i)}</span>
-          <span style="font-size:11px;color:#64748b">${inv.id(i)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-amount">${fmtUGX(inv.amt(i))}</div>
-        <div class="mc-actions" style="margin-top:6px">
-          <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
-          ${inv.status(i) !== 'Paid'
-            ? `<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`
-            : ''}
-        </div>
-      </div>
-    </div>`).join('');
-}
-function renderRcpData(rows){
-  const tb=document.getElementById('tReceipts');
-  if(!rows.length){tb.innerHTML=empty(9,'🧾','No receipts yet');return;}
-  tb.innerHTML=rows.map(r=>`<tr>
-    <td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td>
-    <td>${fmtUGX(rc.amt(r))}</td>
-    <td>${rc.month(r)} ${rc.year(r)}</td>
-    <td><span class="badge ${rc.ptype(r)==='Full'?'success':'warning'}">${rc.ptype(r)}</span></td>
-    <td>${rc.method(r)}</td><td>${rc.date(r)}</td>
-    <td class="actions">
-      <button class="btn-view" onclick="window.open('/api/receipts/${rc.id(r)}/pdf','_blank')">View</button>
-      <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱 WA</button>
-    </td></tr>`).join('');
-}
-function renderMcReceipts(rows) {
-  const mc = document.getElementById('mcReceipts');
-  if (!mc) return;
-  if (!rows.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = rows.map(r => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${rc.tenant(r) || '—'}</div>
-        <div class="mc-sub">Unit: ${rc.unit(r) || '—'} &nbsp;·&nbsp; ${rc.month(r)} ${rc.year(r)}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          <span class="badge ${rc.ptype(r) === 'Full' ? 'success' : 'warning'}">${rc.ptype(r)}</span>
-          <span>${rc.method(r)}</span>
-          <span style="font-size:11px;color:#64748b">${rc.date(r)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-amount">${fmtUGX(rc.amt(r))}</div>
-        <div class="mc-actions" style="margin-top:6px">
-          <button class="btn-view" onclick="window.open('/api/receipts/${rc.id(r)}/pdf','_blank')">View</button>
-          <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱</button>
-        </div>
-      </div>
-    </div>`).join('');
-}
 function renderUsers(){
   const tb=document.getElementById('tUsers');
   if(!allUsers.length){tb.innerHTML=empty(7,'🔐','No users found');return;}
@@ -1232,17 +958,29 @@ function renderSettings(){
   form.innerHTML=keys.map(k=>`<div class="settings-row"><label for="s_${k}">${SETTING_LABELS[k]||k}</label><input id="s_${k}" value="${(settings[k]||'').replace(/"/g,'&quot;')}" placeholder="${SETTING_LABELS[k]||k}"></div>`).join('');
 }
 function applyBranding(){
-  const name=settings.company_name||'PMS';
-  document.getElementById('logoCompanyName').textContent=name.length>14?name.substring(0,14)+'…':name;
+  // Company name — update page title only
+  const name = settings.company_name || 'ManageMate';
+  document.title = name + ' — Dashboard';
+  // Apply logo to sidebar if uploaded
   if(settings.company_logo){
-    const logo=document.getElementById('sidebarLogo');
-    const icon=logo.querySelector('.logo-icon');
-    if(icon) icon.style.display='none';
-    if(!logo.querySelector('.logo-img')){
-      const img=document.createElement('img');
-      img.className='logo-img'; img.src=settings.company_logo;
-      logo.insertBefore(img,logo.firstChild);
+    const logo = document.getElementById('sidebarLogo');
+    if(logo){
+      // Hide text, show image
+      const txt = logo.querySelector('.logo-text');
+      if(txt) txt.style.display = 'none';
+      if(!logo.querySelector('.logo-img')){
+        const img = document.createElement('img');
+        img.className = 'logo-img';
+        img.src = settings.company_logo;
+        img.style.cssText = 'width:36px;height:36px;object-fit:contain;border-radius:8px;';
+        logo.insertBefore(img, logo.firstChild);
+      }
     }
+  }
+  // Apply logo to settings preview
+  if(settings.company_logo){
+    const wrap = document.getElementById('logoPreviewWrap');
+    if(wrap) wrap.innerHTML = `<img class="logo-preview" src="${settings.company_logo}">`;
   }
 }
 async function saveSettings(){

@@ -627,76 +627,6 @@ app.put('/api/settings', requireAuth, requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// ── Invoice PDF ───────────────────────────────────────────────────────────────
-app.get('/api/invoices/:id/pdf', requireAuth, async (req, res) => {
-  try {
-    const [{ rows:inv }, { rows:cfg }] = await Promise.all([
-      pool.query(`SELECT invoice_id,type,entity_id,entity_name,description,amount,month,year,status,TO_CHAR(created_at,'DD/MM/YYYY') AS date FROM invoices WHERE invoice_id=$1`, [req.params.id]),
-      pool.query('SELECT key,value FROM settings')
-    ]);
-    if (!inv.length) return res.status(404).send('Invoice not found');
-    const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
-    const i = inv[0];
-    const logoHtml = s.company_logo
-      ? `<img src="${s.company_logo}" style="height:48px;object-fit:contain">`
-      : `<div style="font-size:28px">🏢</div>`;
-    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(i.invoice_id, 'INV', req);
-    res.setHeader('Content-Type','text/html');
-    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${i.invoice_id}</title>
-<style>body{font-family:'Mona Sans','Inter',system-ui,sans-serif;margin:40px;color:#010101;background:#FFFFFF}.hdr{display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid rgba(33,147,119,0.16);padding-bottom:26px;margin-bottom:32px}.hdr h1{color:#219377;margin:0;font-size:34px;font-weight:900}.hdr p{color:#525252;margin:6px 0;font-size:13px}.row{display:flex;gap:20px;margin-bottom:30px}.box{background:#F4FBF8;padding:22px;border-radius:20px;flex:1}.box h3{margin:0 0 10px;color:#219377;font-size:12px;text-transform:uppercase;letter-spacing:.18em}table{width:100%;border-collapse:collapse;margin:20px 0;border-radius:20px;overflow:hidden;box-shadow:0 14px 30px rgba(1,1,1,0.06)}th{background:#F4FBF8;color:#525252;padding:18px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.16em}td{padding:18px;border-bottom:1px solid rgba(1,1,1,0.06);color:#010101}.total{text-align:right;font-size:22px;font-weight:900;color:#219377;margin-top:20px}.badge{padding:8px 18px;border-radius:999px;font-weight:800;font-size:12px;text-transform:uppercase}.paid{background:rgba(34,197,94,0.14);color:#166534}.unpaid{background:rgba(255,189,89,0.18);color:#B76E00}.footer{margin-top:44px;text-align:center;color:#525252;font-size:13px;border-top:1px solid rgba(1,1,1,0.08);padding-top:22px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
-  <div class="hdr" style="display:flex;align-items:center;gap:16px"><div>${logoHtml}</div><div><h1>INVOICE</h1><p><strong>${s.company_name||'Property Management System'}</strong></p><p>${s.company_address||''} | ${s.company_phone||''}</p><p>Invoice #: <strong>${i.invoice_id}</strong></p></div></div>
-<div class="row"><div class="box"><h3>Bill To</h3><p><strong>${i.entity_name||'N/A'}</strong></p><p>Ref: ${i.entity_id||'—'}</p></div>
-<div class="box"><h3>Details</h3><p><strong>Date:</strong> ${i.date}</p><p><strong>Period:</strong> ${i.month||''} ${i.year||''}</p><p><strong>Status:</strong> <span class="badge ${(i.status||'unpaid').toLowerCase()}">${i.status||'Unpaid'}</span></p></div></div>
-<table><thead><tr><th>Description</th><th style="text-align:right">Amount (${s.currency||'UGX'})</th></tr></thead>
-<tbody><tr><td>${i.description||'Management Fee'}</td><td style="text-align:right">${Number(i.amount||0).toLocaleString()}</td></tr></tbody></table>
-<div class="total">Total: ${s.currency||'UGX'} ${Number(i.amount||0).toLocaleString()}</div>
-<div class="footer"><p>Thank you for your business</p><p>${s.company_name||'PMS'} | Generated ${new Date().toLocaleDateString('en-GB')}</p></div>
-<div class="no-print" style="text-align:center;margin-top:40px"><button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer">🖨️ Print / Save as PDF</button></div>
-</body></html>`);
-  } catch (e) { console.error('[invoice pdf]', e.message); res.status(500).send('Error: '+e.message); }
-});
-
-// ── Receipt PDF ───────────────────────────────────────────────────────────────
-app.get('/api/receipts/:id/pdf', requireAuth, async (req, res) => {
-  try {
-    const [{ rows:rcp }, { rows:cfg }] = await Promise.all([
-      pool.query(`SELECT receipt_id,rent_id,tenant_name,unit_number,amount,month,year,payment_method,TO_CHAR(created_at,'DD/MM/YYYY') AS date FROM receipts WHERE receipt_id=$1`, [req.params.id]),
-      pool.query('SELECT key,value FROM settings')
-    ]);
-    if (!rcp.length) return res.status(404).send('Receipt not found');
-    const s = {}; cfg.forEach(r => { s[r.key]=r.value; });
-    const r = rcp[0];
-    const logoHtml = s.company_logo
-      ? `<img src="${s.company_logo}" style="height:48px;object-fit:contain">`
-      : `<div style="font-size:28px">🏢</div>`;
-    const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(r.receipt_id, 'RCP', req);
-    res.setHeader('Content-Type','text/html');
-    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${r.receipt_id}</title>
-<style>body{font-family:'Mona Sans','Inter',system-ui,sans-serif;margin:40px;color:#010101;background:#FFFFFF}.receipt{max-width:620px;margin:0 auto;background:#FFFFFF;border-radius:24px;padding:42px;box-shadow:0 30px 80px rgba(1,1,1,0.08);border:1px solid rgba(1,1,1,0.08)}.hdr{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;text-align:left;border-bottom:1px solid rgba(33,147,119,0.16);padding-bottom:26px;margin-bottom:32px}.hdr h1{color:#219377;margin:0;font-size:32px;font-weight:900}.stamp{display:inline-flex;align-items:center;justify-content:center;background:#FFBD59;color:#010101;padding:10px 24px;border-radius:16px;font-weight:800;margin-top:0}.row{display:flex;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(1,1,1,0.08)}.lbl{color:#525252;font-weight:700;font-size:13px}.val{font-weight:900;font-size:14px}.amt{background:var(--accent-soft);border:1px solid rgba(255,189,89,0.3);border-radius:20px;padding:22px;text-align:center;margin:28px 0}.amt .lbl{color:#B76E00;font-size:12px;text-transform:uppercase}.amt .val{color:#010101;font-size:34px;font-weight:900;margin-top:6px}.footer{text-align:center;margin-top:32px;color:#525252;font-size:13px}@media print{.no-print{display:none!important}body{margin:0}}</style></head><body>
-  <div class="receipt"><div class="hdr" style="display:flex;align-items:center;gap:12px"><div>${logoHtml}</div><div><h1>RENT RECEIPT</h1><p>${s.company_name||'Property Management System'}</p><p>${s.company_address||''}</p></div><div class="stamp">✔ PAID</div><p style="margin-top:10px">Receipt #: <strong>${r.receipt_id}</strong></p></div>
-<div class="row"><span class="lbl">Date</span><span class="val">${r.date}</span></div>
-<div class="row"><span class="lbl">Received From</span><span class="val">${r.tenant_name||'N/A'}</span></div>
-<div class="row"><span class="lbl">Unit</span><span class="val">${r.unit_number||'N/A'}</span></div>
-<div class="row"><span class="lbl">Period</span><span class="val">${r.month||''} ${r.year||''}</span></div>
-<div class="row"><span class="lbl">Payment Method</span><span class="val">${r.payment_method||'Cash'}</span></div>
-<div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px;gap:16px">
-  <div>
-    <strong style="font-size:12px;color:#374151">Document Verification</strong>
-    <div style="font-size:11px;color:#94a3b8;margin-top:3px">Scan the QR code or visit the link to verify this document is authentic</div>
-    <div style="margin-top:4px"><a href="${verifyUrl}" style="color:#0f766e;font-size:11px;word-break:break-all">${verifyUrl}</a></div>
-    <div style="font-family:monospace;font-size:15px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:6px">${verifyCode}</div>
-  </div>
-  <div style="flex-shrink:0;text-align:center">
-    <img src="${qrDataUrl}" style="width:80px;height:80px;display:block">
-    <div style="font-size:10px;color:#94a3b8;margin-top:3px">Scan to verify</div>
-  </div>
-</div>
-<div class="amt"><div class="lbl">Amount Received</div><div class="val">${s.currency||'UGX'} ${Number(r.amount||0).toLocaleString()}</div></div>
-<div class="footer"><p>Thank you for your payment.</p><p>${s.company_name||'PMS'} | ${new Date().toLocaleDateString('en-GB')}</p></div>
-<div class="no-print" style="text-align:center;margin-top:28px"><button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer">🖨️ Print / Save as PDF</button></div>
-</div></body></html>`);
-  } catch (e) { console.error('[receipt pdf]', e.message); res.status(500).send('Error: '+e.message); }
-});
 // ── NEW ROUTES TO ADD TO server.js ───────────────────────────────────────────
 // ── API: Bulk Units ───────────────────────────────────────────────────────────
 app.post('/api/units/bulk', requireAuth, async (req, res) => {
@@ -869,7 +799,6 @@ async function setTenantBalance(tenantId, balance) {
 
 // Hard-delete tenant → archive → free unit
 app.delete('/api/tenants/:id', requireAuth, async (req, res) => {
-  if (!sheetsReady(res)) return;
   try {
     const { rows } = await pool.query(`SELECT * FROM tenants WHERE tenant_id=$1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Tenant not found' });
@@ -894,7 +823,6 @@ app.delete('/api/tenants/:id', requireAuth, async (req, res) => {
 
 // Hard-delete landlord → archive
 app.delete('/api/landlords/:id', requireAuth, async (req, res) => {
-  if (!sheetsReady(res)) return;
   try {
     const { rows } = await pool.query(`SELECT * FROM landlords WHERE landlord_id=$1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Landlord not found' });
@@ -1740,14 +1668,11 @@ app.get('/api/reports/tenant/:tenantId/pdf', requireAuth, async (req, res) => {
 });
 // ─────────────────────────────────────────────────────────────────────────────
 // SERVER FIXES 
-// Replaces / extends existing routes
-
-const crypto_hmac = require('crypto'); // already required as crypto
-
+// Replaces / extends existing routes with fixes or improvements, without changing their core functionality. This is useful for patching bugs or adding features to existing endpoints without breaking backward compatibility.
 // ── Verification helper ───────────────────────────────────────────────────────
 function makeVerifyCode(docId, type) {
   const secret = process.env.SESSION_SECRET || 'pms-verify-secret';
-  return crypto_hmac
+  return crypto
     .createHmac('sha256', secret)
     .update(`${type}:${docId}`)
     .digest('hex')
