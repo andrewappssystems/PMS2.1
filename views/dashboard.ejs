@@ -658,16 +658,18 @@ const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('userName').textContent=USER.name||USER.username;
-  document.getElementById('userRole').textContent=USER.role;
-  document.getElementById('dashDate').ftextContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const u=document.getElementById('userName'); if(u) u.textContent=USER.name||USER.username;
+  const r=document.getElementById('userRole'); if(r) r.textContent=USER.role;
+  const d=document.getElementById('dashDate'); if(d) d.textContent=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   if(USER.role==='Admin'){
-    document.getElementById('usersActionsBar').style.display='flex';
-    document.getElementById('saveSettingsBtn').style.display='block';
-    document.getElementById('logoRow').style.display='flex';
+    const a=document.getElementById('usersActionsBar'); if(a) a.style.display='flex';
+    const s=document.getElementById('saveSettingsBtn'); if(s) s.style.display='block';
+    const l=document.getElementById('logoRow'); if(l) l.style.display='flex';
   } else {
     ['navAdminLabel','navUsers','navArchive','navSettings'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
   }
+  updateClock();
+  setInterval(updateClock, 60000);
   loadAllData();
 });
 // Live clock
@@ -688,10 +690,14 @@ function toggleSidebar(){document.getElementById('sidebar').classList.toggle('op
 function showSection(id,e){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
-  document.getElementById('sec-'+id).classList.add('active');
+  const sec=document.getElementById('sec-'+id); if(sec) sec.classList.add('active');
   if(e&&e.target) e.target.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
   if(id==='arrears') renderArrears();
+  if(id==='landlords') renderLandlords();
+  if(id==='properties') renderProperties();
+  if(id==='units') renderUnits();
+  if(id==='tenants') renderTenants();
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────────

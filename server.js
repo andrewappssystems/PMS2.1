@@ -2062,7 +2062,7 @@ app.post('/api/invoices/custom', requireAuth, async (req, res) => {
     await pool.query(
       `INSERT INTO invoices (invoice_id,type,entity_id,entity_name,description,amount,month,year,status,created_by)
        VALUES ($1,'custom',$2,$3,$4,$5,$6,$7,'Unpaid',$8)`,
-      [id, clientEmail||'custom', clientName.trim(), desc, parseFloat(amount), month, year?parseInt(year):null, actor(req)]
+      [id, 'CUSTOM', clientName.trim(), desc, parseFloat(amount), month, year?parseInt(year):null, actor(req)]
     );
     clearCachePrefix('invoices_');
     res.json({ success: true, id });
