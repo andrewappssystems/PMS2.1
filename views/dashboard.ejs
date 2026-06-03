@@ -841,19 +841,44 @@ function renderMcArrears() {
 }
 
 // ── Paginated loader ──────────────────────────────────────────────────────────
-async function loadPage(type,page){
-  const urls={rent:'/api/rent',expenses:'/api/expenses',invoices:'/api/invoices',receipts:'/api/receipts'};
-  try{
-    const res=await fetch(`${urls[type]}?page=${page}&limit=50`,{credentials:'include'}).then(r=>r.json());
-    const rows=Array.isArray(res)?res:(res.data||[]);
-    const pages=Array.isArray(res)?1:(res.pages||1);
-    pgState[type]={page:Array.isArray(res)?1:(res.page||1),pages};
-    if(type==='rent'){rentData=rows;renderRent();renderPg('rent','pgRent');computeDashboardArrears();}
-    if(type==='expenses'){renderExpData(rows);renderPg('expenses','pgExpenses');}
-    if(type==='invoices'){renderInvData(rows);renderPg('invoices','pgInvoices');}
-    if(type==='receipts'){renderRcpData(rows);renderPg('receipts','pgReceipts');}
-  }catch(e){console.error('loadPage',type,e);}
+async function loadPage(type, page) {
+  const urls = {
+    rent: '/api/rent',
+    expenses: '/api/expenses',
+    invoices: '/api/invoices',
+    receipts: '/api/receipts'
+  };
+  try {
+    const res = await fetch(`${urls[type]}?page=${page}&limit=50`, {
+      credentials: 'include'
+    }).then(r => r.json());
+
+    const rows  = Array.isArray(res) ? res : (res.data  || []);
+    const pages = Array.isArray(res) ? 1   : (res.pages || 1);
+    pgState[type] = {
+      page:  Array.isArray(res) ? 1 : (res.page || 1),
+      pages
+    };
+
+    if (type === 'rent') {
+      rentData = rows;
+      _renderRent();
+      renderPg('rent', 'pgRent');
+      computeDashboardArrears();
+    }
+    if (type === 'expenses') { _renderExpData(rows);  renderPg('expenses', 'pgExpenses'); }
+    if (type === 'invoices') { _renderInvData(rows);  renderPg('invoices', 'pgInvoices'); }
+    if (type === 'receipts') { _renderRcpData(rows);  renderPg('receipts', 'pgReceipts'); }
+
+  } catch(e) {
+    console.error('loadPage error:', type, e.message);
+  }
 }
+// Safe render wrappers — called from loadPage
+function _renderRent()        { if(typeof renderRent      === 'function') renderRent();       else console.error('renderRent missing'); }
+function _renderExpData(rows) { if(typeof renderExpData   === 'function') renderExpData(rows); else console.error('renderExpData missing'); }
+function _renderInvData(rows) { if(typeof renderInvData   === 'function') renderInvData(rows); else console.error('renderInvData missing'); }
+function _renderRcpData(rows) { if(typeof renderRcpData   === 'function') renderRcpData(rows); else console.error('renderRcpData missing'); }
 function renderPg(type,cid){
   const{page,pages}=pgState[type]; const el=document.getElementById(cid); if(!el)return;
   if(pages<=1){el.style.display='none';return;}
@@ -884,32 +909,6 @@ function renderLandlords(){
       <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
       <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')">Delete</button>
     </td></tr>`).join('');
-}
-function renderMcLandlords() {
-  const mc = document.getElementById('mcLandlords');
-  if (!mc) return;
-  if (!landlords.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = landlords.map(l => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${ll.name(l)}</div>
-        <div class="mc-sub">${ll.phone(l) || '—'} &nbsp;·&nbsp; ${ll.email(l) || '—'}</div>
-        <div class="mc-sub" style="margin-top:6px;display:flex;align-items:center;gap:8px">
-          Commission: <strong>${ll.comm(l)}%</strong>
-          <span class="badge ${isActive(l) ? 'success' : 'danger'}">${ll.status(l)}</span>
-        </div>
-      </div>
-      <div class="mc-right">
-        <div class="mc-actions">
-          <button class="btn-view" onclick="viewLandlordPortfolio('${ll.id(l)}')">View</button>
-          <button class="btn-edit" onclick="editLandlord('${ll.id(l)}')">Edit</button>
-        </div>
-        <button class="btn-delete" onclick="confirmDelete('landlord','${ll.id(l)}','${ll.name(l)}')"
-          style="width:100%;padding:0 12px;height:28px;border-radius:50px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fee2e2;color:#991b1b;margin-top:4px">
-          Delete
-        </button>
-      </div>
-    </div>`).join('');
 }
 function renderProperties(){
   const tb=document.getElementById('tProperties');
@@ -1061,7 +1060,68 @@ function renderMcTenants() {
       </div>
     </div>`).join('');
 }
+function renderRent() {
+  const tb = document.getElementById('tRent');
+  if (!rentData.length) { tb.innerHTML = empty(9,'💰','No payments recorded'); return; }
+  tb.innerHTML = rentData.map(r => `<tr>
+    <td>${rn.id(r)}</td>
+    <td>${rn.tname(r)||rn.tenant(r)}</td>
+    <td>${rn.unum(r)||rn.unit(r)}</td>
+    <td><strong>${fmtUGX(rn.amt(r))}</strong></td>
+    <td>${rn.month(r)} ${rn.year(r)}</td>
+    <td><span class="badge ${rn.ptype(r)==='Full'?'success':'warning'}">${rn.ptype(r)}</span></td>
+    <td>${rn.method(r)}</td>
+    <td>${rn.date(r)}</td>
+    <td class="actions">
+      <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
+    </td></tr>`).join('');
+  if (typeof renderMcRent === 'function') renderMcRent();
+}
 
+function renderExpData(rows) {
+  const tb = document.getElementById('tExpenses');
+  if (!rows.length) { tb.innerHTML = empty(7,'📑','No expenses recorded'); return; }
+  tb.innerHTML = rows.map(e => `<tr>
+    <td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td>
+    <td>${ex.cat(e)}</td><td>${ex.desc(e)}</td>
+    <td>${fmtUGX(ex.amt(e))}</td><td>${ex.date(e)}</td>
+    <td class="actions">
+      <button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button>
+    </td></tr>`).join('');
+  if (typeof renderMcExpenses === 'function') renderMcExpenses(rows);
+}
+
+function renderInvData(rows) {
+  const tb = document.getElementById('tInvoices');
+  if (!rows.length) { tb.innerHTML = empty(8,'📄','No invoices yet'); return; }
+  tb.innerHTML = rows.map(i => `<tr>
+    <td>${inv.id(i)}</td><td>${inv.type(i)}</td>
+    <td>${inv.ename(i)}</td><td>${inv.desc(i)}</td>
+    <td>${fmtUGX(inv.amt(i))}</td>
+    <td>${inv.month(i)} ${inv.year(i)}</td>
+    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
+    <td class="actions">
+      <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
+    </td></tr>`).join('');
+  if (typeof renderMcInvoices === 'function') renderMcInvoices(rows);
+}
+
+function renderRcpData(rows) {
+  const tb = document.getElementById('tReceipts');
+  if (!rows.length) { tb.innerHTML = empty(9,'🧾','No receipts yet'); return; }
+  tb.innerHTML = rows.map(r => `<tr>
+    <td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td>
+    <td>${fmtUGX(rc.amt(r))}</td>
+    <td>${rc.month(r)} ${rc.year(r)}</td>
+    <td><span class="badge ${rc.ptype(r)==='Full'?'success':'warning'}">${rc.ptype(r)}</span></td>
+    <td>${rc.method(r)}</td><td>${rc.date(r)}</td>
+    <td class="actions">
+      <button class="btn-view" onclick="window.open('/api/receipts/${rc.id(r)}/pdf','_blank')">View</button>
+      <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱</button>
+    </td></tr>`).join('');
+  if (typeof renderMcReceipts === 'function') renderMcReceipts(rows);
+}
 // ── Settings ──────────────────────────────────────────────────────────────────
 const SETTING_LABELS={company_name:'Company Name',company_address:'Address',company_phone:'Phone',company_email:'Email',currency:'Currency',vat_rate:'VAT Rate (%)'};
 function renderSettings(){
