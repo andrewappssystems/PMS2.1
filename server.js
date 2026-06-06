@@ -5,6 +5,7 @@ const session    = require('express-session');
 const pgSession  = require('connect-pg-simple')(session);
 const rateLimit  = require('express-rate-limit');
 const helmet     = require('helmet');
+const compression = require('compression');
 const pool       = require('./db');
 const path       = require('path');
 const crypto     = require('crypto');
@@ -14,6 +15,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // ── Security Headers ──────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
+app.use(compression());
 
 // ── App Setup ─────────────────────────────────────────────────────────────────
 app.set('view engine', 'ejs');
@@ -22,6 +24,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 if (isProduction) app.set('trust proxy', 1);
+
+// Request logger (production: only log errors; dev: log all)
+app.use((req, res, next) => {
+  if (req.path === '/health') return next(); // skip health pings
+  const start = Date.now();
+  res.on('finish', () => {
+    const ms = Date.now() - start;
+    const level = res.statusCode >= 500 ? 'ERROR' :
+                  res.statusCode >= 400 ? 'WARN'  : 'INFO';
+    if (ms > 2000 || res.statusCode >= 400) {
+      console.log(`[${level}] ${req.method} ${req.path} ${res.statusCode} ${ms}ms`);
+    }
+  });
+  next();
+});
 
 // ── Session stored in PostgreSQL ──────────────────────────────────────────────
 app.use(session({
@@ -606,12 +623,25 @@ app.get('/api/settings', requireAuth, async (req, res) => {
   const cached = getCached('settings');
   if (cached) return res.json(cached);
   try {
-    const { rows } = await pool.query('SELECT key, value FROM settings');
+    const { rows } = await pool.query(
+      `SELECT key, value FROM settings WHERE key != 'company_logo'`
+    );
     const result = {};
     rows.forEach(r => { result[r.key] = r.value; });
     setCache('settings', result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/settings/logo', requireAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT value FROM settings WHERE key='company_logo' LIMIT 1`
+    );
+    res.json({ logo: rows.length ? rows[0].value : null });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put('/api/settings', requireAuth, requireAdmin, async (req, res) => {
@@ -750,7 +780,7 @@ app.post('/api/settings/logo', requireAuth, requireAdmin, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-'use strict';
+
 // ── ID helpers with year prefix ───────────────────────────────────────────────
 async function getNextYearId(table, idColumn, prefix) {
   const year = new Date().getFullYear();
@@ -1352,13 +1382,97 @@ app.get('/api/reports/landlord/:landlordId/pdf', requireAuth, async (req, res) =
   const { from, to } = req.query;
   if (!from || !to) return res.status(400).send('Date range required');
   try {
-    const reportRes = await fetch(
-      `http://localhost:${process.env.PORT||3000}/api/reports/landlord/${req.params.landlordId}?from=${from}&to=${to}`,
-      { headers: { cookie: req.headers.cookie || '' } }
+    // ── Gather all data directly ──────────────────────────────────────────────
+    const { rows: llRows } = await pool.query(
+      `SELECT * FROM landlords WHERE landlord_id=$1`, [req.params.landlordId]
     );
-    const d = await reportRes.json();
-    if (d.error) return res.status(404).send(d.error);
-    const { landlord: ll, summary: s, properties: props, paymentDetails, arrearsDetail, company } = d;
+    if (!llRows.length) return res.status(404).send('Landlord not found');
+    const ll = llRows[0];
+
+    const { rows: props } = await pool.query(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM units u WHERE u.property_id=p.property_id) AS total_units,
+        (SELECT COUNT(*) FROM units u WHERE u.property_id=p.property_id AND LOWER(u.status)='occupied') AS occupied_units,
+        (SELECT COUNT(*) FROM units u WHERE u.property_id=p.property_id AND LOWER(u.status)='vacant') AS vacant_units
+       FROM properties p WHERE p.landlord_id=$1`,
+      [req.params.landlordId]
+    );
+
+    const { rows: rentRows } = await pool.query(
+      `SELECT p.property_id, p.name AS property_name,
+              COALESCE(SUM(rc.amount),0) AS collected,
+              COUNT(rc.rent_id) AS payment_count
+       FROM properties p
+       LEFT JOIN units u ON u.property_id = p.property_id
+       LEFT JOIN rent_collection rc
+         ON rc.unit_id = u.unit_id
+         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+       WHERE p.landlord_id = $1
+       GROUP BY p.property_id, p.name`,
+      [req.params.landlordId, from, to]
+    );
+
+    const { rows: expRows } = await pool.query(
+      `SELECT p.property_id, p.name AS property_name,
+              COALESCE(SUM(e.amount),0) AS total_expenses
+       FROM properties p
+       LEFT JOIN expenses e
+         ON e.property_id = p.property_id
+         AND e.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+       WHERE p.landlord_id = $1
+       GROUP BY p.property_id, p.name`,
+      [req.params.landlordId, from, to]
+    );
+
+    const { rows: arrearsRows } = await pool.query(
+      `SELECT t.tenant_id, t.name AS tenant_name,
+              u.unit_number, p.name AS property_name,
+              t.rent_amount,
+              COALESCE(rb.carried_balance,0) AS balance
+       FROM tenants t
+       JOIN units u ON u.unit_id = t.unit_id
+       JOIN properties p ON p.property_id = u.property_id
+       LEFT JOIN rent_balances rb ON rb.tenant_id = t.tenant_id
+       WHERE p.landlord_id=$1 AND LOWER(t.status)='active' AND COALESCE(rb.carried_balance,0)>0`,
+      [req.params.landlordId]
+    );
+
+    const { rows: paymentDetails } = await pool.query(
+      `SELECT rc.rent_id, t.name AS tenant_name,
+              u.unit_number, p.name AS property_name,
+              rc.amount, rc.month, rc.year,
+              rc.payment_method, rc.payment_type,
+              rc.balance_after,
+              TO_CHAR(rc.created_at,'YYYY-MM-DD') AS date
+       FROM rent_collection rc
+       JOIN units u ON u.unit_id = rc.unit_id
+       JOIN properties p ON p.property_id = u.property_id
+       LEFT JOIN tenants t ON t.tenant_id = rc.tenant_id
+       WHERE p.landlord_id=$1
+         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+       ORDER BY rc.created_at DESC`,
+      [req.params.landlordId, from, to]
+    );
+
+    // Calculate summary
+    const totalCollected = rentRows.reduce((s,r)=>s+parseFloat(r.collected||0),0);
+    const totalExpenses  = expRows.reduce((s,r)=>s+parseFloat(r.total_expenses||0),0);
+    const managementFee  = totalCollected * (parseFloat(ll.commission_rate||10)/100);
+    const netPayable     = totalCollected - managementFee - totalExpenses;
+    const s = {
+      totalCollected, totalExpenses, managementFee,
+      managementFeeRate: parseFloat(ll.commission_rate||10),
+      netPayable,
+      totalArrears: arrearsRows.reduce((sum,r)=>sum+parseFloat(r.balance||0),0)
+    };
+
+    // Get company branding
+    const { rows: sRows } = await pool.query('SELECT key,value FROM settings WHERE key != \'company_logo\'');
+    const company = {}; sRows.forEach(r => { company[r.key]=r.value; });
+
+    // Prepare rent/expense maps for template rendering
+    const d = { rentByProperty: rentRows, expensesByProperty: expRows };
+
     const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
     const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
@@ -1486,12 +1600,12 @@ app.get('/api/reports/landlord/:landlordId/pdf', requireAuth, async (req, res) =
     </tbody>
   </table>` : '<p style="color:#64748b;margin-bottom:16px">No payments recorded in this period.</p>'}
 
-  ${arrearsDetail.length ? `
+  ${arrearsRows.length ? `
   <h3>Arrears as of Today</h3>
   <table>
     <thead><tr><th>Tenant</th><th>Unit</th><th>Property</th><th class="right">Monthly Rent</th><th class="right">Outstanding Balance</th></tr></thead>
     <tbody>
-    ${arrearsDetail.map(a=>`<tr>
+    ${arrearsRows.map(a=>`<tr>
       <td>${a.tenant_name}</td><td>${a.unit_number}</td><td>${a.property_name}</td>
       <td class="right">${fmt(a.rent_amount)}</td>
       <td class="right"><strong style="color:#dc2626">${fmt(a.balance)}</strong></td>
@@ -2192,6 +2306,34 @@ app.use((err, req, res, next) => {
   if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Internal server error' });
   res.status(500).render('login', { error: 'An unexpected error occurred.' });
 });
+
+// ── Health check endpoint ─────────────────────────────────────────────────────
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development',
+    uptime: Math.floor(process.uptime()) + 's'
+  });
+});
+
+// ── Keep Render free tier warm (ping every 14 minutes) ────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || 
+                   `http://localhost:${process.env.PORT || 3000}`;
+  
+  setTimeout(() => {
+    setInterval(async () => {
+      try {
+        const res = await fetch(`${SELF_URL}/health`);
+        const data = await res.json();
+        console.log(`[keep-alive] ok — uptime: ${data.uptime}`);
+      } catch(e) {
+        console.warn('[keep-alive] ping failed:', e.message);
+      }
+    }, 14 * 60 * 1000); // 14 minutes
+  }, 60 * 1000); // Start after 1 minute (let server fully boot first)
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
