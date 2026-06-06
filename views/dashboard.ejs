@@ -759,7 +759,7 @@ function showSection(id, e) {
   _sectionLoaded.add(id);
 
   if (id === 'arrears') { renderArrears(); renderMcArrears(); }
-  if (id === 'landlords') { renderLandlords(); renderMcLandlords(); }
+  if (id === 'landlords') { renderLandlords(); }
   if (id === 'properties') { renderProperties(); renderMcProperties(); }
   if (id === 'units') { renderUnits(); renderMcUnits(); }
   if (id === 'tenants') { renderTenants(); renderMcTenants(); }
@@ -794,7 +794,7 @@ async function loadAllData() {
     document.getElementById('statExpenses').textContent = fmtUGX(s.totalExpenses);
   } catch(e) { console.error('stats', e); }
 
-  landlords = await cfetch('/api/landlords'); renderLandlords(); renderMcLandlords();
+  landlords = await cfetch('/api/landlords'); renderLandlords();
   properties = await cfetch('/api/properties'); renderProperties(); renderMcProperties();
   units = await cfetch('/api/units'); renderUnits(); renderMcUnits();
   tenants = await cfetch('/api/tenants'); renderTenants(); renderMcTenants();
