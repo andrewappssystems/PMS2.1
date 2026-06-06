@@ -148,7 +148,7 @@ button{cursor:pointer;}
   .topbar .mobile-menu { display: block; }
   .topbar .topbar-left .greeting { display: none; }
 }
-
+.content{flex:1;overflow-y:auto;padding:32px;background:var(--bg);display:flex;flex-direction:column;}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px;}
 .stat-card {
   background: #EAF8F4;
@@ -240,10 +240,10 @@ table{width:100%;border-collapse:collapse;font-size:14px;}
 th{text-align:left;padding:18px 20px;background:var(--surface-strong);font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.16em;}
 td{padding:18px 20px;border-bottom:1px solid rgba(1,1,1,0.06);color:var(--text);}
 tr:hover td{background:var(--surface-soft);}
-.skeleton{background:linear-gradient(90deg,#f6f8f7 25%,#e7efea 50%,#f6f8f7 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:14px;height:14px;display:inline-block;}
+.skeleton{background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;height:14px;display:inline-block;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .sk-row td{padding:16px 18px;}
-.sk-row td div{height:12px;border-radius:14px;background:linear-gradient(90deg,#f6f8f7 25%,#e7efea 50%,#f6f8f7 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;}
+.sk-row td div{height:14px;border-radius:8px;background:linear-gradient(90deg,#f1f5f9 25%,#e2e8f0 50%,#f1f5f9 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;margin:4px 0;}
 .badge{display:inline-block;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;}
 .badge.success{background:rgba(34,197,94,0.12);color:#166534;}
 .badge.danger{background:rgba(239,68,68,0.12);color:#991b1b;}
@@ -357,34 +357,29 @@ tr:hover td{background:var(--surface-soft);}
     </div>
   </aside>
 <div class="main">
-  </div><!-- Main -->
-<div class="topbar">
-  </div><!-- Topbar -->
-  <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
-  <div class="topbar-left">
-    <span class="greeting">Welcome back,</span>
-    <span class="username" id="userName">—</span>
-    <span class="role-badge" id="userRole">—</span>
-  </div>
-  <div class="topbar-right">
-    <div class="datetime">
-      <strong id="topbarTime">—</strong>
-      <span id="dashDate">—</span>
+  <div class="topbar">
+    <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-left">
+      <span class="greeting">Welcome back,</span>
+      <span class="username" id="userName">—</span>
+      <span class="role-badge" id="userRole">—</span>
     </div>
-    <button class="signout-btn" onclick="logout()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      Sign Out
-    </button>
+    <div class="topbar-right">
+      <div class="datetime">
+        <strong id="topbarTime">—</strong>
+        <span id="dashDate">—</span>
+      </div>
+      <button class="signout-btn" onclick="logout()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+    </div>
   </div>
-  </div>
-<div class="content">
+  <div class="content">
     <div class="alert-bar" id="rentDueBar"></div>
-  <div class="section active" id="sec-dashboard">
-</div><!-- Content -->
 
-      <!-- ══ DASHBOARD ══ -->
-      <div class="section active" id="sec-dashboard">
-        <div class="alert-bar" id="rentDueBar"></div>
+    <!-- ══ DASHBOARD ══ -->
+    <div class="section active" id="sec-dashboard">
         <div class="stats-grid">
   <div class="stat-card"><div class="label">Landlords</div><div class="value" id="statLandlords">—</div></div>
   <div class="stat-card"><div class="label">Properties</div><div class="value" id="statProperties">—</div></div>
@@ -649,6 +644,52 @@ tr:hover td{background:var(--surface-soft);}
 </div>
 
 <script>
+// ── Smart Client Cache (survives section switching, 5-min TTL) ────────────────
+const CACHE = {
+  _mem: {},
+  _ttl: 5 * 60 * 1000,
+
+  set(key, data) {
+    this._mem[key] = { data, ts: Date.now() };
+    try {
+      sessionStorage.setItem('mm_' + key, JSON.stringify({ data, ts: Date.now() }));
+    } catch(e) {}
+  },
+
+  get(key) {
+    const m = this._mem[key];
+    if (m && (Date.now() - m.ts) < this._ttl) return m.data;
+    
+    try {
+      const stored = sessionStorage.getItem('mm_' + key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if ((Date.now() - parsed.ts) < this._ttl) {
+          this._mem[key] = parsed;
+          return parsed.data;
+        }
+      }
+    } catch(e) {}
+    return null;
+  },
+
+  bust(keys = []) {
+    keys.forEach(k => {
+      delete this._mem[k];
+      try { sessionStorage.removeItem('mm_' + k); } catch(e) {}
+    });
+  },
+
+  bustAll() {
+    this._mem = {};
+    try {
+      Object.keys(sessionStorage)
+        .filter(k => k.startsWith('mm_'))
+        .forEach(k => sessionStorage.removeItem(k));
+    } catch(e) {}
+  }
+};
+
 const USER = JSON.parse('<%- JSON.stringify(user || {}).replace(/</g, "\\u003c") %>');
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -698,45 +739,69 @@ function updateClock(){
   if(el) el.textContent = time;
   if(de) de.textContent = date;
 }
-updateClock();
-setInterval(updateClock, 60000);
+
 function logout(){window.location.href='/logout';}
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
 
-function showSection(id,e){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
-  const sec=document.getElementById('sec-'+id); if(sec) sec.classList.add('active');
-  if(e&&e.target) e.target.classList.add('active');
+// ── Lazy section loading ──────────────────────────────────────────────────────
+const _sectionLoaded = new Set();
+
+function showSection(id, e) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+  
+  const sec = document.getElementById('sec-' + id);
+  if (sec) sec.classList.add('active');
+  if (e && e.target) e.target.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
-  if(id==='arrears') {renderArrears(); renderMcArrears();}
-  if(id==='landlords') {renderLandlords(); renderMcLandlords();}
-  if(id==='properties') {renderProperties(); renderMcProperties();}
-  if(id==='units') {renderUnits(); renderMcUnits();}
-  if(id==='tenants') {renderTenants(); renderMcTenants();}
+
+  if (_sectionLoaded.has(id)) return;
+  _sectionLoaded.add(id);
+
+  if (id === 'arrears') { renderArrears(); renderMcArrears(); }
+  if (id === 'landlords') { renderLandlords(); renderMcLandlords(); }
+  if (id === 'properties') { renderProperties(); renderMcProperties(); }
+  if (id === 'units') { renderUnits(); renderMcUnits(); }
+  if (id === 'tenants') { renderTenants(); renderMcTenants(); }
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────────
-async function loadAllData(){
-  try{
-    const s=await fetch('/api/stats',{credentials:'include'}).then(r=>r.json());
-    document.getElementById('statLandlords').textContent=s.landlords||0;
-    document.getElementById('statProperties').textContent=s.properties||0;
-    document.getElementById('statUnits').textContent=s.units||0;
-    document.getElementById('statTenants').textContent=s.tenants||0;
-    document.getElementById('statOccupied').textContent=s.occupied||0;
-    document.getElementById('statVacant').textContent=s.vacant||0;
-    document.getElementById('statRent').textContent=fmtUGX(s.totalRent);
-    document.getElementById('statExpenses').textContent=fmtUGX(s.totalExpenses);
-  }catch(e){console.error('stats',e);}
-  const load=async(url,fb=[])=>{try{return await fetch(url,{credentials:'include'}).then(r=>r.json());}catch(e){return fb;}};
-  landlords =await load('/api/landlords');  renderLandlords(); renderMcLandlords();
-  properties=await load('/api/properties'); renderProperties(); renderMcProperties();
-  units     =await load('/api/units');      renderUnits(); renderMcUnits();
-  tenants   =await load('/api/tenants');    renderTenants(); renderMcTenants();
-  settings  =await load('/api/settings',{}); renderSettings(); applyBranding();
-  if(USER.role==='Admin'){allUsers=await load('/api/users',[]); renderUsers(); renderMcUsers();}
-  await Promise.all([loadPage('rent',1),loadPage('expenses',1),loadPage('invoices',1),loadPage('receipts',1)]);
+// ── Smart fetch with caching ──────────────────────────────────────────────────
+const cfetch = async(url, fallback = []) => {
+  const cached = CACHE.get(url);
+  if (cached !== null) return cached;
+
+  try {
+    const data = await fetch(url, { credentials: 'include' }).then(r => r.json());
+    CACHE.set(url, data);
+    return data;
+  } catch(e) {
+    console.error('cfetch', url, e.message);
+    return fallback;
+  }
+};
+
+async function loadAllData() {
+  try {
+    const s = await cfetch('/api/stats', {});
+    document.getElementById('statLandlords').textContent = s.landlords || 0;
+    document.getElementById('statProperties').textContent = s.properties || 0;
+    document.getElementById('statUnits').textContent = s.units || 0;
+    document.getElementById('statTenants').textContent = s.tenants || 0;
+    document.getElementById('statOccupied').textContent = s.occupied || 0;
+    document.getElementById('statVacant').textContent = s.vacant || 0;
+    document.getElementById('statRent').textContent = fmtUGX(s.totalRent);
+    document.getElementById('statExpenses').textContent = fmtUGX(s.totalExpenses);
+  } catch(e) { console.error('stats', e); }
+
+  landlords = await cfetch('/api/landlords'); renderLandlords(); renderMcLandlords();
+  properties = await cfetch('/api/properties'); renderProperties(); renderMcProperties();
+  units = await cfetch('/api/units'); renderUnits(); renderMcUnits();
+  tenants = await cfetch('/api/tenants'); renderTenants(); renderMcTenants();
+  settings = await cfetch('/api/settings', {}); renderSettings(); applyBranding();
+  if (USER.role === 'Admin') { allUsers = await cfetch('/api/users', []); renderUsers(); renderMcUsers(); }
+  
+  await Promise.all([loadPage('rent', 1), loadPage('expenses', 1), loadPage('invoices', 1), loadPage('receipts', 1)]);
   computeDashboardArrears();
   loadRentDueStatus();
 }
@@ -848,15 +913,15 @@ async function loadPage(type, page) {
     invoices: '/api/invoices',
     receipts: '/api/receipts'
   };
-  try {
-    const res = await fetch(`${urls[type]}?page=${page}&limit=50`, {
-      credentials: 'include'
-    }).then(r => r.json());
 
-    const rows  = Array.isArray(res) ? res : (res.data  || []);
-    const pages = Array.isArray(res) ? 1   : (res.pages || 1);
+  try {
+    const url = `${urls[type]}?page=${page}&limit=50`;
+    const res = await cfetch(url, []);
+
+    const rows = Array.isArray(res) ? res : (res.data || []);
+    const pages = Array.isArray(res) ? 1 : (res.pages || 1);
     pgState[type] = {
-      page:  Array.isArray(res) ? 1 : (res.page || 1),
+      page: Array.isArray(res) ? 1 : (res.page || 1),
       pages
     };
 
@@ -866,10 +931,9 @@ async function loadPage(type, page) {
       renderPg('rent', 'pgRent');
       computeDashboardArrears();
     }
-    if (type === 'expenses') { _renderExpData(rows);  renderPg('expenses', 'pgExpenses'); }
-    if (type === 'invoices') { _renderInvData(rows);  renderPg('invoices', 'pgInvoices'); }
-    if (type === 'receipts') { _renderRcpData(rows);  renderPg('receipts', 'pgReceipts'); }
-
+    if (type === 'expenses') { _renderExpData(rows); renderPg('expenses', 'pgExpenses'); }
+    if (type === 'invoices') { _renderInvData(rows); renderPg('invoices', 'pgInvoices'); }
+    if (type === 'receipts') { _renderRcpData(rows); renderPg('receipts', 'pgReceipts'); }
   } catch(e) {
     console.error('loadPage error:', type, e.message);
   }
@@ -1136,29 +1200,24 @@ function renderSettings(){
   form.innerHTML=keys.map(k=>`<div class="settings-row"><label for="s_${k}">${SETTING_LABELS[k]||k}</label><input id="s_${k}" value="${(settings[k]||'').replace(/"/g,'&quot;')}" placeholder="${SETTING_LABELS[k]||k}"></div>`).join('');
 }
 function applyBranding(){
-  // Company name — update page title only
   const name = settings.company_name || 'ManageMate';
-  document.title = name + ' — Dashboard';
-  // Apply logo to sidebar if uploaded
+  document.title = name + ' — ManageMate';
+
   if(settings.company_logo){
     const logo = document.getElementById('sidebarLogo');
     if(logo){
-      // Hide text, show image
       const txt = logo.querySelector('.logo-text');
       if(txt) txt.style.display = 'none';
       if(!logo.querySelector('.logo-img')){
         const img = document.createElement('img');
         img.className = 'logo-img';
         img.src = settings.company_logo;
-        img.style.cssText = 'width:36px;height:36px;object-fit:contain;border-radius:8px;';
+        img.style.cssText = 'width:34px;height:34px;object-fit:contain;border-radius:8px;flex-shrink:0';
         logo.insertBefore(img, logo.firstChild);
       }
     }
-  }
-  // Apply logo to settings preview
-  if(settings.company_logo){
     const wrap = document.getElementById('logoPreviewWrap');
-    if(wrap) wrap.innerHTML = `<img class="logo-preview" src="${settings.company_logo}">`;
+    if(wrap) wrap.innerHTML = `![](${settings.company_logo})`;
   }
 }
 async function saveSettings(){
@@ -1557,6 +1616,12 @@ async function saveForm(){
     if(data.success){
       const sf=currentForm,sid=data.id,sp={...payload};
       showToast(sf==='bulk_unit'?`${data.count} units created!`:sf==='bulk_invoice'?`${data.count} invoices created!`:'Saved successfully!','success');
+      
+      // Bust relevant cache keys to force fresh data reload
+      const keysToReset = ['/api/stats', '/api/landlords', '/api/properties', '/api/units', '/api/tenants', '/api/settings', '/api/users'];
+      if (['rent', 'expense', 'invoice', 'receipt'].includes(sf)) keysToReset.push(`/api/${sf}`);
+      CACHE.bust(keysToReset);
+      
       closeModal();
       await loadAllData();
 
