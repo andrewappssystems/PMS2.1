@@ -1,0 +1,14 @@
+node_modules/
+npm-debug.log*
+.env
+.env.local
+.env.production
+.render/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+logs/
+*.log
+makehash.js
