@@ -82,6 +82,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   updateClock();
   setInterval(updateClock, 60000);
   loadAllData();
+  // Initialize Lucide icons
+  if(typeof lucide!=='undefined') lucide.createIcons();
 });
 // Live clock
 function updateClock(){
@@ -95,7 +97,12 @@ function updateClock(){
 }
 
 function logout(){window.location.href='/logout';}
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sidebarOverlay');
+  sb.classList.toggle('open');
+  if(ov) ov.classList.toggle('active',sb.classList.contains('open'));
+}
 
 // ── Lazy section loading ──────────────────────────────────────────────────────
 const _sectionLoaded = new Set();
@@ -108,6 +115,7 @@ function showSection(id, e) {
   if (sec) sec.classList.add('active');
   if (e && e.target) e.target.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
+  const ov=document.getElementById('sidebarOverlay'); if(ov) ov.classList.remove('active');
 
   if (_sectionLoaded.has(id)) return;
   _sectionLoaded.add(id);
@@ -117,6 +125,8 @@ function showSection(id, e) {
   if (id === 'properties') { renderProperties(); renderMcProperties(); }
   if (id === 'units') { renderUnits(); renderMcUnits(); }
   if (id === 'tenants') { renderTenants(); renderMcTenants(); }
+  // Render Lucide icons in newly loaded content
+  if(typeof lucide!=='undefined') lucide.createIcons();
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────────
@@ -158,6 +168,8 @@ async function loadAllData() {
   await Promise.all([loadPage('rent', 1), loadPage('expenses', 1), loadPage('invoices', 1), loadPage('receipts', 1)]);
   computeDashboardArrears();
   loadRentDueStatus();
+  // Render all Lucide icons after data load
+  if(typeof lucide!=='undefined') lucide.createIcons();
 }
 
 // ── Rent due alert ────────────────────────────────────────────────────────────
@@ -168,10 +180,10 @@ async function loadRentDueStatus(){
     if(!bar) return;
     if(d.dueToday){
       bar.style.display='flex'; bar.style.background='rgba(255,189,89,0.14)'; bar.style.borderColor='rgba(255,189,89,0.35)';
-      bar.innerHTML=`<span style="font-size:18px">📅</span><strong style="color:#B76E00">Rent is due today (1st of the month).</strong><span style="color:#B76E00">&nbsp;${d.totalUnpaid} tenant${d.totalUnpaid!==1?'s':''} have not yet paid.</span>`;
+      bar.innerHTML=`<i data-lucide="calendar" style="width:18px;height:18px;vertical-align:middle"></i><strong style="color:#B76E00">Rent is due today (1st of the month).</strong><span style="color:#B76E00">&nbsp;${d.totalUnpaid} tenant${d.totalUnpaid!==1?'s':''} have not yet paid.</span>`;
     } else if(d.overdueCount>0){
       bar.style.display='flex'; bar.style.background='rgba(239,68,68,0.12)'; bar.style.borderColor='rgba(239,68,68,0.25)';
-      bar.innerHTML=`<span style="font-size:18px">⚠️</span><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">&nbsp;— rent was due on the 1st.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:7px 14px;background:#ef4444;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer">View →</button>`;
+      bar.innerHTML=`<i data-lucide="triangle-alert" style="width:18px;height:18px;vertical-align:middle;color:#dc2626"></i><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">&nbsp;— rent was due on the 1st.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:7px 14px;background:#ef4444;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer">View →</button>`;
     } else {
       bar.style.display='none';
     }
@@ -210,7 +222,7 @@ function computeDashboardArrears(){
 }
 function renderArrears(){
   const arr=computeArrearsAll(); const tb=document.getElementById('tArrears');
-  if(!arr.length){tb.innerHTML=empty(8,'✅','All tenants are up to date');return;}
+  if(!arr.length){tb.innerHTML=empty(8,'circle-check','All tenants are up to date');return;}
   tb.innerHTML=arr.map(a=>{
     const lv=a.months>=3?'danger':a.months>=2?'warning':'info';
     const lb=a.months>=3?'Critical':a.months>=2?'High':'Overdue';
@@ -288,6 +300,7 @@ async function loadPage(type, page) {
     if (type === 'expenses') { _renderExpData(rows); renderPg('expenses', 'pgExpenses'); }
     if (type === 'invoices') { _renderInvData(rows); renderPg('invoices', 'pgInvoices'); }
     if (type === 'receipts') { _renderRcpData(rows); renderPg('receipts', 'pgReceipts'); }
+    if(typeof lucide!=='undefined') lucide.createIcons();
   } catch(e) {
     console.error('loadPage error:', type, e.message);
   }
@@ -312,11 +325,11 @@ function renderPg(type,cid){
 }
 
 // ── Render functions ──────────────────────────────────────────────────────────
-const empty=(n,icon,msg)=>`<tr><td colspan="${n}"><div class="empty-state"><div class="icon">${icon}</div><h3>${msg}</h3></div></td></tr>`;
+const empty=(n,icon,msg)=>`<tr><td colspan="${n}"><div class="empty-state"><div class="icon"><i data-lucide="${icon}" width="36" height="36"></i></div><h3>${msg}</h3></div></td></tr>`;
 
 function renderLandlords(){
   const tb=document.getElementById('tLandlords');
-  if(!landlords.length){tb.innerHTML=empty(7,'📋','No landlords yet');return;}
+  if(!landlords.length){tb.innerHTML=empty(7,'clipboard-list','No landlords yet');return;}
   tb.innerHTML=landlords.map(l=>`<tr>
     <td>${ll.id(l)}</td><td><strong>${ll.name(l)}</strong></td>
     <td>${ll.phone(l)}</td><td>${ll.email(l)}</td>
@@ -330,7 +343,7 @@ function renderLandlords(){
 }
 function renderProperties(){
   const tb=document.getElementById('tProperties');
-  if(!properties.length){tb.innerHTML=empty(8,'🏠','No properties yet');return;}
+  if(!properties.length){tb.innerHTML=empty(8,'building-2','No properties yet');return;}
   tb.innerHTML=properties.map(p=>`<tr>
     <td>${pr.id(p)}</td><td><strong>${pr.name(p)}</strong></td>
     <td>${pr.llname(p)}</td><td>${pr.addr(p)}</td>
@@ -343,7 +356,7 @@ function renderProperties(){
 }
 function renderUnits(){
   const tb=document.getElementById('tUnits');
-  if(!units.length){tb.innerHTML=empty(7,'🚪','No units yet');return;}
+  if(!units.length){tb.innerHTML=empty(7,'door-open','No units yet');return;}
   tb.innerHTML=units.map(u=>`<tr>
     <td>${un.id(u)}</td><td>${un.pname(u)}</td><td>${un.num(u)}</td>
     <td>${un.type(u)}</td><td>${fmtUGX(un.rent(u))}</td>
@@ -355,7 +368,7 @@ function renderUnits(){
 }
 function renderTenants(){
   const tb=document.getElementById('tTenants');
-  if(!tenants.length){tb.innerHTML=empty(8,'👥','No tenants yet');return;}
+  if(!tenants.length){tb.innerHTML=empty(8,'users','No tenants yet');return;}
   tb.innerHTML=tenants.map(t=>`<tr>
     <td>${tn.id(t)}</td><td><strong>${tn.name(t)}</strong></td>
     <td>${tn.phone(t)}</td><td>${tn.unum(t)||'—'}</td>
@@ -368,7 +381,7 @@ function renderTenants(){
 }
 function renderUsers(){
   const tb=document.getElementById('tUsers');
-  if(!allUsers.length){tb.innerHTML=empty(7,'🔐','No users found');return;}
+  if(!allUsers.length){tb.innerHTML=empty(7,'shield-check','No users found');return;}
   tb.innerHTML=allUsers.map(u=>`<tr>
     <td>${u.ID||''}</td><td>${u.Name||''}</td><td>${u.Username||''}</td>
     <td>${u.Email||''}</td>
@@ -480,7 +493,7 @@ function renderMcTenants() {
 }
 function renderRent() {
   const tb = document.getElementById('tRent');
-  if (!rentData.length) { tb.innerHTML = empty(9,'💰','No payments recorded'); return; }
+  if (!rentData.length) { tb.innerHTML = empty(9,'wallet','No payments recorded'); return; }
   tb.innerHTML = rentData.map(r => `<tr>
     <td>${rn.id(r)}</td>
     <td>${rn.tname(r)||rn.tenant(r)}</td>
@@ -491,14 +504,14 @@ function renderRent() {
     <td>${rn.method(r)}</td>
     <td>${rn.date(r)}</td>
     <td class="actions">
-      <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')">🧾</button>
+      <button class="btn-receipt" onclick="generateAndViewReceipt('${rn.id(r)}')"><i data-lucide="receipt" class="btn-icon"></i></button>
     </td></tr>`).join('');
   if (typeof renderMcRent === 'function') renderMcRent();
 }
 
 function renderExpData(rows) {
   const tb = document.getElementById('tExpenses');
-  if (!rows.length) { tb.innerHTML = empty(7,'📑','No expenses recorded'); return; }
+  if (!rows.length) { tb.innerHTML = empty(7,'file-spreadsheet','No expenses recorded'); return; }
   tb.innerHTML = rows.map(e => `<tr>
     <td>${ex.id(e)}</td><td>${ex.pname(e)||'—'}</td>
     <td>${ex.cat(e)}</td><td>${ex.desc(e)}</td>
@@ -511,7 +524,7 @@ function renderExpData(rows) {
 
 function renderInvData(rows) {
   const tb = document.getElementById('tInvoices');
-  if (!rows.length) { tb.innerHTML = empty(8,'📄','No invoices yet'); return; }
+  if (!rows.length) { tb.innerHTML = empty(8,'file-text','No invoices yet'); return; }
   tb.innerHTML = rows.map(i => `<tr>
     <td>${inv.id(i)}</td><td>${inv.type(i)}</td>
     <td>${inv.ename(i)}</td><td>${inv.desc(i)}</td>
@@ -527,7 +540,7 @@ function renderInvData(rows) {
 
 function renderRcpData(rows) {
   const tb = document.getElementById('tReceipts');
-  if (!rows.length) { tb.innerHTML = empty(9,'🧾','No receipts yet'); return; }
+  if (!rows.length) { tb.innerHTML = empty(9,'receipt','No receipts yet'); return; }
   tb.innerHTML = rows.map(r => `<tr>
     <td>${rc.id(r)}</td><td>${rc.tenant(r)}</td><td>${rc.unit(r)}</td>
     <td>${fmtUGX(rc.amt(r))}</td>
@@ -536,7 +549,7 @@ function renderRcpData(rows) {
     <td>${rc.method(r)}</td><td>${rc.date(r)}</td>
     <td class="actions">
       <button class="btn-view" onclick="window.open('/api/receipts/${rc.id(r)}/pdf','_blank')">View</button>
-      <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')">📱</button>
+      <button class="btn-wa" onclick="generateWhatsApp('${rc.id(r)}')"><i data-lucide="smartphone" class="btn-icon"></i></button>
     </td></tr>`).join('');
   if (typeof renderMcReceipts === 'function') renderMcReceipts(rows);
 }
@@ -592,7 +605,7 @@ async function saveSettings(){
       applyBranding();
     } else showToast(d.error||'Failed','error');
   }catch(e){showToast('Error: '+e.message,'error');}
-  btn.textContent='💾 Save Settings'; btn.disabled=false;
+  btn.innerHTML='<i data-lucide="save" style="width:14px;height:14px"></i> Save Settings'; btn.disabled=false;
 }
 function handleLogoUpload(event){
   const file=event.target.files[0]; if(!file) return;
@@ -614,7 +627,7 @@ async function loadArchive(){
   tb.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
   try{
     const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`,{credentials:'include'}).then(r=>r.json());
-    if(!rows.length){tb.innerHTML=empty(5,'🗃️','No archived records found');return;}
+    if(!rows.length){tb.innerHTML=empty(5,'archive','No archived records found');return;}
     tb.innerHTML=rows.map(r=>`<tr>
       <td>${r.deleted_at}</td>
       <td><span class="badge info">${r.entity_type}</span></td>
@@ -622,7 +635,8 @@ async function loadArchive(){
       <td>${r.entity_label}</td>
       <td>${r.deleted_by||'—'}</td>
     </tr>`).join('');
-  }catch(e){tb.innerHTML=empty(5,'❌','Failed to load archive');}
+  }catch(e){tb.innerHTML=empty(5,'x-circle','Failed to load archive');}
+  if(typeof lucide!=='undefined') lucide.createIcons();
 }
 function renderMcArchive(rows) {
   const mc = document.getElementById('mcArchive');
@@ -739,7 +753,7 @@ function openModal(type,e,prefillTenantId=null){
       <div class="form-group full"><label>Reference / Transaction ID</label><input id="f_ref" placeholder="MTN ref, cheque no., etc."></div>
       <div class="form-group full" id="balanceInfo" style="display:none">
         <div style="background:rgba(255,189,89,0.14);border:1px solid rgba(255,189,89,0.35);border-radius:14px;padding:14px;font-size:13px;color:#B76E00">
-          ⚠️ <strong id="balanceInfoText">Balance will be carried forward.</strong>
+          <i data-lucide="triangle-alert" style="width:16px;height:16px;color:#B76E00;vertical-align:middle"></i> <strong id="balanceInfoText">Balance will be carried forward.</strong>
         </div>
       </div>
     </div>`; },
@@ -1136,7 +1150,7 @@ function openReportModal(type, prefillTenantId=''){
   const saveBtn=document.getElementById('modalSave');
  
   if(type==='portfolio'){
-    document.getElementById('modalTitle').textContent='📊 Portfolio Report';
+    document.getElementById('modalTitle').textContent='Portfolio Report';
     document.getElementById('modalBody').innerHTML=`<div class="form-grid">
       <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
       <div class="form-group"><label>To Date *</label><input id="r_to" type="date" value="${today}"></div>
@@ -1150,7 +1164,7 @@ function openReportModal(type, prefillTenantId=''){
       closeModal();
     };
   } else if(type==='landlord'){
-    document.getElementById('modalTitle').textContent='👤 Landlord Report';
+    document.getElementById('modalTitle').textContent='Landlord Report';
     document.getElementById('modalBody').innerHTML=`<div class="form-grid">
       <div class="form-group full"><label>Landlord *</label><select id="r_landlord"><option value="">— Select landlord —</option>${llOpts}</select></div>
       <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
@@ -1167,7 +1181,7 @@ function openReportModal(type, prefillTenantId=''){
       closeModal();
     };
   } else if(type==='tenant'){
-    document.getElementById('modalTitle').textContent='👥 Tenant Statement';
+    document.getElementById('modalTitle').textContent='Tenant Statement';
     document.getElementById('modalBody').innerHTML=`<div class="form-grid">
       <div class="form-group full"><label>Tenant *</label><select id="r_tenant"><option value="">— Select tenant —</option>${tnAllOpts}</select></div>
       <div class="form-group"><label>From Date *</label><input id="r_from" type="date" value="${firstDay}"></div>
@@ -1231,9 +1245,9 @@ async function generateWhatsApp(receiptId){
     const res=await fetch('/api/rent/whatsapp-message',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({receiptId})});
     const data=await res.json();
     if(!data.success){showToast(data.error||'Failed','error');return;}
-    document.getElementById('promptTitle').textContent='📱 WhatsApp Message';
+    document.getElementById('promptTitle').textContent='WhatsApp Message';
     document.getElementById('promptMessage').innerHTML=`<textarea id="waMsg" style="width:100%;height:180px;padding:12px;border:1px solid rgba(1,1,1,0.12);border-radius:14px;font-size:13px;font-family:monospace;resize:vertical">${data.message}</textarea><small style="color:#525252;display:block;margin-top:10px">Copy this message and send it to the tenant via WhatsApp.</small>`;
-    document.getElementById('promptYes').textContent='📋 Copy';
+    document.getElementById('promptYes').textContent='Copy';
     document.getElementById('promptYes').onclick=()=>{
       const el=document.getElementById('waMsg'); el.select(); document.execCommand('copy');
       showToast('Copied to clipboard!','success'); closePrompt();
@@ -1405,7 +1419,7 @@ async function viewLandlordPortfolio(landlordId){
 <div class="mobile-cards" id="mcLandlords"></div>
       </table>
       <div style="margin-top:20px;display:flex;gap:10px">
-        <button onclick="openReportModal('landlord')" style="padding:11px 20px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer">📊 Generate Full Report</button>
+        <button onclick="openReportModal('landlord')" style="padding:11px 20px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer"> Generate Full Report</button>
       </div>`;
   }catch(e){document.getElementById('modalBody').innerHTML=`<p style="color:var(--danger)">Error: ${e.message}</p>`;}
 }
