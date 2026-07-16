@@ -64,7 +64,7 @@ exports.createV2 = async (req, res) => {
     const prevBal  = await getTenantBalance(tenantId);
     const totalOwed = expected + prevBal;
     const newBal    = totalOwed - paid;
-    const finalBal  = newBal > 0 ? newBal : 0;
+    const finalBal  = newBal; // negative = tenant credit
     const isPartial = paymentType === 'Partial' || paid < totalOwed;
 
     const id = await getNextId('rent_collection', 'rent_id', 'RNT');
