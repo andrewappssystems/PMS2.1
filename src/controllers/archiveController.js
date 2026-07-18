@@ -5,6 +5,7 @@ exports.search = async (req, res) => {
   try {
     const { type='', search='' } = req.query;
     let query = `SELECT id, entity_type, entity_id, entity_label,
+                        data,
                         TO_CHAR(deleted_at,'YYYY-MM-DD HH24:MI') AS deleted_at,
                         deleted_by
                  FROM archive WHERE 1=1`;
