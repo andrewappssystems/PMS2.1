@@ -253,7 +253,7 @@ exports.getLandlordReportPdf = async (req, res) => {
     const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const logoHtml = company.company_logo
-      ? `<img src="${company.company_logo}" style="height:56px;object-fit:contain">`
+      ? `<img src="${company.company_logo.startsWith('http') ? '' : '/'}${company.company_logo.replace(/^\/+/, '')}" style="height:56px;object-fit:contain">`
       : `<div style="font-size:32px">🏢</div>`;
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(`LREP-${req.params.landlordId}-${from}-${to}`, 'RPT', req);
 
@@ -458,7 +458,7 @@ exports.getTenantStatement = async (req, res) => {
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
     const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
     const logoHtml = cfg.company_logo
-      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
+      ? `<img src="${cfg.company_logo.startsWith('http') ? '' : '/'}${cfg.company_logo.replace(/^\/+/, '')}" style="height:48px;object-fit:contain">`
       : `<div style="font-size:28px">🏢</div>`;
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(`TST-${req.params.tenantId}-${from}-${to}`, 'RPT', req);
 
@@ -573,15 +573,15 @@ exports.getPortfolioPdf = async (req, res) => {
         COUNT(u.unit_id) AS total_units,
         COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='occupied') AS occupied,
         COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='vacant') AS vacant,
-        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp),0) AS collected,
-        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp),0) AS expenses
+        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp),0) AS collected,
+        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp),0) AS expenses
       FROM properties p
       LEFT JOIN landlords l ON l.landlord_id=p.landlord_id
       LEFT JOIN units u ON u.property_id=p.property_id
       LEFT JOIN rent_collection rc ON rc.unit_id=u.unit_id
       LEFT JOIN expenses e ON e.property_id=p.property_id
       GROUP BY p.property_id, p.name, l.name ORDER BY collected DESC`,
-      ['', from, to]
+      [from, to]
     );
     const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
@@ -591,7 +591,7 @@ exports.getPortfolioPdf = async (req, res) => {
     const es = expStats.rows[0];
     const ar = arrStats.rows[0];
     const occRate = us.total > 0 ? Math.round((us.occupied/us.total)*100) : 0;
-    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:52px;object-fit:contain">` : `<div style="font-size:30px">🏢</div>`;
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo.startsWith('http') ? '' : '/'}${cfg.company_logo.replace(/^\/+/, '')}" style="height:52px;object-fit:contain">` : `<div style="font-size:30px">🏢</div>`;
     const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
