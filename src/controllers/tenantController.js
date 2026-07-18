@@ -4,7 +4,7 @@ const { getCached, setCache, clearCache } = require('../utils/cache');
 const { validate } = require('../utils/validation');
 const { actor } = require('../utils/helpers');
 const { getNextId } = require('../utils/idGenerator');
-const { archiveRecord } = require('../services/archiveService');
+const { logAudit, archiveRecord } = require('../services/auditService');
 const { getTenantBalance } = require('../services/rentService');
 
 exports.list = async (req, res) => {
@@ -38,6 +38,7 @@ exports.create = async (req, res) => {
       [id, name.trim(), phone.trim(), email.trim(), idNumber.trim(), unitId, leaseStart||null, leaseEnd||null, parseFloat(rentAmount)||0, parseFloat(deposit)||0, actor(req)]
     );
     await pool.query(`UPDATE units SET status='Occupied' WHERE unit_id=$1`, [unitId]);
+    await logAudit('CREATE', 'tenant', id, name.trim(), req.body, actor(req));
     clearCache('tenants','units','properties','stats');
     res.json({ success:true, id });
   } catch (e) { console.error('[POST /api/tenants]', e.message); res.status(500).json({ error: e.message }); }
@@ -61,6 +62,7 @@ exports.update = async (req, res) => {
       await pool.query(`UPDATE units SET status='Vacant'   WHERE unit_id=$1`, [oldUnit]);
       await pool.query(`UPDATE units SET status='Occupied' WHERE unit_id=$1`, [unitId]);
     }
+    await logAudit('UPDATE', 'tenant', req.params.id, name.trim(), req.body, actor(req));
     clearCache('tenants','units','properties','stats');
     res.json({ success:true });
   } catch (e) { console.error('[PUT /api/tenants]', e.message); res.status(500).json({ error: e.message }); }
@@ -72,13 +74,24 @@ exports.remove = async (req, res) => {
     const { rows } = await pool.query(`SELECT * FROM tenants WHERE tenant_id=$1`, [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: 'Tenant not found' });
     const tenant = rows[0];
+
+    // Check if in arrears
+    const balRows = await pool.query(`SELECT carried_balance FROM rent_balances WHERE tenant_id=$1`, [req.params.id]);
+    if (balRows.rows.length && parseFloat(balRows.rows[0].carried_balance) > 0) {
+      return res.status(400).json({ error: 'Cannot delete tenant: Tenant is in arrears. Settle or clear balance first.' });
+    }
+
+    // Check if unit is still marked as occupied
+    if (tenant.unit_id) {
+      const unitRows = await pool.query(`SELECT status FROM units WHERE unit_id=$1`, [tenant.unit_id]);
+      if (unitRows.rows.length && unitRows.rows[0].status.toLowerCase() === 'occupied') {
+        return res.status(400).json({ error: 'Cannot delete tenant: Unit is still marked as Occupied. Set tenant/unit to vacant first.' });
+      }
+    }
+
     // Archive
     await archiveRecord('tenant', tenant.tenant_id,
       `${tenant.name} (${tenant.tenant_id})`, tenant, actor(req));
-    // Free unit
-    if (tenant.unit_id) {
-      await pool.query(`UPDATE units SET status='Vacant' WHERE unit_id=$1`, [tenant.unit_id]);
-    }
     // Hard delete
     await pool.query(`DELETE FROM tenants WHERE tenant_id=$1`, [req.params.id]);
     await pool.query(`DELETE FROM rent_balances WHERE tenant_id=$1`, [req.params.id]);
