@@ -4,6 +4,7 @@ const { getCached, setCache, clearCache } = require('../utils/cache');
 const { validate } = require('../utils/validation');
 const { actor } = require('../utils/helpers');
 const { getNextId } = require('../utils/idGenerator');
+const { logAudit } = require('../services/auditService');
 
 exports.list = async (req, res) => {
   const cached = getCached('properties');
@@ -33,6 +34,7 @@ exports.create = async (req, res) => {
       `INSERT INTO properties (property_id,name,landlord_id,address,type,status,created_by) VALUES ($1,$2,$3,$4,$5,'Active',$6)`,
       [id, name.trim(), landlordId, address.trim(), type, actor(req)]
     );
+    await logAudit('CREATE', 'property', id, name.trim(), req.body, actor(req));
     clearCache('properties','stats');
     res.json({ success:true, id });
   } catch (e) { console.error('[POST /api/properties]', e.message); res.status(500).json({ error: e.message }); }
@@ -48,6 +50,7 @@ exports.update = async (req, res) => {
       [name.trim(), landlordId, address.trim(), type, status, req.params.id]
     );
     if (!rowCount) return res.status(404).json({ error: 'Property not found' });
+    await logAudit('UPDATE', 'property', req.params.id, name.trim(), req.body, actor(req));
     clearCache('properties','stats');
     res.json({ success:true });
   } catch (e) { console.error('[PUT /api/properties]', e.message); res.status(500).json({ error: e.message }); }
