@@ -87,7 +87,7 @@ exports.getPdf = async (req, res) => {
     const r = rcpRows[0];
     const cfg = {}; sRows.forEach(s => { cfg[s.key]=s.value; });
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(r.receipt_id, 'RCP', req);
-    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:44px;object-fit:contain">` : '';
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo.startsWith('http') ? '' : '/'}${cfg.company_logo.replace(/^\/+/, '')}" style="height:44px;object-fit:contain">` : '';
     const balCarried = parseFloat(r.balance_carried||0);
     const expected  = parseFloat(r.expected_amount||0);
     const paid      = parseFloat(r.amount||0);
