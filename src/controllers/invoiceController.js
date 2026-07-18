@@ -148,7 +148,7 @@ exports.getPdf = async (req, res) => {
     const item = invRows[0];
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(item.invoice_id, 'INV', req);
-    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:52px;object-fit:contain">` : '';
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo.startsWith('http') ? '' : '/'}${cfg.company_logo.replace(/^\/+/, '')}" style="height:52px;object-fit:contain">` : '';
     const statusCls = (item.status||'unpaid').toLowerCase();
     const fmt = n => (cfg.currency||'UGX') + ' ' + Number(n||0).toLocaleString();
     const host = `${req.protocol}://${req.get('host')}`;
