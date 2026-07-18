@@ -3,7 +3,7 @@ const { getCached, setCache, clearCache } = require('../utils/cache');
 const { validate } = require('../utils/validation');
 const { actor } = require('../utils/helpers');
 const { getNextId } = require('../utils/idGenerator');
-const { archiveRecord } = require('../services/archiveService');
+const { archiveRecord } = require('../services/auditService');
 
 exports.list = async (req, res) => {
   const cached = getCached('landlords');
