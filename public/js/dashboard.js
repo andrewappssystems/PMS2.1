@@ -183,24 +183,28 @@ async function loadRentDueStatus(){
       bar.innerHTML=`<i data-lucide="calendar" style="width:18px;height:18px;vertical-align:middle"></i><strong style="color:#B76E00">Rent is due today (1st of the month).</strong><span style="color:#B76E00">&nbsp;${d.totalUnpaid} tenant${d.totalUnpaid!==1?'s':''} have not yet paid.</span>`;
     } else if(d.overdueCount>0){
       bar.style.display='flex'; bar.style.background='rgba(239,68,68,0.12)'; bar.style.borderColor='rgba(239,68,68,0.25)';
-      bar.innerHTML=`<i data-lucide="triangle-alert" style="width:18px;height:18px;vertical-align:middle;color:#dc2626"></i><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">&nbsp;— rent was due on the 1st.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:7px 14px;background:#ef4444;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer">View →</button>`;
+      bar.innerHTML=`<i data-lucide="triangle-alert" style="width:18px;height:18px;vertical-align:middle;color:#dc2626"></i><strong style="color:#991b1b">${d.overdueCount} tenant${d.overdueCount!==1?'s':''} overdue</strong><span style="color:#991b1b">&nbsp;— rent was due on the 5th.</span><button onclick="showSection('arrears',event)" style="margin-left:auto;padding:7px 14px;background:#ef4444;color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:700;cursor:pointer">View →</button>`;
     } else {
       bar.style.display='none';
     }
+    window.backendArrears = d.unpaidTenants || [];
+    computeDashboardArrears();
+    renderArrears();
+    renderMcArrears();
   }catch(e){console.error('due-status',e);}
 }
 
 // ── Arrears ───────────────────────────────────────────────────────────────────
 function computeArrearsAll(){
-  const now=new Date(); const arr=[];
-  tenants.filter(t=>isActive(t)).forEach(t=>{
-    const u=units.find(x=>un.id(x)===tn.unit(t));
-    const rentAmt=parseFloat(tn.rent(t))||0; if(!rentAmt) return;
-    const ls=tn.start(t)?new Date(tn.start(t)):null; if(!ls) return;
-    const paid=new Set(rentData.filter(r=>rn.tenant(r)===tn.id(t)).map(r=>`${rn.year(r)}-${String(rn.month(r)).padStart(2,'0')}`));
-    let due=0; const check=new Date(ls); check.setMonth(check.getMonth()+1);
-    while(check<=now){const ym=`${check.getFullYear()}-${String(check.getMonth()+1).padStart(2,'0')}`;if(!paid.has(ym))due++;check.setMonth(check.getMonth()+1);}
-    if(due>0) arr.push({t,u,rent:rentAmt,months:due,total:rentAmt*due});
+  if (!window.backendArrears) return [];
+  const arr = [];
+  window.backendArrears.forEach(a => {
+    if (a.overdueBalance <= 0) return;
+    const t = tenants.find(x => tn.id(x) === a.id);
+    if (!t) return;
+    const u = units.find(x => un.id(x) === tn.unit(t));
+    const months = a.rent > 0 ? Math.ceil(a.overdueBalance / a.rent) : 0;
+    arr.push({ t, u, rent: a.rent, months, total: a.overdueBalance });
   });
   return arr.sort((a,b)=>b.total-a.total);
 }
@@ -624,20 +628,32 @@ async function loadArchive(){
   const type=document.getElementById('archiveTypeFilter')?.value||'';
   const search=document.getElementById('archiveSearch')?.value||'';
   const tb=document.getElementById('tArchive');
-  tb.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
+  tb.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
   try{
     const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`,{credentials:'include'}).then(r=>r.json());
-    if(!rows.length){tb.innerHTML=empty(5,'archive','No archived records found');return;}
-    tb.innerHTML=rows.map(r=>`<tr>
+    if(!rows.length){tb.innerHTML=empty(6,'scroll','No audit logs found');return;}
+    window.auditLogs = rows;
+    tb.innerHTML=rows.map((r,i)=>`<tr>
       <td>${r.deleted_at}</td>
       <td><span class="badge info">${r.entity_type}</span></td>
       <td>${r.entity_id}</td>
       <td>${r.entity_label}</td>
       <td>${r.deleted_by||'—'}</td>
+      <td><button class="btn-edit" onclick="viewAuditDetails(${i})">See Details</button></td>
     </tr>`).join('');
-  }catch(e){tb.innerHTML=empty(5,'x-circle','Failed to load archive');}
+  }catch(e){tb.innerHTML=empty(6,'x-circle','Failed to load audit logs');}
   if(typeof lucide!=='undefined') lucide.createIcons();
 }
+}
+
+function viewAuditDetails(index) {
+  const r = window.auditLogs[index];
+  if(!r) return;
+  const jsonStr = r.data ? JSON.stringify(r.data, null, 2) : 'No details available.';
+  const html = `<pre style="background:var(--bg-card);padding:15px;border-radius:12px;font-size:13px;overflow-x:auto;color:var(--text);border:1px solid var(--border)">${jsonStr}</pre>`;
+  showPrompt(`Audit Details: ${r.entity_label}`, html, ()=>{}, false, true); // true for html mode
+}
+
 function renderMcArchive(rows) {
   const mc = document.getElementById('mcArchive');
   if (!mc) return;
@@ -992,6 +1008,7 @@ async function saveForm(){
       
       closeModal();
       await loadAllData();
+      await loadRentDueStatus();
 
       if(sf==='property'&&!editingId){
         showPrompt('Add Units Now?',`"${sp.name}" created. Add all its units in bulk now?`,()=>{
@@ -1314,9 +1331,10 @@ function deactivateUser(id,name){
 }
 
 // ── Prompt / Confirm ──────────────────────────────────────────────────────────
-function showPrompt(title,msg,onYes,danger=false){
+function showPrompt(title,msg,onYes,danger=false, isHtml=false){
   document.getElementById('promptTitle').textContent=title;
-  document.getElementById('promptMessage').textContent=msg;
+  if (isHtml) document.getElementById('promptMessage').innerHTML=msg;
+  else document.getElementById('promptMessage').textContent=msg;
   const yBtn=document.getElementById('promptYes');
   yBtn.textContent='Yes'; yBtn.className=danger?'btn-yes danger':'btn-yes';
   yBtn.onclick=()=>{closePrompt();onYes();};
