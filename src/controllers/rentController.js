@@ -7,6 +7,7 @@ const { getNextId } = require('../utils/idGenerator');
 const { getPagination, pageResp } = require('../utils/pagination');
 const { getTenantBalance, setTenantBalance } = require('../services/rentService');
 const { getSettings } = require('../services/settingsService');
+const { logAudit } = require('../services/auditService');
 
 exports.list = async (req, res) => {
   const { page, limit, offset } = getPagination(req.query);
@@ -80,6 +81,7 @@ exports.createV2 = async (req, res) => {
        prevBal, finalBal, expected, actor(req)]
     );
     await setTenantBalance(tenantId, finalBal);
+    await logAudit('CREATE', 'rent', id, `Payment for ${month}/${year}`, req.body, actor(req));
 
     clearCachePrefix('rent_'); clearCache('stats');
     res.json({ success: true, id, balanceBefore: prevBal, balanceAfter: finalBal, isPartial });
@@ -91,6 +93,9 @@ exports.createV2 = async (req, res) => {
 
 exports.getDueStatus = async (req, res) => {
   try {
+    const { syncLedgers } = require('../services/rentService');
+    await syncLedgers();
+
     const now        = new Date();
     const dayOfMonth = now.getDate();
     const thisMonth  = String(now.getMonth() + 1).padStart(2,'0');
@@ -99,7 +104,7 @@ exports.getDueStatus = async (req, res) => {
     const { rows: activeTenants } = await pool.query(
       `SELECT t.tenant_id, t.name, t.rent_amount,
               u.unit_number, p.name AS property_name,
-              rb.carried_balance
+              COALESCE(rb.carried_balance, 0) as carried_balance
        FROM tenants t
        LEFT JOIN units u ON u.unit_id = t.unit_id
        LEFT JOIN properties p ON p.property_id = u.property_id
@@ -107,29 +112,43 @@ exports.getDueStatus = async (req, res) => {
        WHERE LOWER(t.status)='active' AND t.rent_amount > 0`
     );
 
-    const paid = new Set();
-    const { rows: payments } = await pool.query(
-      `SELECT tenant_id FROM rent_collection
-       WHERE month=$1 AND year=$2`, [thisMonth, thisYear]
-    );
-    payments.forEach(p => paid.add(p.tenant_id));
+    // After syncLedgers, all active tenants have the current month's charge in their carried_balance.
+    // If today is <= 5, the current month's charge is not yet overdue.
+    // Genuine overdue arrears = carried_balance - (dayOfMonth <= 5 ? rent_amount : 0)
+    
+    let totalUnpaid = 0;
+    let overdueCount = 0;
+    const unpaidTenants = [];
 
-    const unpaid = activeTenants.filter(t => !paid.has(t.tenant_id));
-    const overdue = dayOfMonth > 1 ? unpaid : [];
+    activeTenants.forEach(t => {
+      const bal = parseFloat(t.carried_balance);
+      const rent = parseFloat(t.rent_amount);
+      const genuineArrears = dayOfMonth <= 5 ? (bal - rent) : bal;
+
+      // If genuineArrears > 0, they owe money from past (or current if > 5th)
+      if (bal > 0) {
+        totalUnpaid++; // They owe *something* right now
+        if (genuineArrears > 0) {
+          overdueCount++; // It's officially overdue
+          unpaidTenants.push({
+            id:           t.tenant_id,
+            name:         t.name,
+            unit:         t.unit_number,
+            property:     t.property_name,
+            rent:         rent,
+            carriedBalance: bal,
+            overdueBalance: genuineArrears
+          });
+        }
+      }
+    });
 
     res.json({
       dayOfMonth,
-      dueToday:   dayOfMonth === 1,
-      totalUnpaid: unpaid.length,
-      overdueCount: overdue.length,
-      unpaidTenants: unpaid.map(t => ({
-        id:           t.tenant_id,
-        name:         t.name,
-        unit:         t.unit_number,
-        property:     t.property_name,
-        rent:         parseFloat(t.rent_amount),
-        carriedBalance: parseFloat(t.carried_balance || 0)
-      }))
+      dueToday:   dayOfMonth === 5,
+      totalUnpaid,
+      overdueCount,
+      unpaidTenants
     });
   } catch (e) {
     console.error('[/api/rent/due-status]', e.message);
