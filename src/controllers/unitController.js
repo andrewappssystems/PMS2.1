@@ -4,6 +4,7 @@ const { getCached, setCache, clearCache } = require('../utils/cache');
 const { validate } = require('../utils/validation');
 const { actor } = require('../utils/helpers');
 const { getNextId } = require('../utils/idGenerator');
+const { logAudit } = require('../services/auditService');
 
 exports.list = async (req, res) => {
   const cached = getCached('units');
@@ -31,6 +32,7 @@ exports.create = async (req, res) => {
       `INSERT INTO units (unit_id,property_id,unit_number,type,rent,description,status,created_by) VALUES ($1,$2,$3,$4,$5,$6,'Vacant',$7)`,
       [id, propertyId, unitNumber.trim(), type, parseFloat(rent)||0, description.trim(), actor(req)]
     );
+    await logAudit('CREATE', 'unit', id, unitNumber.trim(), req.body, actor(req));
     clearCache('units','properties','stats');
     res.json({ success:true, id });
   } catch (e) { console.error('[POST /api/units]', e.message); res.status(500).json({ error: e.message }); }
@@ -46,6 +48,7 @@ exports.update = async (req, res) => {
       [propertyId, unitNumber.trim(), type, parseFloat(rent)||0, description.trim(), status, req.params.id]
     );
     if (!rowCount) return res.status(404).json({ error: 'Unit not found' });
+    await logAudit('UPDATE', 'unit', req.params.id, unitNumber.trim(), req.body, actor(req));
     clearCache('units','properties','stats');
     res.json({ success:true });
   } catch (e) { console.error('[PUT /api/units]', e.message); res.status(500).json({ error: e.message }); }
@@ -68,6 +71,7 @@ exports.bulkCreate = async (req, res) => {
       );
       created.push(id);
     }
+    await logAudit('CREATE', 'unit_bulk', 'BULK', `Bulk create ${created.length} units`, req.body, actor(req));
     clearCache('units','properties','stats');
     res.json({ success: true, count: created.length, ids: created });
   } catch (e) {
