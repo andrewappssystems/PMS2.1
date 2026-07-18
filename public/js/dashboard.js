@@ -644,7 +644,6 @@ async function loadArchive(){
   }catch(e){tb.innerHTML=empty(6,'x-circle','Failed to load audit logs');}
   if(typeof lucide!=='undefined') lucide.createIcons();
 }
-}
 
 function viewAuditDetails(index) {
   const r = window.auditLogs[index];
