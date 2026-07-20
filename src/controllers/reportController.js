@@ -17,12 +17,12 @@ exports.getPortfolio = async (req, res) => {
       pool.query(
         `SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count
          FROM rent_collection
-         WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]
+         WHERE created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to]
       ),
       pool.query(
         `SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count
          FROM expenses
-         WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]
+         WHERE created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to]
       ),
       pool.query(
         `SELECT COUNT(DISTINCT t.tenant_id) AS tenants_in_arrears,
@@ -81,7 +81,7 @@ exports.getLandlordReport = async (req, res) => {
        LEFT JOIN units u ON u.property_id = p.property_id
        LEFT JOIN rent_collection rc
          ON rc.unit_id = u.unit_id
-         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+         AND rc.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
        WHERE p.landlord_id = $1
        GROUP BY p.property_id, p.name`,
       [req.params.landlordId, from, to]
@@ -93,7 +93,7 @@ exports.getLandlordReport = async (req, res) => {
        FROM properties p
        LEFT JOIN expenses e
          ON e.property_id = p.property_id
-         AND e.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+         AND e.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
        WHERE p.landlord_id = $1
        GROUP BY p.property_id, p.name`,
       [req.params.landlordId, from, to]
@@ -124,7 +124,7 @@ exports.getLandlordReport = async (req, res) => {
        JOIN properties p ON p.property_id = u.property_id
        LEFT JOIN tenants t ON t.tenant_id = rc.tenant_id
        WHERE p.landlord_id=$1
-         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+         AND rc.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
        ORDER BY rc.created_at DESC`,
       [req.params.landlordId, from, to]
     );
@@ -185,7 +185,7 @@ exports.getLandlordReportPdf = async (req, res) => {
        LEFT JOIN units u ON u.property_id = p.property_id
        LEFT JOIN rent_collection rc
          ON rc.unit_id = u.unit_id
-         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+         AND rc.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
        WHERE p.landlord_id = $1
        GROUP BY p.property_id, p.name`,
       [req.params.landlordId, from, to]
@@ -197,7 +197,7 @@ exports.getLandlordReportPdf = async (req, res) => {
        FROM properties p
        LEFT JOIN expenses e
          ON e.property_id = p.property_id
-         AND e.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+         AND e.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
        WHERE p.landlord_id = $1
        GROUP BY p.property_id, p.name`,
       [req.params.landlordId, from, to]
@@ -228,7 +228,7 @@ exports.getLandlordReportPdf = async (req, res) => {
        JOIN properties p ON p.property_id = u.property_id
        LEFT JOIN tenants t ON t.tenant_id = rc.tenant_id
        WHERE p.landlord_id=$1
-         AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+         AND rc.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
        ORDER BY rc.created_at DESC`,
       [req.params.landlordId, from, to]
     );
@@ -449,7 +449,7 @@ exports.getTenantStatement = async (req, res) => {
     const { rows: payments } = await pool.query(`
       SELECT rc.*, TO_CHAR(rc.created_at,'YYYY-MM-DD') AS date
       FROM rent_collection rc
-      WHERE rc.tenant_id=$1 AND rc.created_at BETWEEN $2::timestamp AND ($3::date + interval '1 day')::timestamp
+      WHERE rc.tenant_id=$1 AND rc.created_at BETWEEN $2::text::timestamp AND ($3::text::date + interval '1 day')
       ORDER BY rc.created_at ASC`,
       [req.params.tenantId, from, to]);
     const balance = await getTenantBalance(req.params.tenantId);
@@ -563,8 +563,8 @@ exports.getPortfolioPdf = async (req, res) => {
     const [props, unitStats, rentStats, expStats, arrStats, llStats] = await Promise.all([
       pool.query(`SELECT p.*, l.name AS landlord_name FROM properties p LEFT JOIN landlords l ON l.landlord_id=p.landlord_id WHERE LOWER(p.status)='active'`),
       pool.query(`SELECT COUNT(*) FILTER (WHERE LOWER(status)='occupied') AS occupied, COUNT(*) FILTER (WHERE LOWER(status)='vacant') AS vacant, COUNT(*) AS total FROM units`),
-      pool.query(`SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM rent_collection WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]),
-      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp`, [from, to]),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM rent_collection WHERE created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to]),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to]),
       pool.query(`SELECT COUNT(DISTINCT t.tenant_id) AS cnt, COALESCE(SUM(rb.carried_balance),0) AS total FROM rent_balances rb JOIN tenants t ON t.tenant_id=rb.tenant_id WHERE rb.carried_balance>0 AND LOWER(t.status)='active'`),
       pool.query(`SELECT COUNT(*) FROM landlords WHERE LOWER(status)='active'`)
     ]);
@@ -573,8 +573,8 @@ exports.getPortfolioPdf = async (req, res) => {
         COUNT(u.unit_id) AS total_units,
         COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='occupied') AS occupied,
         COUNT(u.unit_id) FILTER (WHERE LOWER(u.status)='vacant') AS vacant,
-        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp),0) AS collected,
-        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $1::timestamp AND ($2::date + interval '1 day')::timestamp),0) AS expenses
+        COALESCE(SUM(rc.amount) FILTER (WHERE rc.created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')),0) AS collected,
+        COALESCE(SUM(e.amount) FILTER (WHERE e.created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')),0) AS expenses
       FROM properties p
       LEFT JOIN landlords l ON l.landlord_id=p.landlord_id
       LEFT JOIN units u ON u.property_id=p.property_id
