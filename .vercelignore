@@ -1,0 +1,14 @@
+# Vercel — files to exclude from deployment upload
+node_modules
+.env
+.env.local
+.git
+.vscode
+.idea
+*.log
+logs/
+schema.sql
+schema_v2.sql
+DESIGN_SYSTEM_GUIDE.md
+QUICKSTART.md
+REDESIGN_SUMMARY.md
