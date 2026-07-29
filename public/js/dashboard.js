@@ -98,9 +98,9 @@ function updateClock(){
 
 function logout(){window.location.href='/logout';}
 function softRefresh(){
-  // Clear client-side cache so all data is re-fetched from server
-  CACHE.clear();
-  _sectionLoaded.clear();
+  // Bust the client-side cache so all data is re-fetched fresh from server
+  CACHE.bustAll();
+  _sectionLoaded.clear();        // Reset so sections re-render on next visit
   window.backendArrears = [];
   loadAllData();
   loadRentDueStatus();
@@ -775,14 +775,6 @@ function viewAuditDetails(index) {
   showPrompt(`Audit Detail — ${r.action||'LOG'}: ${r.entity_type||''}`, html, ()=>{}, false, true);
 }
 
-
-  const type=document.getElementById('archiveTypeFilter')?.value||'';
-  const search=document.getElementById('archiveSearch')?.value||'';
-  const tb=document.getElementById('tArchive');
-  tb.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
-  try{
-    const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`,{credentials:'include'}).then(r=>r.json());
-    if(!rows.length){tb.innerHTML=empty(6,'scroll','No audit logs found');return;}
 // ── Modal opener ──────────────────────────────────────────────────────────────
 function openModal(type,e,prefillTenantId=null){
   currentForm=type; editingId=null;
