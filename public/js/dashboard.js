@@ -952,9 +952,25 @@ function openModal(type,e,prefillTenantId=null){
       <div class="form-group"><label>Month *</label><select id="f_month">${mOpts}</select></div>
       <div class="form-group"><label>Year *</label><input id="f_year" type="number" value="${yr}"></div>
       <div class="form-group full"><label>Description (optional)</label><input id="f_desc" maxlength="255" placeholder="e.g. Management fee for May 2025"></div>
-      <div class="form-group full"><label>Override Amount per Landlord (leave blank to auto-calculate)</label><input id="f_override" type="number" placeholder="Leave blank for auto-calculation per commission rate"></div>
     </div>
-    <p style="color:var(--text-light);font-size:12px;margin-top:12px">Creates one management fee invoice per active landlord based on their commission rate and rent collected in the selected month.</p>`; },
+    <div style="margin:14px 0 6px;display:flex;align-items:center;gap:10px">
+      <button type="button" id="btnLoadBulkPreview" onclick="loadBulkPreview()" style="padding:9px 20px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">Load Landlords →</button>
+      <span style="font-size:12px;color:var(--text-light)">Click to see per-landlord fees before generating invoices.</span>
+    </div>
+    <div id="bulkPreviewWrap" style="display:none;margin-top:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:var(--bg-secondary)">
+          <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)">Landlord</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)">Rent Collected</th>
+          <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)">Rate</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)">Calc. Fee</th>
+          <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)">Override Amount</th>
+        </tr></thead>
+        <tbody id="bulkPreviewBody"></tbody>
+      </table>
+      <p style="color:var(--text-light);font-size:12px;margin-top:10px">Leave override blank to use the calculated commission fee. Enter a custom amount to override for that landlord.</p>
+    </div>`; },
+
 
     user:()=>{ title.textContent='Add User'; return `<div class="form-grid">
       <div class="form-group full"><label>Full Name *</label><input id="f_name" required></div>
@@ -1121,11 +1137,19 @@ async function saveForm(){
         endpoint='/api/invoices/custom';
         payload={clientName:gv('f_clientname'),clientEmail:gv('f_clientemail'),clientAddress:gv('f_clientaddr'),serviceTitle:gv('f_servicetitle'),description:gv('f_desc'),amount:gv('f_amount'),month:gv('f_month'),year:gv('f_year')};
         break;
-      case 'bulk_invoice':
+      case 'bulk_invoice': {
         if(!gv('f_month')||!gv('f_year')){showToast('Month and year required','error');break;}
+        // Collect per-landlord overrides from the preview table
+        const overrideInputs = document.querySelectorAll('.bulk-override-input');
+        const overridesArr = [];
+        overrideInputs.forEach(inp => {
+          if (inp.value !== '') overridesArr.push({ landlordId: inp.dataset.lid, amount: parseFloat(inp.value) });
+        });
         endpoint='/api/invoices/bulk';
-        payload={month:gv('f_month'),year:gv('f_year'),description:gv('f_desc'),overrideAmount:gv('f_override')};
+        payload={month:gv('f_month'),year:gv('f_year'),description:gv('f_desc'),overrides:overridesArr};
         break;
+      }
+
       case 'user':
         if(!gv('f_name')){showToast('Full name required','error');break;}
         if(!gv('f_username')){showToast('Username required','error');break;}
@@ -1432,6 +1456,40 @@ async function payInvoice(id){
   showToast('Invoice marked as paid','success');
   loadPage('invoices',pgState.invoices.page);
 }
+
+// ── Bulk invoice per-landlord preview ─────────────────────────────────────────
+async function loadBulkPreview() {
+  const month = document.getElementById('f_month')?.value;
+  const year  = document.getElementById('f_year')?.value;
+  if (!month || !year) { showToast('Select month and year first','error'); return; }
+  const btn  = document.getElementById('btnLoadBulkPreview');
+  if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
+  try {
+    const data = await cfetch(`/api/invoices/bulk/preview?month=${month}&year=${year}`, null);
+    const wrap = document.getElementById('bulkPreviewWrap');
+    const body = document.getElementById('bulkPreviewBody');
+    if (!wrap || !body) return;
+    if (!data.preview || !data.preview.length) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:18px;color:var(--text-light)">No active landlords found.</td></tr>`;
+      wrap.style.display = 'block'; return;
+    }
+    body.innerHTML = data.preview.map(l => `<tr data-landlord-id="${l.landlordId}" style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 12px"><strong>${l.name}</strong></td>
+      <td style="padding:10px 12px;text-align:right">${fmtUGX(l.collected)}</td>
+      <td style="padding:10px 12px;text-align:center">${l.rate}%</td>
+      <td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--primary)">${fmtUGX(l.calcFee)}</td>
+      <td style="padding:10px 12px;text-align:right">
+        <input type="number" class="bulk-override-input" data-lid="${l.landlordId}"
+          placeholder="${l.calcFee > 0 ? 'Auto: '+l.calcFee.toLocaleString() : 'No collections'}"
+          style="width:140px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;text-align:right">
+      </td>
+    </tr>`).join('');
+    wrap.style.display = 'block';
+    showToast(`${data.preview.length} landlord${data.preview.length!==1?'s':''} loaded — review fees below`,'success');
+  } catch(e) { showToast('Failed to load preview: '+e.message,'error'); }
+  finally { if (btn) { btn.textContent = 'Reload →'; btn.disabled = false; } }
+}
+
 
 // ── Confirm delete with 30-second undo ───────────────────────────────────────
 function confirmDelete(type,id,label){

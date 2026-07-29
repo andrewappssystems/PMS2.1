@@ -75,11 +75,47 @@ exports.createV2 = async (req, res) => {
   }
 };
 
+exports.bulkPreview = async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    if (!month || !year) return res.status(400).json({ error: 'month and year required' });
+    const { rows } = await pool.query(
+      `SELECT l.landlord_id, l.name, l.commission_rate,
+              COALESCE(SUM(rc.amount),0) AS total_collected
+       FROM landlords l
+       LEFT JOIN properties p ON p.landlord_id = l.landlord_id
+       LEFT JOIN units u ON u.property_id = p.property_id
+       LEFT JOIN rent_collection rc
+         ON rc.unit_id = u.unit_id
+         AND rc.month = $1 AND rc.year = $2
+       WHERE LOWER(l.status)='active'
+       GROUP BY l.landlord_id, l.name, l.commission_rate
+       ORDER BY l.name`,
+      [month, parseInt(year)]
+    );
+    const preview = rows.map(l => {
+      const collected = parseFloat(l.total_collected) || 0;
+      const rate      = parseFloat(l.commission_rate) || 0;
+      const calcFee   = Math.round(collected * (rate / 100));
+      return { landlordId: l.landlord_id, name: l.name, rate, collected, calcFee };
+    });
+    res.json({ success: true, preview });
+  } catch (e) {
+    console.error('[GET /api/invoices/bulk/preview]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+};
+
 exports.bulkCreate = async (req, res) => {
   const err = validate([['month','Month'],['year','Year']], req.body);
   if (err) return res.status(400).json({ error: err });
   try {
-    const { month, year, description='', overrideAmount='' } = req.body;
+    const { month, year, description='', overrideAmount='', overrides=[] } = req.body;
+    // Build a quick lookup: landlordId -> custom amount (from per-landlord overrides)
+    const overrideMap = {};
+    if (Array.isArray(overrides)) {
+      overrides.forEach(o => { if (o.landlordId && o.amount !== '' && o.amount !== null) overrideMap[o.landlordId] = parseFloat(o.amount); });
+    }
     const { rows: landlordList } = await pool.query(
       `SELECT l.landlord_id, l.name, l.commission_rate,
               COALESCE(SUM(rc.amount),0) AS total_collected
@@ -96,9 +132,12 @@ exports.bulkCreate = async (req, res) => {
     const created = [];
     for (const l of landlordList) {
       const collected = parseFloat(l.total_collected) || 0;
-      const fee = overrideAmount
-        ? parseFloat(overrideAmount)
-        : Math.round(collected * (parseFloat(l.commission_rate) / 100));
+      // Priority: per-landlord override > global override > commission rate calc
+      const fee = overrideMap[l.landlord_id] !== undefined
+        ? overrideMap[l.landlord_id]
+        : overrideAmount
+          ? parseFloat(overrideAmount)
+          : Math.round(collected * (parseFloat(l.commission_rate) / 100));
       if (fee <= 0) continue;
       const id = await getNextYearId('invoices', 'invoice_id', 'INV');
       await pool.query(

@@ -244,7 +244,7 @@ exports.getLandlordReportPdf = async (req, res) => {
       totalArrears: arrearsRows.reduce((sum,r)=>sum+parseFloat(r.balance||0),0)
     };
 
-    const { rows: sRows } = await pool.query('SELECT key,value FROM settings WHERE key != \'company_logo\'');
+    const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
     const company = {}; sRows.forEach(r => { company[r.key]=r.value; });
 
     const d = { rentByProperty: rentRows, expensesByProperty: expRows };
