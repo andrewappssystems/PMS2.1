@@ -261,44 +261,51 @@ exports.getLandlordReportPdf = async (req, res) => {
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Landlord Report — ${ll.name}</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px;padding:0}
-  .page{max-width:900px;margin:0 auto;padding:32px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:24px}
-  .company h1{color:#0f766e;font-size:22px;margin-bottom:4px}
-  .company p{color:#64748b;font-size:12px}
+  body{font-family:'Inter',system-ui,Arial,sans-serif;color:#010101;font-size:13px;background:#FFFFFF}
+  .page{max-width:920px;margin:0 auto;padding:32px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:24px;border-bottom:1px solid rgba(33,147,119,0.18);margin-bottom:28px}
+  .company{display:flex;align-items:center;gap:14px}
+  .company h1{color:#219377;font-size:22px;font-weight:900;margin-bottom:4px}
+  .company p{color:#525252;font-size:12px}
   .report-title{text-align:right}
-  .report-title h2{font-size:20px;color:#0f172a}
-  .report-title p{color:#64748b;font-size:12px;margin-top:4px}
-  .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
-  .sum-card{background:#f8fafc;border-radius:8px;padding:14px;border-left:3px solid #0f766e}
-  .sum-card.red{border-color:#ef4444}
-  .sum-card.green{border-color:#22c55e}
-  .sum-card .lbl{font-size:11px;color:#64748b;text-transform:uppercase;font-weight:600;letter-spacing:.4px}
-  .sum-card .val{font-size:17px;font-weight:700;margin-top:4px;color:#0f172a}
-  .sum-card.green .val{color:#16a34a}
-  .sum-card.red .val{color:#dc2626}
-  h3{font-size:14px;font-weight:700;margin:20px 0 10px;color:#0f766e;text-transform:uppercase;letter-spacing:.4px}
-  table{width:100%;border-collapse:collapse;margin-bottom:20px}
-  th{background:#0f766e;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
-  td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}
-  tr:hover{background:#f8fafc}
-  .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase}
-  .badge.green{background:#dcfce7;color:#166534}
-  .badge.red{background:#fee2e2;color:#991b1b}
-  .badge.yellow{background:#fef3c7;color:#92400e}
-  .footer{margin-top:32px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
-  .landlord-info{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:24px}
-  .landlord-info h2{font-size:16px;color:#0f766e;margin-bottom:8px}
-  .landlord-info .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .landlord-info .item .lbl{font-size:11px;color:#64748b;font-weight:600}
-  .landlord-info .item .val{font-size:13px;font-weight:600;margin-top:2px}
+  .report-title h2{font-size:20px;color:#010101;font-weight:900}
+  .report-title p{color:#525252;font-size:12px;margin-top:5px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px;margin-bottom:28px}
+  .kpi{background:#F4FBF8;border-radius:14px;padding:15px;border-left:4px solid #219377;box-shadow:0 3px 12px rgba(1,1,1,0.05)}
+  .kpi.red{border-color:#ef4444} .kpi.green{border-color:#22c55e} .kpi.yellow{border-color:#ffbd59}
+  .kpi .lbl{font-size:10px;color:#525252;text-transform:uppercase;font-weight:700;letter-spacing:.16em}
+  .kpi .val{font-size:16px;font-weight:900;margin-top:6px;color:#010101}
+  .kpi.green .val{color:#16a34a} .kpi.red .val{color:#dc2626} .kpi.yellow .val{color:#B76E00}
+  .landlord-box{background:#F0FDF9;border:1px solid rgba(33,147,119,0.25);border-radius:14px;padding:18px;margin-bottom:24px}
+  .landlord-box h2{font-size:16px;color:#219377;font-weight:900;margin-bottom:10px}
+  .landlord-box .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .landlord-box .item .lbl{font-size:10px;color:#525252;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+  .landlord-box .item .val{font-size:13px;font-weight:600;margin-top:2px}
+  .summary-box{border-radius:14px;padding:20px;margin:18px 0}
+  .summary-box.teal{background:#F0FDFA;border:2px solid rgba(33,147,119,0.3)}
+  .summary-box.green{background:#F0FDF4;border:2px solid rgba(34,197,94,0.3)}
+  .summary-box.red{background:#FFF1F2;border:2px solid rgba(239,68,68,0.25)}
+  .summary-box h3{margin:0 0 12px;color:inherit;border:none;padding:0;font-size:13px}
+  .sum-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px}
+  .sum-row.total{border-top:2px solid;border-bottom:none;font-size:15px;font-weight:900;padding-top:10px;margin-top:4px}
+  h3{font-size:12px;font-weight:900;color:#219377;text-transform:uppercase;letter-spacing:.14em;margin:26px 0 10px;border-bottom:2px solid #F4FBF8;padding-bottom:7px}
+  table{width:100%;border-collapse:collapse;margin-bottom:22px}
+  th{background:#F4FBF8;color:#525252;padding:11px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+  td{padding:11px 14px;border-bottom:1px solid rgba(1,1,1,0.06);font-size:12px;color:#010101}
+  tr:last-child td{border-bottom:none}
   .right{text-align:right}
-  @media print{.no-print{display:none!important}body{font-size:12px}.page{padding:20px}}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase}
+  .badge.green{background:rgba(34,197,94,0.12);color:#166534}
+  .badge.red{background:rgba(239,68,68,0.12);color:#991b1b}
+  .badge.yellow{background:rgba(255,189,89,0.18);color:#B76E00}
+  .footer{margin-top:30px;padding-top:16px;border-top:1px solid rgba(1,1,1,0.08);text-align:center;color:#525252;font-size:11px}
+  @media print{.no-print{display:none!important}body{font-size:11px}.page{padding:20px}}
 </style></head><body>
 <div class="page">
   <div class="header">
-    <div class="company" style="display:flex;align-items:center;gap:12px">
+    <div class="company">
       ${logoHtml}
       <div>
         <h1>${company.company_name||'Property Management'}</h1>
@@ -313,7 +320,7 @@ exports.getLandlordReportPdf = async (req, res) => {
     </div>
   </div>
 
-  <div class="landlord-info">
+  <div class="landlord-box">
     <h2>${ll.name}</h2>
     <div class="grid">
       <div class="item"><div class="lbl">Phone</div><div class="val">${ll.phone||'—'}</div></div>
@@ -325,11 +332,11 @@ exports.getLandlordReportPdf = async (req, res) => {
     </div>
   </div>
 
-  <div class="summary-grid">
-    <div class="sum-card"><div class="lbl">Total Collected</div><div class="val">${fmt(s.totalCollected)}</div></div>
-    <div class="sum-card red"><div class="lbl">Management Fee (${s.managementFeeRate}%)</div><div class="val">${fmt(s.managementFee)}</div></div>
-    <div class="sum-card red"><div class="lbl">Expenses</div><div class="val">${fmt(s.totalExpenses)}</div></div>
-    <div class="sum-card green"><div class="lbl">Net Payable to Landlord</div><div class="val">${fmt(s.netPayable)}</div></div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="lbl">Total Collected</div><div class="val">${fmt(s.totalCollected)}</div></div>
+    <div class="kpi red"><div class="lbl">Management Fee (${s.managementFeeRate}%)</div><div class="val">${fmt(s.managementFee)}</div></div>
+    <div class="kpi yellow"><div class="lbl">Property Expenses</div><div class="val">${fmt(s.totalExpenses)}</div></div>
+    <div class="kpi green"><div class="lbl">Net Payable to Landlord</div><div class="val">${fmt(s.netPayable)}</div></div>
   </div>
 
   <h3>Properties Overview</h3>
@@ -394,17 +401,12 @@ exports.getLandlordReportPdf = async (req, res) => {
     </tbody>
   </table>` : '<p style="color:#16a34a;margin-bottom:16px">✅ No arrears for this landlord\'s properties.</p>'}
 
-  <div style="background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:20px;margin:24px 0">
-    <h3 style="margin-top:0;color:#166534">Disbursement Summary</h3>
-    <table style="margin:0">
-      <tr><td>Total Rent Collected</td><td class="right"><strong>${fmt(s.totalCollected)}</strong></td></tr>
-      <tr><td>Less: Management Fee (${s.managementFeeRate}%)</td><td class="right" style="color:#dc2626">- ${fmt(s.managementFee)}</td></tr>
-      <tr><td>Less: Expenses</td><td class="right" style="color:#dc2626">- ${fmt(s.totalExpenses)}</td></tr>
-      <tr style="font-size:15px;font-weight:700;border-top:2px solid #22c55e">
-        <td style="padding-top:10px">NET PAYABLE TO ${(ll.name||'').toUpperCase()}</td>
-        <td class="right" style="padding-top:10px;color:#16a34a">${fmt(s.netPayable)}</td>
-      </tr>
-    </table>
+  <div class="summary-box green">
+    <h3 style="color:#166534">Disbursement Summary</h3>
+    <div class="sum-row"><span>Total Rent Collected</span><strong>${fmt(s.totalCollected)}</strong></div>
+    <div class="sum-row"><span>Less: Management Fee (${s.managementFeeRate}%)</span><span style="color:#dc2626">− ${fmt(s.managementFee)}</span></div>
+    <div class="sum-row"><span>Less: Property Expenses</span><span style="color:#dc2626">− ${fmt(s.totalExpenses)}</span></div>
+    <div class="sum-row total" style="color:#166534"><span>NET PAYABLE TO ${(ll.name||'').toUpperCase()}</span><strong>${fmt(s.netPayable)}</strong></div>
   </div>
 
   <div class="footer">
@@ -467,38 +469,44 @@ exports.getTenantStatement = async (req, res) => {
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>Tenant Statement — ${t.name}</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
-  .page{max-width:800px;margin:0 auto;padding:32px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:24px}
-  .company h1{color:#0f766e;font-size:20px;margin-bottom:4px}
-  .company p{color:#64748b;font-size:11px}
-  .tenant-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-  .item .lbl{font-size:11px;color:#64748b;font-weight:600}
-  .item .val{font-size:13px;font-weight:600;margin-top:2px}
+  body{font-family:'Inter',system-ui,Arial,sans-serif;color:#010101;font-size:13px;background:#FFFFFF}
+  .page{max-width:820px;margin:0 auto;padding:32px}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:22px;border-bottom:1px solid rgba(33,147,119,0.18);margin-bottom:26px}
+  .company{display:flex;align-items:center;gap:14px}
+  .company h1{color:#219377;font-size:20px;font-weight:900;margin-bottom:4px}
+  .company p{color:#525252;font-size:11px}
+  .report-title{text-align:right}
+  .report-title h2{font-size:18px;color:#010101;font-weight:900}
+  .report-title p{color:#525252;font-size:12px;margin-top:5px}
+  .tenant-box{background:#F0FDF9;border:1px solid rgba(33,147,119,0.25);border-radius:14px;padding:18px;margin-bottom:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .item .lbl{font-size:10px;color:#525252;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+  .item .val{font-size:13px;font-weight:600;margin-top:2px;color:#010101}
+  .balance-box{border-radius:14px;padding:18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .balance-box.owe{background:#FFF1F2;border:2px solid rgba(239,68,68,0.3)}
+  .balance-box.credit{background:#F0FDF4;border:2px solid rgba(34,197,94,0.3)}
   table{width:100%;border-collapse:collapse;margin-bottom:20px}
-  th{background:#0f766e;color:#fff;padding:9px 12px;text-align:left;font-size:11px;text-transform:uppercase}
-  td{padding:9px 12px;border-bottom:1px solid #e2e8f0;font-size:12px}
+  th{background:#F4FBF8;color:#525252;padding:10px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+  td{padding:10px 14px;border-bottom:1px solid rgba(1,1,1,0.06);font-size:12px;color:#010101}
+  tr:last-child td{border-bottom:none}
   .right{text-align:right}
-  .badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:10px;font-weight:700;text-transform:uppercase}
-  .badge.green{background:#dcfce7;color:#166534}
-  .badge.yellow{background:#fef3c7;color:#92400e}
-  .balance-box{background:#fff7ed;border:2px solid #f59e0b;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-  .footer{margin-top:24px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;color:#94a3b8;font-size:11px}
-  @media print{.no-print{display:none!important}body{font-size:11px}}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase}
+  .badge.green{background:rgba(34,197,94,0.12);color:#166534}
+  .badge.yellow{background:rgba(255,189,89,0.18);color:#B76E00}
+  .footer{margin-top:26px;padding-top:16px;border-top:1px solid rgba(1,1,1,0.08);text-align:center;color:#525252;font-size:11px}
+  @media print{.no-print{display:none!important}body{font-size:11px}.page{padding:20px}}
 </style></head><body>
 <div class="page">
   <div class="header">
-    <div class="company" style="display:flex;align-items:center;gap:10px">
+    <div class="company">
       ${logoHtml}
       <div><h1>${cfg.company_name||'Property Management'}</h1>
       <p>${cfg.company_address||''} | ${cfg.company_phone||''}</p></div>
     </div>
-    <div style="text-align:right">
-      <h2 style="font-size:18px">Tenant Statement</h2>
-      <p style="color:#64748b;font-size:12px;margin-top:4px">
-        ${new Date(from).toLocaleDateString('en-GB')} — ${new Date(to).toLocaleDateString('en-GB')}
-      </p>
+    <div class="report-title">
+      <h2>Tenant Statement</h2>
+      <p>${new Date(from).toLocaleDateString('en-GB')} — ${new Date(to).toLocaleDateString('en-GB')}</p>
     </div>
   </div>
   <div class="tenant-box">
@@ -510,10 +518,15 @@ exports.getTenantStatement = async (req, res) => {
     <div class="item"><div class="lbl">Lease Period</div><div class="val">${t.lease_start||'—'} to ${t.lease_end||'—'}</div></div>
   </div>
   ${balance > 0 ? `
-  <div class="balance-box">
-    <div><strong style="font-size:14px">⚠️ Outstanding Balance</strong><br><small>Carried forward from previous payments</small></div>
+  <div class="balance-box owe">
+    <div><strong style="font-size:14px">Outstanding Balance</strong><br><small style="color:#525252">Carried forward — payment required</small></div>
     <strong style="font-size:18px;color:#dc2626">${fmt(balance)}</strong>
+  </div>` : balance < 0 ? `
+  <div class="balance-box credit">
+    <div><strong style="font-size:14px">Credit Balance</strong><br><small style="color:#525252">Tenant has paid ahead</small></div>
+    <strong style="font-size:18px;color:#16a34a">${fmt(Math.abs(balance))} credit</strong>
   </div>` : ''}
+
   <table>
     <thead><tr><th>Date</th><th>Period</th><th>Amount Paid</th><th>Method</th><th>Type</th><th class="right">Balance After</th></tr></thead>
     <tbody>

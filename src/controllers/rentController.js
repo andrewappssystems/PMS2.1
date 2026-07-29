@@ -64,10 +64,10 @@ exports.createV2 = async (req, res) => {
     const paid     = parseFloat(amount);
     const expected = parseFloat(expectedAmount) || paid;
     const prevBal  = await getTenantBalance(tenantId);
-    const totalOwed = expected + prevBal;
-    const newBal    = totalOwed - paid;
-    const finalBal  = newBal; // negative = tenant credit
-    const isPartial = paymentType === 'Partial' || paid < totalOwed;
+    // carried_balance already contains all owed rent (charged monthly via syncLedgers).
+    // Simply subtract what was paid — do NOT add expected again (that would double-charge).
+    const finalBal  = Math.round((prevBal - paid) * 100) / 100;
+    const isPartial = paid < expected && finalBal > 0;
 
     const id = await getNextId('rent_collection', 'rent_id', 'RNT');
     await pool.query(

@@ -587,11 +587,45 @@ function renderExpData(rows) {
 }
 
 function renderInvData(rows) {
+  // Split: standard management invoices vs custom service invoices
+  const standard = rows.filter(i => (inv.type(i)||'').toLowerCase() !== 'custom');
+  const custom   = rows.filter(i => (inv.type(i)||'').toLowerCase() === 'custom');
+
+  // ── Standard management invoices ──────────────────────────────────────────
   const tb = document.getElementById('tInvoices');
-  if (!rows.length) { tb.innerHTML = empty(8,'file-text','No invoices yet'); return; }
+  if (!tb) return;
+  if (!standard.length) {
+    tb.innerHTML = empty(8,'file-text','No management invoices yet');
+  } else {
+    tb.innerHTML = standard.map(i => `<tr>
+      <td>${inv.id(i)}</td><td>${inv.type(i)}</td>
+      <td>${inv.ename(i)}</td><td>${inv.desc(i)}</td>
+      <td>${fmtUGX(inv.amt(i))}</td>
+      <td>${inv.month(i)} ${inv.year(i)}</td>
+      <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
+      <td class="actions">
+        <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+        ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
+      </td></tr>`).join('');
+  }
+
+  // ── Custom service invoices ────────────────────────────────────────────────
+  renderCustomInvData(custom);
+
+  if (typeof renderMcInvoices === 'function') renderMcInvoices(standard);
+}
+
+function renderCustomInvData(rows) {
+  const tb = document.getElementById('tCustomInvoices');
+  if (!tb) return;
+  if (!rows.length) {
+    tb.innerHTML = empty(7,'file-text','No custom invoices yet — click \'+ Custom Invoice\'');
+    return;
+  }
   tb.innerHTML = rows.map(i => `<tr>
-    <td>${inv.id(i)}</td><td>${inv.type(i)}</td>
-    <td>${inv.ename(i)}</td><td>${inv.desc(i)}</td>
+    <td>${inv.id(i)}</td>
+    <td><strong>${inv.ename(i)||'—'}</strong></td>
+    <td>${inv.desc(i)}</td>
     <td>${fmtUGX(inv.amt(i))}</td>
     <td>${inv.month(i)} ${inv.year(i)}</td>
     <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
@@ -599,8 +633,8 @@ function renderInvData(rows) {
       <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
       ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
     </td></tr>`).join('');
-  if (typeof renderMcInvoices === 'function') renderMcInvoices(rows);
 }
+
 
 function renderRcpData(rows) {
   const tb = document.getElementById('tReceipts');

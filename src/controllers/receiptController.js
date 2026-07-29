@@ -97,30 +97,33 @@ exports.getPdf = async (req, res) => {
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${r.receipt_id}</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
+body{font-family:'Inter',system-ui,Arial,sans-serif;color:#010101;font-size:13px;background:#FFFFFF}
 .wrap{max-width:580px;margin:0 auto;padding:40px}
-.receipt{border:2px solid #0f766e;border-radius:12px;padding:36px}
-.hdr{text-align:center;border-bottom:2px dashed #0f766e;padding-bottom:18px;margin-bottom:22px}
-.hdr .logo-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
-.hdr h1{color:#0f766e;font-size:24px;margin-bottom:4px}
-.stamp{display:inline-block;background:#0f766e;color:#fff;padding:6px 22px;border-radius:20px;font-weight:700;margin:6px 0}
-.hdr small{color:#64748b;font-size:12px}
-.row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e2e8f0}
-.lbl{color:#64748b;font-weight:600;font-size:12px}
-.val{font-weight:600;font-size:13px}
-.amt-box{background:#f0fdf4;border:2px solid #22c55e;border-radius:8px;padding:18px;text-align:center;margin:20px 0}
-.amt-box .lbl{color:#166534;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-.amt-box .val{color:#0f766e;font-size:30px;font-weight:700;margin-top:4px}
-.bal-box{background:#fff7ed;border:1px solid #f59e0b;border-radius:8px;padding:12px;text-align:center;margin-bottom:16px}
-.verify{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;margin-top:16px}
-.code{font-family:monospace;font-size:14px;font-weight:700;color:#0f766e;letter-spacing:2px}
-.footer{text-align:center;margin-top:20px;color:#94a3b8;font-size:11px}
+.receipt{border:2px solid rgba(33,147,119,0.35);border-radius:16px;padding:36px;box-shadow:0 8px 32px rgba(33,147,119,0.08)}
+.hdr{text-align:center;border-bottom:1px dashed rgba(33,147,119,0.3);padding-bottom:20px;margin-bottom:24px}
+.hdr .logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px}
+.hdr h1{color:#219377;font-size:24px;font-weight:900;margin-bottom:6px;letter-spacing:.04em}
+.stamp{display:inline-block;background:#219377;color:#fff;padding:5px 22px;border-radius:999px;font-weight:800;font-size:11px;letter-spacing:.12em;margin:4px 0}
+.hdr small{color:#525252;font-size:12px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(1,1,1,0.06)}
+.row:last-of-type{border-bottom:none}
+.lbl{color:#525252;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+.val{font-weight:600;font-size:13px;color:#010101}
+.amt-box{background:#F0FDF9;border:2px solid rgba(33,147,119,0.3);border-radius:14px;padding:20px;text-align:center;margin:22px 0}
+.amt-box .lbl{color:#219377;font-size:10px;text-transform:uppercase;letter-spacing:.18em;font-weight:800}
+.amt-box .val{color:#219377;font-size:32px;font-weight:900;margin-top:6px}
+.bal-box{background:#FFF1F2;border:1.5px solid rgba(239,68,68,0.3);border-radius:14px;padding:14px;text-align:center;margin-bottom:18px}
+.verify{background:#F4FBF8;border:1px solid rgba(33,147,119,0.15);border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;margin-top:18px}
+.verify-info{flex:1}
+.code{font-family:monospace;font-size:15px;font-weight:700;color:#219377;letter-spacing:2px;margin-top:6px}
+.footer{text-align:center;margin-top:22px;color:#525252;font-size:11px}
 @media print{.no-print{display:none!important}body{font-size:12px}.wrap{padding:20px}}
 </style></head><body>
 <div class="wrap"><div class="receipt">
   <div class="hdr">
-    <div class="logo-row">${logoHtml}<strong style="font-size:15px">${cfg.company_name||'Property Management'}</strong></div>
+    <div class="logo-row">${logoHtml}<strong style="font-size:15px;color:#010101">${cfg.company_name||'Property Management'}</strong></div>
     <h1>RENT RECEIPT</h1>
     <div class="stamp">✔ PAID</div>
     <div><small>Receipt No: <strong>${r.receipt_id}</strong> &nbsp;|&nbsp; ${new Date(r.created_at).toLocaleDateString('en-GB')}</small></div>
@@ -136,19 +139,23 @@ body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
     <div class="lbl">Amount Received</div>
     <div class="val">${fmt(r.amount)}</div>
   </div>
-  ${balAfter>0?`<div class="bal-box"><strong style="color:#92400e">⚠️ Outstanding Balance: ${fmt(balAfter)}</strong><br><small style="color:#92400e">This amount will be carried to the next payment period.</small></div>`:''}
+  ${balAfter>0?`<div class="bal-box"><strong style="color:#dc2626">Outstanding Balance: ${fmt(balAfter)}</strong><br><small style="color:#525252">This amount carries forward to the next period.</small></div>`:''}
   <div class="verify">
-   <div class="verify" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;display:flex;align-items:center;justify-content:space-between;margin-top:16px;gap:12px">
-  <div style="flex:1">
-    <strong style="font-size:11px;color:#374151">Document Verification</strong>
-    <div style="font-size:10px;color:#94a3b8;margin-top:2px">Scan QR or visit link to verify authenticity</div>
-    <div style="font-size:10px;margin-top:3px"><a href="${verifyUrl}" style="color:#0f766e;word-break:break-all">${verifyUrl}</a></div>
-    <div style="font-family:monospace;font-size:13px;font-weight:700;color:#0f766e;letter-spacing:2px;margin-top:4px">${verifyCode}</div>
+    <div class="verify-info">
+      <strong style="font-size:11px;color:#219377">Document Verification</strong>
+      <div style="font-size:10px;color:#525252;margin-top:3px">Scan QR or visit link to verify authenticity</div>
+      <div style="font-size:10px;margin-top:4px"><a href="${verifyUrl}" style="color:#219377;word-break:break-all">${verifyUrl}</a></div>
+      <div class="code">${verifyCode}</div>
+    </div>
+    <div style="text-align:center;flex-shrink:0">
+      <img src="${qrDataUrl}" style="width:72px;height:72px;display:block">
+      <div style="font-size:10px;color:#525252;margin-top:3px">Scan to verify</div>
+    </div>
   </div>
-  <div style="flex-shrink:0;text-align:center">
-    <img src="${qrDataUrl}" style="width:72px;height:72px;display:block">
-    <div style="font-size:10px;color:#94a3b8;margin-top:2px">Scan to verify</div>
-  </div>
+  <div class="footer"><p>${cfg.company_name||'PMS'} &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString('en-GB')}</p></div>
+</div></div>
+<div class="no-print" style="text-align:center;padding:24px">
+  <button onclick="window.print()" style="padding:12px 32px;background:#219377;color:#fff;border:none;border-radius:999px;font-size:15px;cursor:pointer;font-weight:700">🖨️ Print / Save as PDF</button>
 </div>
 </body></html>`;
     res.setHeader('Content-Type','text/html');

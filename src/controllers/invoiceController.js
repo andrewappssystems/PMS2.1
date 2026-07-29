@@ -155,35 +155,37 @@ exports.getPdf = async (req, res) => {
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${item.invoice_id}</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;color:#1e293b;font-size:13px}
-.page{max-width:800px;margin:0 auto;padding:40px}
-.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;border-bottom:3px solid #0f766e;margin-bottom:28px}
-.company h1{color:#0f766e;font-size:22px;margin-bottom:4px}
-.company p{color:#64748b;font-size:12px;margin-top:2px}
+body{font-family:'Inter',system-ui,Arial,sans-serif;color:#010101;font-size:13px;background:#FFFFFF}
+.page{max-width:820px;margin:0 auto;padding:40px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding-bottom:22px;border-bottom:1px solid rgba(33,147,119,0.18);margin-bottom:28px}
+.company{display:flex;align-items:center;gap:14px}
+.company h1{color:#219377;font-size:22px;font-weight:900;margin-bottom:4px}
+.company p{color:#525252;font-size:12px;margin-top:2px}
 .inv-meta{text-align:right}
-.inv-meta h2{font-size:28px;color:#0f172a;letter-spacing:1px}
-.inv-meta .inv-id{font-size:13px;color:#64748b;margin-top:4px}
-.inv-meta .status-badge{display:inline-block;padding:4px 14px;border-radius:20px;font-weight:700;font-size:11px;text-transform:uppercase;margin-top:6px}
-.paid{background:#dcfce7;color:#166534} .unpaid{background:#fee2e2;color:#991b1b}
-.parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
-.party{background:#f8fafc;border-radius:8px;padding:16px}
-.party h3{font-size:11px;text-transform:uppercase;color:#64748b;font-weight:700;letter-spacing:.5px;margin-bottom:8px}
-.party p{font-size:13px;margin-top:3px}
-table{width:100%;border-collapse:collapse;margin-bottom:20px}
-th{background:#0f766e;color:#fff;padding:10px 14px;text-align:left;font-size:12px}
-td{padding:10px 14px;border-bottom:1px solid #e2e8f0}
+.inv-meta h2{font-size:28px;color:#010101;font-weight:900;letter-spacing:1px}
+.inv-meta .inv-id{font-size:13px;color:#525252;margin-top:4px}
+.inv-meta .status-badge{display:inline-block;padding:4px 14px;border-radius:999px;font-weight:800;font-size:11px;text-transform:uppercase;margin-top:6px}
+.paid{background:rgba(34,197,94,0.12);color:#166534} .unpaid{background:rgba(239,68,68,0.12);color:#991b1b}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:26px}
+.party{background:#F0FDF9;border:1px solid rgba(33,147,119,0.2);border-radius:14px;padding:16px}
+.party h3{font-size:10px;text-transform:uppercase;color:#525252;font-weight:700;letter-spacing:.14em;margin-bottom:8px}
+.party p{font-size:13px;margin-top:3px;color:#010101}
+table{width:100%;border-collapse:collapse;margin-bottom:22px}
+th{background:#F4FBF8;color:#525252;padding:12px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+td{padding:12px 16px;border-bottom:1px solid rgba(1,1,1,0.06);color:#010101}
 .right{text-align:right}
-.total-row{background:#f0fdf4;font-weight:700;font-size:15px}
-.verify{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:space-between;margin-top:24px}
-.verify .code{font-family:monospace;font-size:16px;font-weight:700;color:#0f766e;letter-spacing:2px}
-.verify small{font-size:11px;color:#94a3b8;display:block;margin-top:2px}
-.footer{margin-top:24px;text-align:center;color:#94a3b8;font-size:11px;border-top:1px solid #e2e8f0;padding-top:16px}
+.total-row td{background:#F0FDF9;font-weight:900;font-size:15px;border-bottom:none}
+.verify{background:#F4FBF8;border:1px solid rgba(33,147,119,0.15);border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:space-between;margin-top:24px}
+.verify .code{font-family:monospace;font-size:16px;font-weight:700;color:#219377;letter-spacing:2px}
+.verify small{font-size:11px;color:#525252;display:block;margin-top:2px}
+.footer{margin-top:24px;text-align:center;color:#525252;font-size:11px;border-top:1px solid rgba(1,1,1,0.08);padding-top:16px}
 @media print{.no-print{display:none!important}body{font-size:12px}.page{padding:24px}}
 </style></head><body>
 <div class="page">
   <div class="header">
-    <div class="company" style="display:flex;align-items:center;gap:12px">
+    <div class="company">
       ${logoHtml}
       <div><h1>${cfg.company_name||'Property Management'}</h1>
       <p>${cfg.company_address||''}</p>
@@ -218,6 +220,7 @@ td{padding:10px 14px;border-bottom:1px solid #e2e8f0}
     <tbody>
       <tr><td>${item.description||'Service Fee'}</td><td class="right">${Number(item.amount||0).toLocaleString()}</td></tr>
       <tr class="total-row"><td><strong>TOTAL</strong></td><td class="right"><strong>${fmt(item.amount)}</strong></td></tr>
+
     </tbody>
   </table>
 

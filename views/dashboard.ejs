@@ -193,15 +193,32 @@
       <div class="section" id="sec-invoices">
         <div class="section-title">Invoices</div>
         <div class="quick-actions">
-          <button onclick="openModal('invoice')">+ Create Invoice</button>
-          <button class="secondary" onclick="openModal('bulk_invoice')">+ Bulk Management Fees</button>
+          <button onclick="openModal('invoice')">+ Invoice</button>
+          <button class="secondary" onclick="openModal('bulk_invoice')">+ Bulk Fees</button>
+          <button class="secondary" onclick="openModal('custom_invoice')">+ Custom Invoice</button>
         </div>
+
+        <!-- Standard Invoices (landlord / tenant management fees) -->
         <div class="data-table">
-          <div class="table-header"><h3>All Invoices</h3><input class="search" placeholder="Search..." oninput="filterTable('tInvoices',this.value)"></div>
+          <div class="table-header">
+            <h3>Management Invoices</h3>
+            <input class="search" placeholder="Search..." oninput="filterTable('tInvoices',this.value)">
+          </div>
           <table><thead><tr><th>ID</th><th>Type</th><th>Entity</th><th>Description</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tInvoices"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
           <div class="mobile-cards" id="mcInvoices"></div>
           <div class="pagination" id="pgInvoices" style="display:none"></div>
+        </div>
+
+        <!-- Custom / Service Invoices (free-form — any client) -->
+        <div class="data-table" style="margin-top:24px">
+          <div class="table-header">
+            <h3>Custom Service Invoices</h3>
+            <input class="search" placeholder="Search client / service..." oninput="filterTable('tCustomInvoices',this.value)">
+          </div>
+          <table><thead><tr><th>ID</th><th>Client</th><th>Service</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tCustomInvoices"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcCustomInvoices"></div>
         </div>
       </div>
 
