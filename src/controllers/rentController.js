@@ -7,7 +7,8 @@ const { getNextId } = require('../utils/idGenerator');
 const { getPagination, pageResp } = require('../utils/pagination');
 const { getTenantBalance, setTenantBalance } = require('../services/rentService');
 const { getSettings } = require('../services/settingsService');
-const { logAudit } = require('../services/auditService');
+const { logEvent, logAudit } = require('../services/auditService');
+
 
 exports.list = async (req, res) => {
   const { page, limit, offset } = getPagination(req.query);
@@ -81,7 +82,32 @@ exports.createV2 = async (req, res) => {
        prevBal, finalBal, expected, actor(req)]
     );
     await setTenantBalance(tenantId, finalBal);
-    await logAudit('CREATE', 'rent', id, `Payment for ${month}/${year}`, req.body, actor(req));
+
+    // Rich audit event
+    const { rows: tRows } = await pool.query(`SELECT name, unit_id FROM tenants WHERE tenant_id=$1`, [tenantId]);
+    const { rows: uRows } = tenantId && tRows.length && tRows[0].unit_id
+      ? await pool.query(`SELECT unit_number FROM units WHERE unit_id=$1`, [tRows[0].unit_id])
+      : { rows: [] };
+    const tName  = tRows.length ? tRows[0].name : tenantId;
+    const uNum   = uRows.length ? uRows[0].unit_number : (unitId || '');
+    const pmtLabel = isPartial ? 'Partial Payment' : 'Full Payment';
+    const cfg2 = await getSettings(false);
+    const curr = cfg2.currency || 'UGX';
+    await logEvent({
+      action: isPartial ? 'PARTIAL_PAYMENT' : 'PAYMENT',
+      module: 'rent',
+      entityType: 'rent',
+      entityId: id,
+      description: `${actor(req)} recorded ${pmtLabel} of ${curr} ${Number(paid).toLocaleString()} for ${tName}${uNum?' (Unit '+uNum+')':''} — Period: ${month}/${year}. Balance after: ${curr} ${Number(finalBal).toLocaleString()}.`,
+      oldValues: { balance: prevBal },
+      newValues: { balance: finalBal, amountPaid: paid, period: `${month}/${year}` },
+      severity: isPartial ? 'WARNING' : 'INFO',
+      status: 'SUCCESS',
+      req,
+      tenantId,
+      referenceNumber: id,
+      metadata: { paymentMethod, reference, paymentType: isPartial?'Partial':'Full' }
+    });
 
     clearCachePrefix('rent_'); clearCache('stats');
     res.json({ success: true, id, balanceBefore: prevBal, balanceAfter: finalBal, isPartial });
@@ -98,8 +124,6 @@ exports.getDueStatus = async (req, res) => {
 
     const now        = new Date();
     const dayOfMonth = now.getDate();
-    const thisMonth  = String(now.getMonth() + 1).padStart(2,'0');
-    const thisYear   = now.getFullYear();
 
     const { rows: activeTenants } = await pool.query(
       `SELECT t.tenant_id, t.name, t.rent_amount,
@@ -112,40 +136,53 @@ exports.getDueStatus = async (req, res) => {
        WHERE LOWER(t.status)='active' AND t.rent_amount > 0`
     );
 
-    // After syncLedgers, all active tenants have the current month's charge in their carried_balance.
-    // If today is <= 5, the current month's charge is not yet overdue.
-    // Genuine overdue arrears = carried_balance - (dayOfMonth <= 5 ? rent_amount : 0)
-    
     let totalUnpaid = 0;
     let overdueCount = 0;
     const unpaidTenants = [];
 
     activeTenants.forEach(t => {
-      const bal = parseFloat(t.carried_balance);
+      const bal  = parseFloat(t.carried_balance);
       const rent = parseFloat(t.rent_amount);
-      const genuineArrears = dayOfMonth <= 5 ? (bal - rent) : bal;
 
-      // If genuineArrears > 0, they owe money from past (or current if > 5th)
-      if (bal > 0) {
-        totalUnpaid++; // They owe *something* right now
-        if (genuineArrears > 0) {
-          overdueCount++; // It's officially overdue
-          unpaidTenants.push({
-            id:           t.tenant_id,
-            name:         t.name,
-            unit:         t.unit_number,
-            property:     t.property_name,
-            rent:         rent,
-            carriedBalance: bal,
-            overdueBalance: genuineArrears
-          });
-        }
-      }
+      // Negative balance = credit (paid ahead) — not in arrears
+      if (bal <= 0) return;
+
+      // Before the 5th: current month charge not yet due.
+      // Show only genuine past-month arrears.
+      const genuineArrears = dayOfMonth < 5 ? Math.max(0, bal - rent) : bal;
+      if (genuineArrears <= 0) return;
+
+      // Calculate months overdue (floored) for severity
+      const monthsOverdue = rent > 0 ? Math.floor(genuineArrears / rent) : 0;
+      const severity = monthsOverdue >= 3 ? 'Critical'
+                     : monthsOverdue >= 1 ? 'Overdue'
+                     : 'Watch';
+
+      totalUnpaid++;
+      overdueCount++;
+      unpaidTenants.push({
+        id:             t.tenant_id,
+        name:           t.name,
+        unit:           t.unit_number,
+        property:       t.property_name,
+        rent:           rent,
+        carriedBalance: bal,
+        overdueBalance: genuineArrears,
+        monthsOverdue,
+        severity
+      });
+    });
+
+    // Sort: Critical first, then by balance descending
+    unpaidTenants.sort((a, b) => {
+      const sevOrder = { Critical: 0, Overdue: 1, Watch: 2 };
+      if (sevOrder[a.severity] !== sevOrder[b.severity]) return sevOrder[a.severity] - sevOrder[b.severity];
+      return b.overdueBalance - a.overdueBalance;
     });
 
     res.json({
       dayOfMonth,
-      dueToday:   dayOfMonth === 5,
+      dueToday:     dayOfMonth === 5,
       totalUnpaid,
       overdueCount,
       unpaidTenants
@@ -155,6 +192,7 @@ exports.getDueStatus = async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 };
+
 
 exports.generateWhatsApp = async (req, res) => {
   try {

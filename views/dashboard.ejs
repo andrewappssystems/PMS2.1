@@ -55,7 +55,7 @@
         <strong id="topbarTime">—</strong>
         <span id="dashDate">—</span>
       </div>
-      <button class="signout-btn" onclick="window.location.reload()" style="margin-right:8px" aria-label="Refresh System">
+      <button class="signout-btn" onclick="softRefresh()" style="margin-right:8px" aria-label="Refresh System">
         <i data-lucide="refresh-cw" width="14" height="14"></i>
         Refresh
       </button>
@@ -254,26 +254,68 @@
 
       <!-- ══ AUDIT LOGS ══ -->
       <div class="section" id="sec-archive">
-        <div class="section-title">System Audit Logs</div>
+        <div class="section-title">Enterprise Audit Trail</div>
+
+        <!-- Summary Cards -->
+        <div id="auditSummaryCards" class="stats-grid" style="margin-bottom:20px"></div>
+
         <div class="data-table">
-          <div class="table-header">
-            <h3>Audit Logs</h3>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <select id="archiveTypeFilter" onchange="loadArchive()" style="padding:10px 14px;border:1px solid var(--border);border-radius:14px;font-size:13px">
-                <option value="">All types</option>
+          <div class="table-header" style="flex-wrap:wrap;gap:8px">
+            <h3>Activity Log</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <select id="archiveTypeFilter" onchange="loadArchive()" style="padding:9px 12px;border:1px solid var(--border);border-radius:12px;font-size:12px">
+                <option value="">All Modules</option>
                 <option value="tenant">Tenants</option>
                 <option value="landlord">Landlords</option>
-                <option value="unit">Units</option>
+                <option value="rent">Rent / Payments</option>
+                <option value="invoice">Invoices</option>
+                <option value="receipt">Receipts</option>
                 <option value="property">Properties</option>
-                <option value="rent">Rent Payments</option>
+                <option value="unit">Units</option>
+                <option value="auth">Auth / Login</option>
+                <option value="report">Reports</option>
+                <option value="settings">Settings</option>
               </select>
-              <input id="archiveSearch" class="search" placeholder="Search logs..." oninput="loadArchive()" style="width:180px">
+              <select id="auditSeverityFilter" onchange="loadArchive()" style="padding:9px 12px;border:1px solid var(--border);border-radius:12px;font-size:12px">
+                <option value="">All Severity</option>
+                <option value="INFO">Info</option>
+                <option value="WARNING">Warning</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+              <select id="auditStatusFilter" onchange="loadArchive()" style="padding:9px 12px;border:1px solid var(--border);border-radius:12px;font-size:12px">
+                <option value="">All Status</option>
+                <option value="SUCCESS">Success</option>
+                <option value="FAILED">Failed</option>
+                <option value="PARTIAL">Partial</option>
+              </select>
+              <input type="date" id="auditFrom" onchange="loadArchive()" style="padding:9px 12px;border:1px solid var(--border);border-radius:12px;font-size:12px">
+              <input type="date" id="auditTo"   onchange="loadArchive()" style="padding:9px 12px;border:1px solid var(--border);border-radius:12px;font-size:12px">
+              <input id="archiveSearch" class="search" placeholder="Search logs..." oninput="loadArchive()" style="width:160px">
+              <button onclick="loadArchive()" style="padding:9px 14px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer">Apply</button>
             </div>
           </div>
-          <table><thead><tr><th>Date</th><th>Type</th><th>ID</th><th>Action / Label</th><th>Actor</th><th>Details</th></tr></thead>
-          <tbody id="tArchive"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text-light)">Use the filters above to view audit logs.</td></tr></tbody></table>
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Module</th>
+                <th>Action</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="tArchive">
+              <tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-light)">Use the filters above and click Apply to view audit logs.</td></tr>
+            </tbody>
+          </table>
         </div>
+        <!-- Mobile cards -->
+        <div id="mcArchive" class="mobile-cards"></div>
       </div>
+
 
       <!-- ══ SETTINGS ══ -->
       <div class="section" id="sec-settings">

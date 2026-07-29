@@ -253,8 +253,9 @@ exports.getLandlordReportPdf = async (req, res) => {
     const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const logoHtml = company.company_logo
-      ? `<img src="${company.company_logo.startsWith('http') ? '' : '/'}${company.company_logo.replace(/^\/+/, '')}" style="height:56px;object-fit:contain">`
+      ? `<img src="${company.company_logo}" style="height:56px;object-fit:contain">`
       : `<div style="font-size:32px">🏢</div>`;
+
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(`LREP-${req.params.landlordId}-${from}-${to}`, 'RPT', req);
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -458,8 +459,9 @@ exports.getTenantStatement = async (req, res) => {
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
     const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
     const logoHtml = cfg.company_logo
-      ? `<img src="${cfg.company_logo.startsWith('http') ? '' : '/'}${cfg.company_logo.replace(/^\/+/, '')}" style="height:48px;object-fit:contain">`
+      ? `<img src="${cfg.company_logo}" style="height:48px;object-fit:contain">`
       : `<div style="font-size:28px">🏢</div>`;
+
     const { qrDataUrl, verifyCode, verifyUrl } = await makeVerifyQR(`TST-${req.params.tenantId}-${from}-${to}`, 'RPT', req);
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -560,14 +562,40 @@ exports.getPortfolioPdf = async (req, res) => {
   const { from, to } = req.query;
   if (!from || !to) return res.status(400).send('Date range required');
   try {
-    const [props, unitStats, rentStats, expStats, arrStats, llStats] = await Promise.all([
-      pool.query(`SELECT p.*, l.name AS landlord_name FROM properties p LEFT JOIN landlords l ON l.landlord_id=p.landlord_id WHERE LOWER(p.status)='active'`),
-      pool.query(`SELECT COUNT(*) FILTER (WHERE LOWER(status)='occupied') AS occupied, COUNT(*) FILTER (WHERE LOWER(status)='vacant') AS vacant, COUNT(*) AS total FROM units`),
-      pool.query(`SELECT COALESCE(SUM(amount),0) AS total, COUNT(*) AS count FROM rent_collection WHERE created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to]),
-      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM expenses WHERE created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to]),
-      pool.query(`SELECT COUNT(DISTINCT t.tenant_id) AS cnt, COALESCE(SUM(rb.carried_balance),0) AS total FROM rent_balances rb JOIN tenants t ON t.tenant_id=rb.tenant_id WHERE rb.carried_balance>0 AND LOWER(t.status)='active'`),
-      pool.query(`SELECT COUNT(*) FROM landlords WHERE LOWER(status)='active'`)
+    // ── Core summary queries ───────────────────────────────────────────────────
+    const [unitStats, arrStats, llStats, customIncome] = await Promise.all([
+      pool.query(`SELECT COUNT(*) FILTER (WHERE LOWER(status)='occupied') AS occupied,
+                         COUNT(*) FILTER (WHERE LOWER(status)='vacant') AS vacant,
+                         COUNT(*) AS total FROM units`),
+      pool.query(`SELECT COUNT(DISTINCT t.tenant_id) AS cnt, COALESCE(SUM(rb.carried_balance),0) AS total
+                  FROM rent_balances rb JOIN tenants t ON t.tenant_id=rb.tenant_id
+                  WHERE rb.carried_balance>0 AND LOWER(t.status)='active'`),
+      pool.query(`SELECT COUNT(*) FROM landlords WHERE LOWER(status)='active'`),
+      pool.query(`SELECT COALESCE(SUM(amount),0) AS total FROM invoices
+                  WHERE type='custom' AND status='Paid'
+                  AND created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')`, [from, to])
     ]);
+
+    // ── Per-landlord breakdown ─────────────────────────────────────────────────
+    const { rows: landlordBreakdown } = await pool.query(`
+      SELECT l.landlord_id, l.name AS landlord_name,
+             COALESCE(l.commission_rate, 10)::numeric AS commission_rate,
+             COALESCE(SUM(rc.amount) FILTER (
+               WHERE rc.created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')
+             ), 0) AS total_collected,
+             COALESCE(SUM(e.amount) FILTER (
+               WHERE e.created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')
+             ), 0) AS property_expenses
+      FROM landlords l
+      LEFT JOIN properties p ON p.landlord_id = l.landlord_id
+      LEFT JOIN units u ON u.property_id = p.property_id
+      LEFT JOIN rent_collection rc ON rc.unit_id = u.unit_id
+      LEFT JOIN expenses e ON e.property_id = p.property_id
+      WHERE LOWER(l.status)='active'
+      GROUP BY l.landlord_id, l.name, l.commission_rate
+      ORDER BY total_collected DESC`, [from, to]);
+
+    // ── Per-property breakdown ─────────────────────────────────────────────────
     const { rows: propBreakdown } = await pool.query(`
       SELECT p.property_id, p.name, l.name AS landlord_name,
         COUNT(u.unit_id) AS total_units,
@@ -580,18 +608,44 @@ exports.getPortfolioPdf = async (req, res) => {
       LEFT JOIN units u ON u.property_id=p.property_id
       LEFT JOIN rent_collection rc ON rc.unit_id=u.unit_id
       LEFT JOIN expenses e ON e.property_id=p.property_id
-      GROUP BY p.property_id, p.name, l.name ORDER BY collected DESC`,
-      [from, to]
-    );
+      GROUP BY p.property_id, p.name, l.name ORDER BY collected DESC`, [from, to]);
+
+    // ── Portfolio-level (manager) expenses (not tied to a specific landlord) ───
+    const { rows: portfolioExpRows } = await pool.query(`
+      SELECT COALESCE(SUM(e.amount),0) AS total
+      FROM expenses e
+      LEFT JOIN properties p ON p.property_id = e.property_id
+      WHERE e.created_at BETWEEN $1::text::timestamp AND ($2::text::date + interval '1 day')
+        AND (e.property_id IS NULL OR p.landlord_id IS NULL)`, [from, to]);
+
     const { rows: sRows } = await pool.query('SELECT key,value FROM settings');
     const cfg = {}; sRows.forEach(r => { cfg[r.key]=r.value; });
-    const fmt = n => 'UGX ' + Number(n||0).toLocaleString();
-    const us = unitStats.rows[0];
-    const rs = rentStats.rows[0];
-    const es = expStats.rows[0];
-    const ar = arrStats.rows[0];
+
+    // ── Financial calculations ─────────────────────────────────────────────────
+    const fmt = n => (cfg.currency||'UGX') + ' ' + Number(n||0).toLocaleString();
+    const us  = unitStats.rows[0];
+    const ar  = arrStats.rows[0];
     const occRate = us.total > 0 ? Math.round((us.occupied/us.total)*100) : 0;
-    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo.startsWith('http') ? '' : '/'}${cfg.company_logo.replace(/^\/+/, '')}" style="height:52px;object-fit:contain">` : `<div style="font-size:30px">🏢</div>`;
+
+    let totalRentCollected = 0;
+    let grossMgmtFees = 0;
+    const landlordRows = landlordBreakdown.map(l => {
+      const collected  = parseFloat(l.total_collected) || 0;
+      const propExp    = parseFloat(l.property_expenses) || 0;
+      const rate       = parseFloat(l.commission_rate) || 10;
+      const mgmtFee    = Math.round(collected * rate / 100);
+      const netPayable = collected - mgmtFee - propExp;
+      totalRentCollected += collected;
+      grossMgmtFees      += mgmtFee;
+      return { ...l, collected, propExp, rate, mgmtFee, netPayable };
+    });
+
+    const portfolioExpenses  = parseFloat(portfolioExpRows[0]?.total) || 0;
+    const customIncomeTotal  = parseFloat(customIncome.rows[0]?.total) || 0;
+    const netManagerIncome   = grossMgmtFees - portfolioExpenses;
+    const totalNetToLandlords = landlordRows.reduce((s, l) => s + l.netPayable, 0);
+
+    const logoHtml = cfg.company_logo ? `<img src="${cfg.company_logo}" style="height:52px;object-fit:contain">` : `<div style="font-size:30px">🏢</div>`;
     const fromFmt = new Date(from).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const toFmt   = new Date(to).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
 
@@ -607,46 +661,62 @@ body{font-family:'Mona Sans','Inter',system-ui,sans-serif;color:#010101;font-siz
 .report-meta{text-align:right}
 .report-meta h2{font-size:22px;color:#010101}
 .report-meta p{color:#525252;font-size:13px;margin-top:6px}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:30px}
-.kpi{background:#F4FBF8;border-radius:20px;padding:18px;border-left:4px solid #219377;box-shadow:0 18px 50px rgba(1,1,1,0.06)}
-.kpi.red{border-color:#ef4444} .kpi.green{border-color:#22c55e} .kpi.yellow{border-color:#ffbd59}
-.kpi .lbl{font-size:11px;color:#525252;text-transform:uppercase;font-weight:800;letter-spacing:.18em}
-.kpi .val{font-size:18px;font-weight:900;margin-top:8px;color:#010101}
-.kpi.green .val{color:#16a34a} .kpi.red .val{color:#dc2626} .kpi.yellow .val{color:#B76E00}
-h3{font-size:14px;font-weight:900;color:#219377;text-transform:uppercase;letter-spacing:.14em;margin:28px 0 12px}
-table{width:100%;border-collapse:collapse;margin-bottom:20px;border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(1,1,1,0.06)}
-th{background:#F4FBF8;color:#525252;padding:16px 18px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.16em}
-td{padding:16px 18px;border-bottom:1px solid rgba(1,1,1,0.08);font-size:13px;color:#010101}
-tr:hover{background:#FAFCFB}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:30px}
+.kpi{background:#F4FBF8;border-radius:16px;padding:16px;border-left:4px solid #219377;box-shadow:0 4px 16px rgba(1,1,1,0.06)}
+.kpi.red{border-color:#ef4444} .kpi.green{border-color:#22c55e} .kpi.yellow{border-color:#ffbd59} .kpi.teal{border-color:#0f766e}
+.kpi .lbl{font-size:10px;color:#525252;text-transform:uppercase;font-weight:800;letter-spacing:.18em}
+.kpi .val{font-size:16px;font-weight:900;margin-top:6px;color:#010101}
+.kpi.green .val{color:#16a34a} .kpi.red .val{color:#dc2626} .kpi.yellow .val{color:#B76E00} .kpi.teal .val{color:#0f766e}
+h3{font-size:13px;font-weight:900;color:#219377;text-transform:uppercase;letter-spacing:.14em;margin:28px 0 12px;border-bottom:2px solid #F4FBF8;padding-bottom:8px}
+table{width:100%;border-collapse:collapse;margin-bottom:24px}
+th{background:#F4FBF8;color:#525252;padding:12px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+td{padding:12px 16px;border-bottom:1px solid rgba(1,1,1,0.06);font-size:12px;color:#010101}
+tr:hover td{background:#FAFCFB}
 .right{text-align:right}
-.badge{display:inline-block;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:800;text-transform:uppercase}
 .badge.green{background:rgba(34,197,94,0.12);color:#166534} .badge.yellow{background:rgba(255,189,89,0.18);color:#B76E00} .badge.red{background:rgba(239,68,68,0.12);color:#991b1b}
-.summary-box{background:#FFF4DC;border:2px solid rgba(255,189,89,0.35);border-radius:20px;padding:24px;margin:26px 0}
+.summary-box{border-radius:16px;padding:22px;margin:20px 0}
+.summary-box.green{background:#F0FDF4;border:2px solid rgba(34,197,94,0.3)}
+.summary-box.teal{background:#F0FDFA;border:2px solid rgba(15,118,110,0.3)}
+.summary-box.yellow{background:#FFFBEB;border:2px solid rgba(255,189,89,0.35)}
+.summary-box h3{margin:0 0 14px;color:inherit;border:none;padding:0}
+.sum-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:13px}
+.sum-row.total{border-top:2px solid currentColor;border-bottom:none;font-size:15px;font-weight:900;padding-top:12px;margin-top:4px}
 .footer{margin-top:32px;padding-top:20px;border-top:1px solid rgba(1,1,1,0.08);text-align:center;color:#525252;font-size:12px}
 @media print{.no-print{display:none!important}body{font-size:11px}.page{padding:20px}}
 </style></head><body>
 <div class="page">
   <div class="header">
-    <div class="company">${logoHtml}<div><h1>${cfg.company_name||'Property Management'}</h1><p>${cfg.company_address||''} | ${cfg.company_phone||''}</p></div></div>
+    <div class="company">${logoHtml}<div><h1>${cfg.company_name||'Property Management'}</h1><p>${cfg.company_address||''}</p><p>${cfg.company_phone||''}</p></div></div>
     <div class="report-meta"><h2>Portfolio Report</h2><p><strong>Period:</strong> ${fromFmt} — ${toFmt}</p><p>Generated: ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p></div>
   </div>
 
   <div class="kpi-grid">
     <div class="kpi"><div class="lbl">Active Landlords</div><div class="val">${llStats.rows[0].count}</div></div>
-    <div class="kpi"><div class="lbl">Properties</div><div class="val">${props.rows.length}</div></div>
     <div class="kpi"><div class="lbl">Total Units</div><div class="val">${us.total}</div></div>
     <div class="kpi green"><div class="lbl">Occupied (${occRate}%)</div><div class="val">${us.occupied}</div></div>
     <div class="kpi yellow"><div class="lbl">Vacant</div><div class="val">${us.vacant}</div></div>
-    <div class="kpi green"><div class="lbl">Rent Collected</div><div class="val" style="font-size:12px">${fmt(rs.total)}</div></div>
-    <div class="kpi red"><div class="lbl">Expenses</div><div class="val" style="font-size:12px">${fmt(es.total)}</div></div>
-    <div class="kpi green"><div class="lbl">Net Income</div><div class="val" style="font-size:12px">${fmt(Number(rs.total)-Number(es.total))}</div></div>
+    <div class="kpi green"><div class="lbl">Total Rent Collected</div><div class="val" style="font-size:12px">${fmt(totalRentCollected)}</div></div>
+    <div class="kpi teal"><div class="lbl">Gross Mgmt Fees</div><div class="val" style="font-size:12px">${fmt(grossMgmtFees)}</div></div>
+    <div class="kpi green"><div class="lbl">Net Manager Income</div><div class="val" style="font-size:12px">${fmt(netManagerIncome)}</div></div>
     <div class="kpi red"><div class="lbl">Total Arrears</div><div class="val" style="font-size:12px">${fmt(ar.total)}</div></div>
     <div class="kpi red"><div class="lbl">Tenants in Arrears</div><div class="val">${ar.cnt}</div></div>
+    ${customIncomeTotal > 0 ? `<div class="kpi teal"><div class="lbl">Other Income</div><div class="val" style="font-size:12px">${fmt(customIncomeTotal)}</div></div>` : ''}
   </div>
 
+  <!-- MANAGER P&L -->
+  <div class="summary-box teal">
+    <h3 style="color:#0f766e">📊 Manager Profit & Loss</h3>
+    <div class="sum-row"><span>Gross Management Fees Earned</span><span style="color:#0f766e;font-weight:700">${fmt(grossMgmtFees)}</span></div>
+    ${customIncomeTotal > 0 ? `<div class="sum-row"><span>Other Income (Custom Invoices)</span><span style="color:#0f766e;font-weight:700">${fmt(customIncomeTotal)}</span></div>` : ''}
+    <div class="sum-row"><span>Portfolio Operating Expenses</span><span style="color:#dc2626">- ${fmt(portfolioExpenses)}</span></div>
+    <div class="sum-row total" style="color:#0f766e"><span>NET MANAGER INCOME</span><span>${fmt(netManagerIncome + customIncomeTotal)}</span></div>
+  </div>
+
+  <!-- PROPERTY BREAKDOWN -->
   <h3>Property Breakdown</h3>
   <table>
-    <thead><tr><th>Property</th><th>Landlord</th><th>Units</th><th>Occupied</th><th>Vacant</th><th class="right">Rent Collected</th><th class="right">Expenses</th><th class="right">Net</th></tr></thead>
+    <thead><tr><th>Property</th><th>Landlord</th><th>Units</th><th>Occ.</th><th class="right">Rent Collected</th><th class="right">Expenses</th><th class="right">Net (Property)</th></tr></thead>
     <tbody>
     ${propBreakdown.map(p => {
       const occ = Number(p.occupied), tot = Number(p.total_units);
@@ -657,40 +727,52 @@ tr:hover{background:#FAFCFB}
         <td>${p.landlord_name||'—'}</td>
         <td>${tot}</td>
         <td>${occ} <span class="badge ${occPct>=80?'green':occPct>=50?'yellow':'red'}">${occPct}%</span></td>
-        <td>${Number(p.vacant)>0?`<span class="badge yellow">${p.vacant}</span>`:'0'}</td>
         <td class="right"><strong>${fmt(p.collected)}</strong></td>
         <td class="right">${fmt(p.expenses)}</td>
         <td class="right" style="color:${net>=0?'#16a34a':'#dc2626'}"><strong>${fmt(net)}</strong></td>
       </tr>`;
     }).join('')}
     <tr style="font-weight:700;background:#f0fdf4">
-      <td colspan="5"><strong>TOTAL</strong></td>
-      <td class="right">${fmt(rs.total)}</td>
-      <td class="right">${fmt(es.total)}</td>
-      <td class="right" style="color:${Number(rs.total)-Number(es.total)>=0?'#16a34a':'#dc2626'}">${fmt(Number(rs.total)-Number(es.total))}</td>
+      <td colspan="4"><strong>TOTAL</strong></td>
+      <td class="right">${fmt(totalRentCollected)}</td>
+      <td class="right" style="color:#dc2626">${fmt(propBreakdown.reduce((s,p)=>s+Number(p.expenses),0))}</td>
+      <td class="right" style="color:#16a34a">${fmt(propBreakdown.reduce((s,p)=>s+Number(p.collected)-Number(p.expenses),0))}</td>
     </tr>
     </tbody>
   </table>
 
-  <div class="summary-box">
-    <h3 style="margin-top:0;color:#166534">Portfolio Summary</h3>
-    <table style="margin:0">
-      <tr><td>Total Rent Collected</td><td class="right"><strong>${fmt(rs.total)}</strong></td></tr>
-      <tr><td>Total Expenses</td><td class="right" style="color:#dc2626">- ${fmt(es.total)}</td></tr>
-      <tr style="font-size:15px;font-weight:700;border-top:2px solid #22c55e">
-        <td style="padding-top:10px">NET PORTFOLIO INCOME</td>
-        <td class="right" style="padding-top:10px;color:#16a34a">${fmt(Number(rs.total)-Number(es.total))}</td>
-      </tr>
-    </table>
-  </div>
+  <!-- LANDLORD DISBURSEMENTS -->
+  <h3>Landlord Disbursements</h3>
+  <table>
+    <thead><tr><th>Landlord</th><th class="right">Rent Collected</th><th class="right">Mgmt Fee</th><th class="right">Property Expenses</th><th class="right">Net Payable</th></tr></thead>
+    <tbody>
+    ${landlordRows.map(l => {
+      return `<tr>
+        <td><strong>${l.landlord_name}</strong> <span style="font-size:10px;color:#64748b">(${l.rate}% fee)</span></td>
+        <td class="right">${fmt(l.collected)}</td>
+        <td class="right" style="color:#B76E00">- ${fmt(l.mgmtFee)}</td>
+        <td class="right" style="color:#dc2626">- ${fmt(l.propExp)}</td>
+        <td class="right" style="color:${l.netPayable>=0?'#16a34a':'#dc2626'}"><strong>${fmt(l.netPayable)}</strong></td>
+      </tr>`;
+    }).join('')}
+    <tr style="font-weight:700;background:#f0fdf4">
+      <td><strong>TOTAL</strong></td>
+      <td class="right">${fmt(totalRentCollected)}</td>
+      <td class="right" style="color:#B76E00">- ${fmt(grossMgmtFees)}</td>
+      <td class="right" style="color:#dc2626">- ${fmt(landlordRows.reduce((s,l)=>s+l.propExp,0))}</td>
+      <td class="right" style="color:#16a34a"><strong>${fmt(totalNetToLandlords)}</strong></td>
+    </tr>
+    </tbody>
+  </table>
 
-  <div class="footer"><p>${cfg.company_name||'PMS'} | Portfolio Report | Generated ${new Date().toLocaleDateString('en-GB')} | Confidential</p></div>
+  <div class="footer"><p>${cfg.company_name||'PMS'} | Portfolio Report | Period: ${fromFmt} — ${toFmt} | Generated ${new Date().toLocaleDateString('en-GB')} | Confidential</p></div>
 </div>
 <div class="no-print" style="text-align:center;padding:24px">
-  <button onclick="window.print()" style="padding:12px 32px;background:#0f766e;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
+  <button onclick="window.print()" style="padding:12px 32px;background:#219377;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-weight:600">🖨️ Print / Save as PDF</button>
 </div>
 </body></html>`;
     res.setHeader('Content-Type','text/html');
     res.send(html);
   } catch(e) { console.error('[portfolio pdf]',e.message); res.status(500).send('Error: '+e.message); }
 };
+

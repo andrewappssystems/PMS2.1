@@ -97,6 +97,15 @@ function updateClock(){
 }
 
 function logout(){window.location.href='/logout';}
+function softRefresh(){
+  // Clear client-side cache so all data is re-fetched from server
+  CACHE.clear();
+  _sectionLoaded.clear();
+  window.backendArrears = [];
+  loadAllData();
+  loadRentDueStatus();
+  showToast('Data refreshed','success');
+}
 function toggleSidebar(){
   const sb=document.getElementById('sidebar');
   const ov=document.getElementById('sidebarOverlay');
@@ -209,32 +218,82 @@ function computeArrearsAll(){
   return arr.sort((a,b)=>b.total-a.total);
 }
 function computeDashboardArrears(){
-  const arr=computeArrearsAll();
-  const total=arr.reduce((s,a)=>s+a.total,0);
-  document.getElementById('statArrears').textContent=fmtUGX(total);
-  document.getElementById('statArrearsCount').textContent=arr.length;
-  const critical=arr.filter(a=>a.months>=2);
-  const w=document.getElementById('criticalWidget');
-  if(!critical.length){w.style.display='none';return;}
+  const serverArr = window.backendArrears || [];
+  if (serverArr.length) {
+    // Use server data directly — it has correct severity, credits, 5th rule
+    const total    = serverArr.reduce((s,a) => s + (a.overdueBalance||a.carriedBalance||0), 0);
+    const critical = serverArr.filter(a => a.severity === 'Critical');
+    const statEl   = document.getElementById('statArrears');
+    const cntEl    = document.getElementById('statArrearsCount');
+    if (statEl) statEl.textContent = fmtUGX(total);
+    if (cntEl)  cntEl.textContent  = serverArr.length;
+    const w = document.getElementById('criticalWidget');
+    if (!w) return;
+    if (!critical.length) { w.style.display='none'; return; }
+    w.style.display = 'block';
+    document.getElementById('criticalSub').textContent = `— ${critical.length} tenant${critical.length!==1?'s':''} with 3+ months overdue`;
+    document.getElementById('criticalList').innerHTML = critical.slice(0,5).map(a => `
+      <div class="arrears-item">
+        <div><div class="ai-info">${a.name}</div><div class="ai-sub">Unit: ${a.unit||'N/A'} &nbsp;|&nbsp; ${a.monthsOverdue} month${a.monthsOverdue!==1?'s':''} overdue</div></div>
+        <div class="ai-amt">${fmtUGX(a.overdueBalance||0)}</div>
+      </div>`).join('');
+    return;
+  }
+  // Fallback: client-side
+  const arr   = computeArrearsAll();
+  const total = arr.reduce((s,a) => s+a.total, 0);
+  document.getElementById('statArrears').textContent     = fmtUGX(total);
+  document.getElementById('statArrearsCount').textContent = arr.length;
+  const critical = arr.filter(a => a.months >= 3);
+  const w = document.getElementById('criticalWidget');
+  if (!w) return;
+  if (!critical.length) { w.style.display='none'; return; }
   w.style.display='block';
-  document.getElementById('criticalSub').textContent=`— ${critical.length} tenant${critical.length!==1?'s':''} with 2+ months overdue`;
-  document.getElementById('criticalList').innerHTML=critical.slice(0,5).map(a=>`
+  document.getElementById('criticalSub').textContent = `— ${critical.length} tenant${critical.length!==1?'s':''} with 3+ months overdue`;
+  document.getElementById('criticalList').innerHTML = critical.slice(0,5).map(a => `
     <div class="arrears-item">
       <div><div class="ai-info">${tn.name(a.t)}</div><div class="ai-sub">Unit: ${a.u?un.num(a.u):'N/A'} &nbsp;|&nbsp; ${a.months} months</div></div>
       <div class="ai-amt">${fmtUGX(a.total)}</div>
     </div>`).join('');
 }
+
 function renderArrears(){
-  const arr=computeArrearsAll(); const tb=document.getElementById('tArrears');
-  if(!arr.length){tb.innerHTML=empty(8,'circle-check','All tenants are up to date');return;}
-  tb.innerHTML=arr.map(a=>{
-    const lv=a.months>=3?'danger':a.months>=2?'warning':'info';
-    const lb=a.months>=3?'Critical':a.months>=2?'High':'Overdue';
-    const p=a.u?properties.find(x=>pr.id(x)===un.prop(a.u)):null;
+  const tb = document.getElementById('tArrears');
+  if (!tb) return;
+
+  // Prefer server-side arrears (includes credits, 5th rule, severity)
+  const serverArr = window.backendArrears || [];
+
+  if (serverArr.length) {
+    tb.innerHTML = serverArr.map(a => {
+      const sev = (a.severity||'Watch').toLowerCase();
+      const sevCls = sev === 'critical' ? 'danger' : sev === 'overdue' ? 'warning' : 'info';
+      const monthsLabel = a.monthsOverdue === 0 ? 'Watch' : `${a.monthsOverdue}mo`;
+      return `<tr>
+        <td><strong>${a.name}</strong></td>
+        <td>${a.unit||'N/A'}</td>
+        <td>${a.property||'—'}</td>
+        <td>${fmtUGX(a.rent)}</td>
+        <td>${monthsLabel}</td>
+        <td style="font-weight:700;color:var(--danger)">${fmtUGX(a.overdueBalance||a.carriedBalance)}</td>
+        <td><span class="badge ${sevCls}">${a.severity||'Watch'}</span></td>
+        <td class="actions"><button class="btn-edit" onclick="openModal('rent',null,'${a.id}')">Record Payment</button></td>
+      </tr>`;
+    }).join('');
+    return;
+  }
+
+  // Fallback to client-side
+  const arr = computeArrearsAll();
+  if (!arr.length) { tb.innerHTML = empty(8,'circle-check','All tenants are up to date'); return; }
+  tb.innerHTML = arr.map(a => {
+    const lv = a.months >= 3 ? 'danger' : a.months >= 1 ? 'warning' : 'info';
+    const lb = a.months >= 3 ? 'Critical' : a.months >= 1 ? 'Overdue' : 'Watch';
+    const p  = a.u ? properties.find(x => pr.id(x) === un.prop(a.u)) : null;
     return `<tr>
       <td><strong>${tn.name(a.t)}</strong></td>
-      <td>${a.u?un.num(a.u):'N/A'}</td>
-      <td>${p?pr.name(p):'—'}</td>
+      <td>${a.u ? un.num(a.u) : 'N/A'}</td>
+      <td>${p ? pr.name(p) : '—'}</td>
       <td>${fmtUGX(a.rent)}</td>
       <td>${a.months}</td>
       <td style="font-weight:700;color:var(--danger)">${fmtUGX(a.total)}</td>
@@ -243,6 +302,7 @@ function renderArrears(){
     </tr>`;
   }).join('');
 }
+
 function renderMcArrears() {
   const mc = document.getElementById('mcArrears');
   if (!mc) return;
@@ -623,8 +683,99 @@ function handleLogoUpload(event){
   reader.readAsDataURL(file);
 }
 
-// ── Archive ───────────────────────────────────────────────────────────────────
+// ── Enterprise Audit Log ──────────────────────────────────────────────────────
+async function loadAuditSummary(){
+  try{
+    const s = await fetch('/api/archive/summary',{credentials:'include'}).then(r=>r.json());
+    const cards = [
+      {id:'auditToday',     label:"Today's Activity", val: s.today_total        || 0, cls:''},
+      {id:'auditCritical',  label:'Critical Events',  val: s.today_critical     || 0, cls:'red'},
+      {id:'auditWarnings',  label:'Warnings',         val: s.today_warnings     || 0, cls:'yellow'},
+      {id:'auditFinancial', label:'Financial Txns',   val: s.today_financial    || 0, cls:'green'},
+      {id:'auditLogins',    label:'Logins Today',     val: s.today_logins       || 0, cls:''},
+      {id:'auditFailed',    label:'Failed Logins',    val: s.today_failed_logins|| 0, cls:'red'},
+    ];
+    const wrap = document.getElementById('auditSummaryCards');
+    if(wrap) wrap.innerHTML = cards.map(c=>`
+      <div class="stat-card ${c.cls}" style="min-width:100px;padding:14px 18px">
+        <div class="label">${c.label}</div>
+        <div class="value" id="${c.id}" style="font-size:22px">${c.val}</div>
+      </div>`).join('');
+  }catch(e){console.warn('audit summary',e);}
+}
+
 async function loadArchive(){
+  await loadAuditSummary();
+  const type     = document.getElementById('archiveTypeFilter')?.value || '';
+  const search   = document.getElementById('archiveSearch')?.value    || '';
+  const severity = document.getElementById('auditSeverityFilter')?.value || '';
+  const status   = document.getElementById('auditStatusFilter')?.value   || '';
+  const from     = document.getElementById('auditFrom')?.value || '';
+  const to       = document.getElementById('auditTo')?.value   || '';
+  const tb       = document.getElementById('tArchive');
+  if(!tb) return;
+  tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-light)">Loading…</td></tr>`;
+  try{
+    const params = new URLSearchParams();
+    if(type)     params.set('type', type);
+    if(search)   params.set('search', search);
+    if(severity) params.set('severity', severity);
+    if(status)   params.set('status', status);
+    if(from)     params.set('from', from);
+    if(to)       params.set('to', to);
+    const rows = await fetch(`/api/archive?${params}`,{credentials:'include'}).then(r=>r.json());
+    if(!rows.length){tb.innerHTML=empty(8,'scroll','No audit logs found');return;}
+    window.auditLogs = rows;
+    tb.innerHTML=rows.map((r,i)=>{
+      const sev = (r.severity||'INFO').toLowerCase();
+      const sevCls = sev==='critical'?'danger':sev==='warning'?'warning':'info';
+      const stCls  = (r.status||'SUCCESS').toLowerCase()==='success'?'success'
+                   : (r.status||'').toLowerCase()==='failed'?'danger':'warning';
+      return `<tr style="cursor:pointer" onclick="viewAuditDetails(${i})">
+        <td style="font-size:11px;color:var(--text-light);white-space:nowrap">${r.timestamp||'—'}</td>
+        <td><strong>${r.user_name||'—'}</strong><br><small style="color:#64748b">${r.user_role||''}</small></td>
+        <td><span class="badge info">${r.module||r.entity_type||'—'}</span></td>
+        <td>${r.action||'—'}</td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${r.description||r.entity_label||'—'}</td>
+        <td><span class="badge ${sevCls}">${r.severity||'INFO'}</span></td>
+        <td><span class="badge ${stCls}">${r.status||'SUCCESS'}</span></td>
+        <td class="actions"><button class="btn-edit" onclick="event.stopPropagation();viewAuditDetails(${i})">Details</button></td>
+      </tr>`;
+    }).join('');
+    renderMcArchive(rows);
+  }catch(e){tb.innerHTML=empty(8,'x-circle','Failed to load audit logs');}
+  if(typeof lucide!=='undefined') lucide.createIcons();
+}
+
+function viewAuditDetails(index) {
+  const r = window.auditLogs?.[index];
+  if(!r) return;
+  const section = (title, content) => content
+    ? `<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:6px">${title}</div>${content}</div>`
+    : '';
+  const pre = v => `<pre style="background:var(--bg);padding:10px;border-radius:8px;font-size:11px;overflow-x:auto;border:1px solid var(--border);margin:0">${typeof v==='object'?JSON.stringify(v,null,2):v||'—'}</pre>`;
+  const row2 = (a,b,c,d) => `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+    <div><span style="font-size:11px;color:#64748b">${a}</span><br><strong style="font-size:12px">${b||'—'}</strong></div>
+    <div><span style="font-size:11px;color:#64748b">${c}</span><br><strong style="font-size:12px">${d||'—'}</strong></div>
+  </div>`;
+  const html = `
+    <div style="font-size:13px">
+      ${section('Description', `<div style="background:var(--bg);padding:12px;border-radius:8px;border:1px solid var(--border);font-size:13px">${r.description||r.entity_label||'—'}</div>`)}
+      ${row2('Timestamp', r.timestamp, 'User', `${r.user_name||'—'} (${r.user_role||'?'})`)}
+      ${row2('Module', r.module||r.entity_type, 'Action', r.action)}
+      ${row2('Severity', `<span class="badge ${r.severity==='CRITICAL'?'danger':r.severity==='WARNING'?'warning':'info'}">${r.severity||'INFO'}</span>`, 'Status', `<span class="badge ${r.status==='SUCCESS'?'success':'danger'}">${r.status||'—'}</span>`)}
+      ${r.reference_number?row2('Reference #', r.reference_number, 'Route', r.route||'—'):''}
+      ${r.ip_address?row2('IP Address', r.ip_address, 'Session ID', r.session_id?r.session_id.slice(0,16)+'…':'—'):''}
+      ${r.old_values?section('Before (Old Values)', pre(r.old_values)):''}
+      ${r.new_values?section('After (New Values)', pre(r.new_values)):''}
+      ${r.metadata?section('Additional Metadata', pre(r.metadata)):''}
+      ${(!r.old_values&&!r.new_values&&r.data)?section('Raw Data', pre(r.data)):''}
+      ${r.user_agent?section('Browser / Device', `<div style="font-size:11px;color:#64748b;word-break:break-all">${r.user_agent}</div>`):''}
+    </div>`;
+  showPrompt(`Audit Detail — ${r.action||'LOG'}: ${r.entity_type||''}`, html, ()=>{}, false, true);
+}
+
+
   const type=document.getElementById('archiveTypeFilter')?.value||'';
   const search=document.getElementById('archiveSearch')?.value||'';
   const tb=document.getElementById('tArchive');
@@ -632,45 +783,6 @@ async function loadArchive(){
   try{
     const rows=await fetch(`/api/archive?type=${type}&search=${encodeURIComponent(search)}`,{credentials:'include'}).then(r=>r.json());
     if(!rows.length){tb.innerHTML=empty(6,'scroll','No audit logs found');return;}
-    window.auditLogs = rows;
-    tb.innerHTML=rows.map((r,i)=>`<tr>
-      <td>${r.deleted_at}</td>
-      <td><span class="badge info">${r.entity_type}</span></td>
-      <td>${r.entity_id}</td>
-      <td>${r.entity_label}</td>
-      <td>${r.deleted_by||'—'}</td>
-      <td><button class="btn-edit" onclick="viewAuditDetails(${i})">See Details</button></td>
-    </tr>`).join('');
-  }catch(e){tb.innerHTML=empty(6,'x-circle','Failed to load audit logs');}
-  if(typeof lucide!=='undefined') lucide.createIcons();
-}
-
-function viewAuditDetails(index) {
-  const r = window.auditLogs[index];
-  if(!r) return;
-  const jsonStr = r.data ? JSON.stringify(r.data, null, 2) : 'No details available.';
-  const html = `<pre style="background:var(--bg-card);padding:15px;border-radius:12px;font-size:13px;overflow-x:auto;color:var(--text);border:1px solid var(--border)">${jsonStr}</pre>`;
-  showPrompt(`Audit Details: ${r.entity_label}`, html, ()=>{}, false, true); // true for html mode
-}
-
-function renderMcArchive(rows) {
-  const mc = document.getElementById('mcArchive');
-  if (!mc) return;
-  if (!rows || !rows.length) { mc.innerHTML = ''; return; }
-  mc.innerHTML = rows.map(r => `
-    <div class="mobile-card">
-      <div class="mc-main">
-        <div class="mc-title">${r.entity_label || '—'}</div>
-        <div class="mc-sub">
-          <span class="badge info">${r.entity_type}</span>
-          &nbsp; ${r.entity_id}
-        </div>
-        <div class="mc-sub" style="margin-top:4px;font-size:11px;color:#64748b">
-          Deleted ${r.deleted_at} by ${r.deleted_by || '—'}
-        </div>
-      </div>
-    </div>`).join('');
-}
 // ── Modal opener ──────────────────────────────────────────────────────────────
 function openModal(type,e,prefillTenantId=null){
   currentForm=type; editingId=null;
@@ -752,7 +864,18 @@ function openModal(type,e,prefillTenantId=null){
       <div class="form-group"><label>Next of Kin Name</label><input id="f_nokin" placeholder="Full name"></div>
       <div class="form-group"><label>Next of Kin Phone</label><input id="f_nokinphone" placeholder="+256 7XX XXX XXX"></div>
       <div class="form-group"><label>Relationship</label><input id="f_nokinrel" placeholder="e.g. Spouse, Parent, Sibling"></div>
+      <div class="form-group full" style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+        <label style="font-size:12px;color:var(--primary);font-weight:700">OPENING BALANCE (NEW TENANT)</label>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px;line-height:1.5">
+          If the tenant has paid <strong>months in advance</strong>, enter the number of months — this creates a credit.
+          If they paid a <strong>partial amount</strong> for the first month, enter that amount. Leave both blank for a fresh start.
+        </div>
+      </div>
+      <div class="form-group"><label>Months Paid in Advance</label><input id="f_advance_months" type="number" min="0" max="24" placeholder="0" title="e.g. 3 = paid 3 months ahead"></div>
+      <div class="form-group"><label>Partial First Month Paid (UGX)</label><input id="f_partial_paid" type="number" min="0" placeholder="0" title="Leave blank if first month fully paid or paid in advance"></div>
     </div>`; },
+
+
 
     rent:()=>{ title.textContent='Record Rent Payment'; return `<div class="form-grid">
       <div class="form-group full"><label>Tenant *</label><select id="f_tenant" onchange="autoFillUnit()"><option value="">— Select tenant —</option>${tnOpts||'<option disabled>No active tenants</option>'}</select></div>
@@ -937,7 +1060,12 @@ async function saveForm(){
         endpoint=editingId?`/api/tenants/${editingId}`:'/api/tenants';
         method=editingId?'PUT':'POST';
         payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),idNumber:gv('f_idno'),unitId:gv('f_unit'),leaseStart:gv('f_start'),leaseEnd:gv('f_end'),rentAmount:gv('f_rent'),deposit:gv('f_deposit'),emergencyName:gv('f_emname'),emergencyPhone:gv('f_emphone'),nextOfKinName:gv('f_nokin'),nextOfKinPhone:gv('f_nokinphone'),nextOfKinRel:gv('f_nokinrel')};
+        if(!editingId){
+          payload.advanceMonths = gv('f_advance_months')||'0';
+          payload.partialPaid   = gv('f_partial_paid')||'0';
+        }
         break;
+
       case 'rent':
         if(!gv('f_tenant')){showToast('Please select a tenant','error');break;}
         if(!gv('f_amount')){showToast('Amount required','error');break;}

@@ -5,7 +5,7 @@ const { validate } = require('../utils/validation');
 const { actor } = require('../utils/helpers');
 const { getNextId } = require('../utils/idGenerator');
 const { logAudit, archiveRecord } = require('../services/auditService');
-const { getTenantBalance } = require('../services/rentService');
+const { getTenantBalance, initTenantBalance } = require('../services/rentService');
 
 exports.list = async (req, res) => {
   const cached = getCached('tenants');
@@ -30,17 +30,29 @@ exports.create = async (req, res) => {
   const err = validate([['name','Name'],['phone','Phone'],['unitId','Unit']], req.body);
   if (err) return res.status(400).json({ error: err });
   try {
-    const { name, phone, email='', idNumber='', unitId, leaseStart='', leaseEnd='', rentAmount='0', deposit='0' } = req.body;
+    const {
+      name, phone, email='', idNumber='', unitId,
+      leaseStart='', leaseEnd='', rentAmount='0', deposit='0',
+      advanceMonths='0', partialPaid='0'
+    } = req.body;
     const id = await getNextId('tenants', 'tenant_id', 'TNT');
     await pool.query(
       `INSERT INTO tenants (tenant_id,name,phone,email,id_number,unit_id,lease_start,lease_end,rent_amount,deposit,status,created_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'Active',$11)`,
-      [id, name.trim(), phone.trim(), email.trim(), idNumber.trim(), unitId, leaseStart||null, leaseEnd||null, parseFloat(rentAmount)||0, parseFloat(deposit)||0, actor(req)]
+      [id, name.trim(), phone.trim(), email.trim(), idNumber.trim(), unitId,
+       leaseStart||null, leaseEnd||null, parseFloat(rentAmount)||0,
+       parseFloat(deposit)||0, actor(req)]
     );
     await pool.query(`UPDATE units SET status='Occupied' WHERE unit_id=$1`, [unitId]);
+
+    // Initialise opening balance: advance months = credit, partial = debit
+    const adv = parseInt(advanceMonths) || 0;
+    const partial = parseFloat(partialPaid) || 0;
+    await initTenantBalance(id, parseFloat(rentAmount)||0, adv, partial);
+
     await logAudit('CREATE', 'tenant', id, name.trim(), req.body, actor(req));
     clearCache('tenants','units','properties','stats');
-    res.json({ success:true, id });
+    res.json({ success:true, id, advanceMonths: adv, partialPaid: partial });
   } catch (e) { console.error('[POST /api/tenants]', e.message); res.status(500).json({ error: e.message }); }
 };
 
