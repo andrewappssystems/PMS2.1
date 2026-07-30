@@ -6,6 +6,7 @@ const { actor } = require('../utils/helpers');
 const { getNextId } = require('../utils/idGenerator');
 const { logAudit, archiveRecord } = require('../services/auditService');
 const { getTenantBalance, initTenantBalance } = require('../services/rentService');
+const { getNextYearId } = require('../utils/idGenerator');
 
 exports.list = async (req, res) => {
   const cached = getCached('tenants');
@@ -48,7 +49,50 @@ exports.create = async (req, res) => {
     // Initialise opening balance: advance months = credit, partial = debit
     const adv = parseInt(advanceMonths) || 0;
     const partial = parseFloat(partialPaid) || 0;
-    await initTenantBalance(id, parseFloat(rentAmount)||0, adv, partial);
+    const depositAmt = parseFloat(deposit) || 0;
+    const rentAmt = parseFloat(rentAmount) || 0;
+    await initTenantBalance(id, rentAmt, adv, partial);
+
+    // ── Generate advance-month receipts ──────────────────────────────────
+    const { rows: uRows } = await pool.query(
+      `SELECT unit_number, property_id FROM units WHERE unit_id=$1`, [unitId]
+    );
+    const unitNum  = uRows[0]?.unit_number  || unitId;
+    const propId   = uRows[0]?.property_id  || null;
+    if (adv > 0 && rentAmt > 0) {
+      const startDate = leaseStart ? new Date(leaseStart) : new Date();
+      for (let m = 0; m < adv; m++) {
+        const d = new Date(startDate.getFullYear(), startDate.getMonth() + m, 1);
+        const rcpId = await getNextYearId('receipts', 'id', 'RCP');
+        await pool.query(
+          `INSERT INTO receipts
+             (id,tenant_id,tenant_name,unit_number,property_id,
+              amount,expected_amount,month,year,
+              payment_method,payment_type,balance_carried,created_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$6,$7,$8,'Advance','Advance',0,$9)`,
+          [rcpId, id, name.trim(), unitNum, propId,
+           rentAmt, d.getMonth() + 1, d.getFullYear(), actor(req)]
+        );
+      }
+    }
+
+    // ── Security Deposit receipt ──────────────────────────────────────────
+    // Receipted separately — does NOT affect rent balance.
+    // Logged as security income for the landlord under this property.
+    if (depositAmt > 0) {
+      const depId = await getNextYearId('receipts', 'id', 'RCP');
+      const now = new Date();
+      await pool.query(
+        `INSERT INTO receipts
+           (id,tenant_id,tenant_name,unit_number,property_id,
+            amount,expected_amount,month,year,
+            payment_method,payment_type,balance_carried,created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,0,$7,$8,'Cash','Security Deposit',0,$9)`,
+        [depId, id, name.trim(), unitNum, propId,
+         depositAmt, now.getMonth() + 1, now.getFullYear(), actor(req)]
+      );
+    }
+
 
     await logAudit('CREATE', 'tenant', id, name.trim(), req.body, actor(req));
     clearCache('tenants','units','properties','stats');

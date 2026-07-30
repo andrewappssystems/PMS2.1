@@ -15,7 +15,7 @@ exports.search = async (req, res) => {
       limit = 200
     } = req.query;
 
-    // Build base WHERE from always-present columns
+    // Build base WHERE from always-present columns (no search here — handled in rich block)
     const params = [];
     const whereParts = ['1=1'];
 
@@ -31,15 +31,6 @@ exports.search = async (req, res) => {
       params.push(to);
       whereParts.push(`a.deleted_at < ($${params.length}::date + interval '1 day')`);
     }
-    if (search) {
-      params.push(`%${search.toLowerCase()}%`);
-      whereParts.push(`(
-        LOWER(a.entity_label) LIKE $${params.length} OR
-        LOWER(a.deleted_by)   LIKE $${params.length} OR
-        LOWER(a.entity_type)  LIKE $${params.length} OR
-        LOWER(a.entity_id)    LIKE $${params.length}
-      )`);
-    }
 
     const where = whereParts.join(' AND ');
 
@@ -49,21 +40,25 @@ exports.search = async (req, res) => {
       const richWhere = [];
 
       if (severity) {
-        richParams.splice(richParams.length, 0, severity);
+        richParams.push(severity);
         richWhere.push(`a.severity=$${richParams.length}`);
       }
       if (status) {
-        richParams.splice(richParams.length, 0, status);
+        richParams.push(status);
         richWhere.push(`a.log_status=$${richParams.length}`);
       }
       if (action) {
-        richParams.splice(richParams.length, 0, action);
+        richParams.push(action);
         richWhere.push(`a.action=$${richParams.length}`);
       }
       if (search) {
-        // Extend search to migration columns (description, reference_number)
+        // Single OR block across ALL searchable columns — base columns + migration columns
         richParams.push(`%${search.toLowerCase()}%`);
         richWhere.push(`(
+          LOWER(a.entity_label) LIKE $${richParams.length} OR
+          LOWER(a.deleted_by)   LIKE $${richParams.length} OR
+          LOWER(a.entity_type)  LIKE $${richParams.length} OR
+          LOWER(a.entity_id)    LIKE $${richParams.length} OR
           LOWER(COALESCE(a.description,'')) LIKE $${richParams.length} OR
           LOWER(COALESCE(a.reference_number,'')) LIKE $${richParams.length}
         )`);

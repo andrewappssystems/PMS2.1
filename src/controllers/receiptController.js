@@ -9,25 +9,31 @@ const { makeVerifyQR } = require('../utils/verification');
 
 exports.list = async (req, res) => {
   const { page, limit, offset } = getPagination(req.query);
-  const key = `receipts_p${page}_l${limit}`;
+  const { paymentType = '' } = req.query;
+  const key = `receipts_p${page}_l${limit}_pt${paymentType}`;
   const cached = getCached(key);
   if (cached) return res.json(cached);
   try {
+    const ptFilter = paymentType ? `WHERE payment_type = $3` : '';
+    const ptParams = paymentType ? [limit, offset, paymentType] : [limit, offset];
     const [data, count] = await Promise.all([
       pool.query(`
-        SELECT receipt_id AS "ID", rent_id AS "Rent ID",
-               tenant_name AS "TenantName", unit_number AS "UnitNumber",
+        SELECT id AS "ID", rent_id AS "Rent ID",
+               tenant_name AS "Tenant", unit_number AS "Unit",
                amount AS "Amount", month AS "Month", year AS "Year",
+               payment_type AS "Type",
                payment_method AS "PaymentMethod",
                TO_CHAR(created_at,'YYYY-MM-DD HH24:MI') AS "Date", created_by AS "Added By"
-        FROM receipts ORDER BY id DESC LIMIT $1 OFFSET $2`, [limit, offset]),
-      pool.query('SELECT COUNT(*) FROM receipts')
+        FROM receipts ${ptFilter} ORDER BY id DESC LIMIT $1 OFFSET $2`, ptParams),
+      pool.query(`SELECT COUNT(*) FROM receipts ${ptFilter}`,
+        paymentType ? [paymentType] : [])
     ]);
     const result = pageResp(data.rows, count.rows[0].count, page, limit);
     setCache(key, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
+
 
 exports.create = async (req, res) => {
   const err = validate([['tenantName','Tenant name'],['amount','Amount']], req.body);

@@ -528,6 +528,36 @@ tr:hover td { background: var(--surface-soft); }
 .badge.credit { background: #E0F2FE; color: #0369A1; }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   TAB BARS (invoices / expenses / rent collection)
+   ───────────────────────────────────────────────────────────────────────────── */
+.inv-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 6px;
+  background: var(--bg-secondary);
+  border-radius: 14px;
+  width: fit-content;
+  flex-wrap: wrap;
+}
+.inv-tab {
+  padding: 9px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+  cursor: pointer;
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+.inv-tab:hover { background: rgba(33,147,119,.1); color: var(--primary); }
+.inv-tab.active { background: var(--primary); color: #fff; box-shadow: 0 4px 14px rgba(33,147,119,.35); }
+
+
+
+/* ─────────────────────────────────────────────────────────────────────────────
    9. ACTION BUTTONS
    ───────────────────────────────────────────────────────────────────────────── */
 

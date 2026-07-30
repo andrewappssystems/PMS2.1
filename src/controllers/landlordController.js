@@ -12,7 +12,9 @@ exports.list = async (req, res) => {
     const { rows } = await pool.query(`
       SELECT landlord_id AS "ID", name AS "Name", phone AS "Phone", email AS "Email",
              address AS "Address", bank_name AS "Bank Name", bank_account AS "Bank Account",
-             commission_rate AS "Commission Rate", status AS "Status",
+             commission_rate AS "Commission Rate",
+             COALESCE(management_flat_fee,0) AS "Flat Fee",
+             status AS "Status",
              TO_CHAR(created_at,'YYYY-MM-DD') AS "Date Added", created_by AS "Added By"
       FROM landlords ORDER BY id DESC`);
     setCache('landlords', rows);
@@ -24,12 +26,13 @@ exports.create = async (req, res) => {
   const err = validate([['name','Name']], req.body);
   if (err) return res.status(400).json({ error: err });
   try {
-    const { name, phone='', email='', address='', bankName='', bankAccount='', commissionRate='10' } = req.body;
+    const { name, phone='', email='', address='', bankName='', bankAccount='', commissionRate='10', managementFlatFee='0' } = req.body;
     const id = await getNextId('landlords', 'landlord_id', 'LLD');
     await pool.query(
-      `INSERT INTO landlords (landlord_id,name,phone,email,address,bank_name,bank_account,commission_rate,status,created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Active',$9)`,
-      [id, name.trim(), phone.trim(), email.trim(), address.trim(), bankName.trim(), bankAccount.trim(), parseFloat(commissionRate)||10, actor(req)]
+      `INSERT INTO landlords (landlord_id,name,phone,email,address,bank_name,bank_account,commission_rate,management_flat_fee,status,created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'Active',$10)`,
+      [id, name.trim(), phone.trim(), email.trim(), address.trim(), bankName.trim(), bankAccount.trim(),
+       parseFloat(commissionRate)||10, parseFloat(managementFlatFee)||0, actor(req)]
     );
     clearCache('landlords','stats');
     res.json({ success:true, id });
@@ -40,10 +43,11 @@ exports.update = async (req, res) => {
   const err = validate([['name','Name']], req.body);
   if (err) return res.status(400).json({ error: err });
   try {
-    const { name, phone='', email='', address='', bankName='', bankAccount='', commissionRate='10', status='Active' } = req.body;
+    const { name, phone='', email='', address='', bankName='', bankAccount='', commissionRate='10', managementFlatFee='0', status='Active' } = req.body;
     const { rowCount } = await pool.query(
-      `UPDATE landlords SET name=$1,phone=$2,email=$3,address=$4,bank_name=$5,bank_account=$6,commission_rate=$7,status=$8 WHERE landlord_id=$9`,
-      [name.trim(), phone.trim(), email.trim(), address.trim(), bankName.trim(), bankAccount.trim(), parseFloat(commissionRate)||10, status, req.params.id]
+      `UPDATE landlords SET name=$1,phone=$2,email=$3,address=$4,bank_name=$5,bank_account=$6,commission_rate=$7,management_flat_fee=$8,status=$9 WHERE landlord_id=$10`,
+      [name.trim(), phone.trim(), email.trim(), address.trim(), bankName.trim(), bankAccount.trim(),
+       parseFloat(commissionRate)||10, parseFloat(managementFlatFee)||0, status, req.params.id]
     );
     if (!rowCount) return res.status(404).json({ error: 'Landlord not found' });
     clearCache('landlords','stats');

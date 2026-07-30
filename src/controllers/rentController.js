@@ -21,13 +21,15 @@ exports.list = async (req, res) => {
         SELECT r.rent_id AS "ID", r.tenant_id AS "Tenant ID", t.name AS "Tenant Name",
                r.unit_id AS "Unit ID", u.unit_number AS "Unit Number",
                r.amount AS "Amount", r.month AS "Month", r.year AS "Year",
-               r.payment_method AS "Payment Method", r.reference AS "Reference",
-               TO_CHAR(r.created_at,'YYYY-MM-DD HH24:MI') AS "Date", r.created_by AS "Added By"
+               r.payment_method AS "Payment Method", r.payment_type AS "Type",
+               r.reference AS "Reference",
+               TO_CHAR(r.collected_at,'YYYY-MM-DD HH24:MI') AS "Date", r.created_by AS "Added By"
         FROM rent_collection r
         LEFT JOIN tenants t ON t.tenant_id=r.tenant_id
         LEFT JOIN units   u ON u.unit_id=r.unit_id
+        WHERE r.payment_type != 'Charge'
         ORDER BY r.id DESC LIMIT $1 OFFSET $2`, [limit, offset]),
-      pool.query('SELECT COUNT(*) FROM rent_collection')
+      pool.query(`SELECT COUNT(*) FROM rent_collection WHERE payment_type != 'Charge'`)
     ]);
     const result = pageResp(data.rows, count.rows[0].count, page, limit);
     setCache(key, result);

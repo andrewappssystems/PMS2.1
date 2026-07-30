@@ -439,6 +439,7 @@ function renderTenants(){
     <td>${fmtUGX(tn.rent(t))}</td><td>${tn.end(t)||'—'}</td>
     <td><span class="badge ${isActive(t)?'success':'danger'}">${tn.status(t)}</span></td>
     <td class="actions">
+      <button class="btn-view" onclick="viewTenantProfile('${tn.id(t)}')">View</button>
       <button class="btn-edit" onclick="editTenant('${tn.id(t)}')">Edit</button>
       <button class="btn-delete" onclick="confirmDelete('tenant','${tn.id(t)}','${tn.name(t)}')">Delete</button>
     </td></tr>`).join('');
@@ -555,6 +556,74 @@ function renderMcTenants() {
       </div>
     </div>`).join('');
 }
+
+function renderInvData(rows) {
+  const mgmt   = rows.filter(i => (inv.type(i)||'').toLowerCase() === 'landlord');
+  const tenant = rows.filter(i => (inv.type(i)||'').toLowerCase() === 'tenant');
+  const custom = rows.filter(i => (inv.type(i)||'').toLowerCase() === 'custom');
+
+  // Management fee invoices (landlord type)
+  const tb = document.getElementById('tInvoices');
+  if (tb) {
+    if (!mgmt.length) {
+      tb.innerHTML = empty(8,'file-text','No management fee invoices yet');
+    } else {
+      tb.innerHTML = mgmt.map(i => `<tr>
+        <td>${inv.id(i)}</td><td>${inv.type(i)}</td>
+        <td>${inv.ename(i)}</td><td>${inv.desc(i)}</td>
+        <td>${fmtUGX(inv.amt(i))}</td>
+        <td>${inv.month(i)} ${inv.year(i)}</td>
+        <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
+        <td class="actions">
+          <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+          ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
+        </td></tr>`).join('');
+    }
+  }
+
+  // Tenant invoices
+  renderTenantInvData(tenant);
+
+  // Custom service invoices
+  renderCustomInvData(custom);
+
+  if (typeof renderMcInvoices === 'function') renderMcInvoices(mgmt);
+}
+
+function renderTenantInvData(rows) {
+  const tb = document.getElementById('tTenantInvoices');
+  if (!tb) return;
+  if (!rows.length) { tb.innerHTML = empty(7,'file-text','No tenant invoices yet'); return; }
+  tb.innerHTML = rows.map(i => `<tr>
+    <td>${inv.id(i)}</td>
+    <td><strong>${inv.ename(i)||'\u2014'}</strong></td>
+    <td>${inv.desc(i)}</td>
+    <td>${fmtUGX(inv.amt(i))}</td>
+    <td>${inv.month(i)} ${inv.year(i)}</td>
+    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
+    <td class="actions">
+      <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
+    </td></tr>`).join('');
+}
+
+function renderCustomInvData(rows) {
+  const tb = document.getElementById('tCustomInvoices');
+  if (!tb) return;
+  if (!rows.length) { tb.innerHTML = empty(7,'file-text','No custom invoices yet \u2014 click \'+ Custom Invoice\''); return; }
+  tb.innerHTML = rows.map(i => `<tr>
+    <td>${inv.id(i)}</td>
+    <td><strong>${inv.ename(i)||'\u2014'}</strong></td>
+    <td>${inv.desc(i)}</td>
+    <td>${fmtUGX(inv.amt(i))}</td>
+    <td>${inv.month(i)} ${inv.year(i)}</td>
+    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
+    <td class="actions">
+      <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
+      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
+    </td></tr>`).join('');
+}
+
 function renderRent() {
   const tb = document.getElementById('tRent');
   if (!rentData.length) { tb.innerHTML = empty(9,'wallet','No payments recorded'); return; }
@@ -584,55 +653,6 @@ function renderExpData(rows) {
       <button class="btn-edit" onclick="editExpense('${ex.id(e)}')">Edit</button>
     </td></tr>`).join('');
   if (typeof renderMcExpenses === 'function') renderMcExpenses(rows);
-}
-
-function renderInvData(rows) {
-  // Split: standard management invoices vs custom service invoices
-  const standard = rows.filter(i => (inv.type(i)||'').toLowerCase() !== 'custom');
-  const custom   = rows.filter(i => (inv.type(i)||'').toLowerCase() === 'custom');
-
-  // ── Standard management invoices ──────────────────────────────────────────
-  const tb = document.getElementById('tInvoices');
-  if (!tb) return;
-  if (!standard.length) {
-    tb.innerHTML = empty(8,'file-text','No management invoices yet');
-  } else {
-    tb.innerHTML = standard.map(i => `<tr>
-      <td>${inv.id(i)}</td><td>${inv.type(i)}</td>
-      <td>${inv.ename(i)}</td><td>${inv.desc(i)}</td>
-      <td>${fmtUGX(inv.amt(i))}</td>
-      <td>${inv.month(i)} ${inv.year(i)}</td>
-      <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
-      <td class="actions">
-        <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
-        ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
-      </td></tr>`).join('');
-  }
-
-  // ── Custom service invoices ────────────────────────────────────────────────
-  renderCustomInvData(custom);
-
-  if (typeof renderMcInvoices === 'function') renderMcInvoices(standard);
-}
-
-function renderCustomInvData(rows) {
-  const tb = document.getElementById('tCustomInvoices');
-  if (!tb) return;
-  if (!rows.length) {
-    tb.innerHTML = empty(7,'file-text','No custom invoices yet — click \'+ Custom Invoice\'');
-    return;
-  }
-  tb.innerHTML = rows.map(i => `<tr>
-    <td>${inv.id(i)}</td>
-    <td><strong>${inv.ename(i)||'—'}</strong></td>
-    <td>${inv.desc(i)}</td>
-    <td>${fmtUGX(inv.amt(i))}</td>
-    <td>${inv.month(i)} ${inv.year(i)}</td>
-    <td><span class="badge ${inv.status(i).toLowerCase()==='paid'?'success':'danger'}">${inv.status(i)}</span></td>
-    <td class="actions">
-      <button class="btn-view" onclick="window.open('/api/invoices/${inv.id(i)}/pdf','_blank')">View</button>
-      ${inv.status(i)!=='Paid'?`<button class="btn-edit" onclick="payInvoice('${inv.id(i)}')">Pay</button>`:''}
-    </td></tr>`).join('');
 }
 
 
@@ -839,7 +859,20 @@ function openModal(type,e,prefillTenantId=null){
       <div class="form-group full"><label>Address</label><input id="f_address"></div>
       <div class="form-group"><label>Bank Name</label><input id="f_bank"></div>
       <div class="form-group"><label>Bank Account No.</label><input id="f_account"></div>
-      <div class="form-group"><label>Commission %</label><input id="f_commission" type="number" value="10" min="0" max="100"></div>
+      <div class="form-group full" style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+        <label style="font-size:12px;color:var(--primary);font-weight:700">MANAGEMENT FEES</label>
+        <div style="font-size:11px;color:var(--text-light);margin-top:4px">Enter <strong>either</strong> a percentage of rent collected <strong>or</strong> a flat amount — not both. Entering one locks the other.</div>
+      </div>
+      <div class="form-group">
+        <label>Management Fees Percentage (%)</label>
+        <input id="f_commission" type="number" value="10" min="0" max="100" placeholder="e.g. 10"
+          oninput="mgmtFeeToggle('f_commission','f_mgmt_flat')">
+      </div>
+      <div class="form-group">
+        <label>Management Fees Flat Amount (UGX)</label>
+        <input id="f_mgmt_flat" type="number" min="0" placeholder="Leave blank to use percentage"
+          oninput="mgmtFeeToggle('f_mgmt_flat','f_commission')">
+      </div>
     </div>`; },
 
     property:()=>{ title.textContent='Add Property'; return `<div class="form-grid">
@@ -922,13 +955,25 @@ function openModal(type,e,prefillTenantId=null){
       </div>
     </div>`; },
 
-    expense:()=>{ title.textContent='Add Expense'; return `<div class="form-grid">
+    expense:()=>{ title.textContent='Add Property Expense'; return `<div class="form-grid">
       <div class="form-group full"><label>Property (optional)</label><select id="f_property"><option value="">— General / Not property-specific —</option>${propOpts}</select></div>
       <div class="form-group"><label>Category *</label><select id="f_category">${catOpts}</select></div>
       <div class="form-group full"><label>Description *</label><input id="f_desc" required placeholder="What was this expense for?"></div>
       <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
       <div class="form-group"><label>Date</label><input id="f_date" type="date" value="${tod}"></div>
     </div>`; },
+
+    expense_portfolio:()=>{ title.textContent='Add Portfolio Expense'; return `<div class="form-grid">
+      <div class="form-group full" style="background:rgba(33,147,119,.06);padding:12px;border-radius:10px;border-left:4px solid var(--primary)">
+        <label style="font-size:12px;color:var(--primary);font-weight:700">PORTFOLIO EXPENSE</label>
+        <div style="font-size:11px;color:var(--text-light);margin-top:3px">This expense is not linked to a specific property — it covers the whole portfolio (e.g. office costs, software, marketing).</div>
+      </div>
+      <div class="form-group"><label>Category *</label><select id="f_category">${catOpts}</select></div>
+      <div class="form-group full"><label>Description *</label><input id="f_desc" required placeholder="What was this expense for?"></div>
+      <div class="form-group"><label>Amount (UGX) *</label><input id="f_amount" type="number" required placeholder="0"></div>
+      <div class="form-group"><label>Date</label><input id="f_date" type="date" value="${tod}"></div>
+    </div>`; },
+
 
     invoice:()=>{ title.textContent='Create Invoice'; return `<div class="form-grid">
       <div class="form-group full"><label>Invoice Type *</label><select id="f_invType" onchange="updateInvoiceEntity()"><option value="">— Select type —</option><option value="landlord">Landlord Management Fee</option><option value="tenant">Tenant Rent Invoice</option></select></div>
@@ -1019,6 +1064,17 @@ function autoFillRent(){
   const opt=sel.selectedOptions[0];
   const ri=document.getElementById('f_rent'); if(ri&&!ri.value&&opt?.dataset?.rent) ri.value=opt.dataset.rent;
 }
+function mgmtFeeToggle(activeId, otherId) {
+  const active = document.getElementById(activeId);
+  const other  = document.getElementById(otherId);
+  if (!active || !other) return;
+  const hasValue = active.value !== '' && parseFloat(active.value) >= 0;
+  other.disabled = hasValue;
+  other.style.opacity = hasValue ? '0.35' : '1';
+  other.style.cursor  = hasValue ? 'not-allowed' : '';
+  if (hasValue) other.value = '';
+}
+
 function checkPartial(){
   const paid=parseFloat(document.getElementById('f_amount')?.value||0);
   const exp=parseFloat(document.getElementById('f_expected')?.value||0);
@@ -1066,8 +1122,9 @@ async function saveForm(){
         if(!gv('f_name')){showToast('Name required','error');break;}
         endpoint=editingId?`/api/landlords/${editingId}`:'/api/landlords';
         method=editingId?'PUT':'POST';
-        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission')};
+        payload={name:gv('f_name'),phone:gv('f_phone'),email:gv('f_email'),address:gv('f_address'),bankName:gv('f_bank'),bankAccount:gv('f_account'),commissionRate:gv('f_commission'),managementFlatFee:gv('f_mgmt_flat')||'0'};
         break;
+
       case 'property':
         if(!gv('f_name')){showToast('Property name required','error');break;}
         if(!gv('f_landlord')){showToast('Please select a landlord','error');break;}
@@ -1121,6 +1178,14 @@ async function saveForm(){
         method=editingId?'PUT':'POST';
         payload={propertyId:gv('f_property'),category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')};
         break;
+      case 'expense_portfolio':
+        if(!gv('f_desc')){showToast('Description required','error');break;}
+        if(!gv('f_amount')){showToast('Amount required','error');break;}
+        endpoint='/api/expenses';
+        method='POST';
+        payload={propertyId:'',category:gv('f_category'),description:gv('f_desc'),amount:gv('f_amount'),date:gv('f_date')};
+        break;
+
       case 'invoice':{
         if(!gv('f_invType')||!gv('f_entity')){showToast('Select type and entity','error');break;}
         if(!gv('f_amount')){showToast('Amount required','error');break;}
@@ -1652,3 +1717,178 @@ async function viewLandlordPortfolio(landlordId){
       </div>`;
   }catch(e){document.getElementById('modalBody').innerHTML=`<p style="color:var(--danger)">Error: ${e.message}</p>`;}
 }
+
+// ── Invoice tab switcher ───────────────────────────────────────────────────────
+function switchInvoiceTab(tab) {
+  ['mgmt','tenant','custom'].forEach(t => {
+    const pane = document.getElementById(`invPane-${t}`);
+    const btn  = document.getElementById(`itab-${t}`);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+    if (btn)  btn.classList.toggle('active', t === tab);
+  });
+}
+
+// ── Rent collection tab switcher ──────────────────────────────────────────────
+function switchRentTab(tab) {
+  ['payments','deposits'].forEach(t => {
+    const pane = document.getElementById(`rentPane-${t}`);
+    const btn  = document.getElementById(`rtab-${t}`);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+    if (btn)  btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'deposits') loadDeposits();
+}
+
+// ── Load + render security deposit receipts ───────────────────────────────────
+async function loadDeposits() {
+  const tb = document.getElementById('tDeposits');
+  if (!tb) return;
+  try {
+    const data = await cfetch('/api/receipts?paymentType=Security+Deposit&limit=200', null);
+    const rows = data.rows || data.data || data || [];
+    if (!rows.length) { tb.innerHTML = empty(7,'shield','No security deposits recorded'); return; }
+    tb.innerHTML = rows.map(r => `<tr>
+      <td>${r['ID']||r.id}</td>
+      <td><strong>${r['Tenant']||r.tenant_name||'\u2014'}</strong></td>
+      <td>${r['Unit']||r.unit_number||'\u2014'}</td>
+      <td>${fmtUGX(r['Amount']||r.amount)}</td>
+      <td>${(r['Month']||r.month)} / ${(r['Year']||r.year)}</td>
+      <td>${r['Date']||r.created_at||'\u2014'}</td>
+      <td class="actions">
+        <button class="btn-view" onclick="window.open('/api/receipts/${r['ID']||r.id}/pdf','_blank')">Receipt</button>
+      </td></tr>`).join('');
+  } catch(e) { tb.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:18px;color:var(--danger)">${e.message}</td></tr>`; }
+}
+
+// ── Expense tab switcher ──────────────────────────────────────────────────────
+function switchExpenseTab(tab) {
+  ['property','portfolio'].forEach(t => {
+    const pane = document.getElementById(`expPane-${t}`);
+    const btn  = document.getElementById(`etab-${t}`);
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+    if (btn)  btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'portfolio') loadPortfolioExpenses();
+}
+
+let portfolioExpState = { page: 1 };
+async function loadPortfolioExpenses(page = 1) {
+  portfolioExpState.page = page;
+  const tb = document.getElementById('tPortfolioExpenses');
+  if (!tb) return;
+  try {
+    const data = await cfetch(`/api/expenses?scope=portfolio&page=${page}`, null);
+    const rows = data.data || data.rows || data || [];
+    if (!rows.length) { tb.innerHTML = empty(6,'briefcase','No portfolio expenses yet'); return; }
+    tb.innerHTML = rows.map(r => `<tr>
+      <td>${r['ID']||r.expense_id}</td>
+      <td>${r['Category']||r.category||'\u2014'}</td>
+      <td>${r['Description']||r.description}</td>
+      <td>${fmtUGX(r['Amount']||r.amount)}</td>
+      <td>${r['Date']||r.expense_date||'\u2014'}</td>
+      <td class="actions">
+        <button class="btn-edit" onclick="editExpense('${r['ID']||r.expense_id}')">Edit</button>
+        <button class="btn-delete" onclick="deleteExpense('${r['ID']||r.expense_id}')">Delete</button>
+      </td></tr>`).join('');
+  } catch(e) { tb.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--danger)">${e.message}</td></tr>`; }
+}
+
+// ── Open expense modal (context-aware: property or portfolio) ─────────────────
+function openAddExpense() {
+  // Check active tab to decide if portfolio or property expense
+  const portfolioBtn = document.getElementById('etab-portfolio');
+  if (portfolioBtn && portfolioBtn.classList.contains('active')) {
+    // Open expense form without property field (portfolio expense)
+    openModal('expense_portfolio');
+  } else {
+    openModal('expense');
+  }
+}
+
+// ── Tenant Profile / View ─────────────────────────────────────────────────────
+async function viewTenantProfile(tenantId) {
+  const t = tenants.find(x => tn.id(x) === tenantId) || {};
+  document.getElementById('modalOverlay').classList.add('active');
+  document.getElementById('modalBox').className = 'modal wide';
+  document.getElementById('modalTitle').textContent = `Tenant Profile — ${tn.name(t) || tenantId}`;
+  document.getElementById('modalBody').innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-light)">Loading profile…</div>`;
+  document.getElementById('modalSave').style.display = 'none';
+
+  try {
+    // Fetch balance + recent rent history in parallel
+    const [balRes, rentRes] = await Promise.all([
+      fetch(`/api/tenants/${tenantId}/balance`, {credentials:'include'}).then(r=>r.json()),
+      fetch(`/api/rent?tenantId=${tenantId}&limit=5`, {credentials:'include'}).then(r=>r.json()).catch(()=>({}))
+    ]);
+
+    const balance = parseFloat(balRes.balance || 0);
+    const lastPayments = rentRes.data || rentRes.rows || [];
+    const lastPay = lastPayments[0];
+
+    // Determine status badge
+    const monthlyRent = parseFloat(tn.rent(t)) || 0;
+    let statusLabel = 'Current', statusColor = '#22c55e', statusBg = 'rgba(34,197,94,0.08)';
+    if (balance > 0) {
+      const months = monthlyRent > 0 ? balance / monthlyRent : 0;
+      if (months >= 3)      { statusLabel='Critical';  statusColor='#dc2626'; statusBg='rgba(239,68,68,0.1)'; }
+      else if (months >= 2) { statusLabel='Overdue';   statusColor='#ea580c'; statusBg='rgba(234,88,12,0.08)'; }
+      else if (months >= 1) { statusLabel='Watch';     statusColor='#ca8a04'; statusBg='rgba(234,179,8,0.08)'; }
+    } else if (balance < 0) {
+      statusLabel = 'Paid Ahead'; statusColor = '#0369a1'; statusBg = 'rgba(3,105,161,0.08)';
+    }
+
+    document.getElementById('modalBody').innerHTML = `
+      <!-- Status cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px">
+        <div style="background:rgba(33,147,119,0.08);border-radius:16px;padding:18px;border-left:5px solid #219377">
+          <div style="font-size:11px;color:#525252;font-weight:700;text-transform:uppercase;letter-spacing:.14em">Monthly Rent</div>
+          <div style="font-size:20px;font-weight:900;color:#010101">${fmtUGX(monthlyRent)}</div>
+        </div>
+        <div style="background:${statusBg};border-radius:16px;padding:18px;border-left:5px solid ${statusColor}">
+          <div style="font-size:11px;color:#525252;font-weight:700;text-transform:uppercase;letter-spacing:.14em">Payment Status</div>
+          <div style="font-size:18px;font-weight:900;color:${statusColor}">${statusLabel}</div>
+        </div>
+        <div style="background:${balance > 0?'rgba(239,68,68,0.08)':'rgba(34,197,94,0.08)'};border-radius:16px;padding:18px;border-left:5px solid ${balance>0?'#ef4444':'#22c55e'}">
+          <div style="font-size:11px;color:#525252;font-weight:700;text-transform:uppercase;letter-spacing:.14em">${balance>0?'Outstanding Balance':'Credit Balance'}</div>
+          <div style="font-size:18px;font-weight:900;color:${balance>0?'#dc2626':'#16a34a'}">${fmtUGX(Math.abs(balance))}</div>
+        </div>
+        <div style="background:rgba(255,189,89,0.1);border-radius:16px;padding:18px;border-left:5px solid #ffbd59">
+          <div style="font-size:11px;color:#525252;font-weight:700;text-transform:uppercase;letter-spacing:.14em">Security Deposit</div>
+          <div style="font-size:18px;font-weight:900;color:#b76e00">${fmtUGX(tn.dep ? tn.dep(t) : (t['Deposit']||0))}</div>
+        </div>
+      </div>
+
+      <!-- Tenant details table -->
+      <h3 style="font-size:13px;font-weight:900;color:#219377;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px">Tenant Details</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px">
+        ${[
+          ['Phone', tn.phone(t)||'\u2014'],
+          ['Email', t['Email']||'\u2014'],
+          ['National ID', t['ID Number']||'\u2014'],
+          ['Unit', tn.unum(t)||'\u2014'],
+          ['Lease Start', t['Lease Start']||'\u2014'],
+          ['Lease End', tn.end(t)||'\u2014'],
+          ['Status', `<span class="badge ${(t['Status']||'').toLowerCase()==='active'?'success':'danger'}">${t['Status']||'\u2014'}</span>`],
+          ['Last Payment', lastPay ? `${fmtUGX(lastPay['Amount']||lastPay.amount)} on ${lastPay['Date']||lastPay.collected_at||'\u2014'}` : 'No payments recorded']
+        ].map(([k,v])=>`<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 0;color:#666;width:40%;font-weight:600">${k}</td>
+          <td style="padding:10px 0">${v}</td>
+        </tr>`).join('')}
+      </table>
+
+      <!-- Actions -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+        <button onclick="openReportModal('tenant','${tenantId}')"
+          style="padding:11px 20px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer">
+          📄 Generate Full Statement
+        </button>
+        <button onclick="editTenant('${tenantId}');closeModal()"
+          style="padding:11px 20px;background:var(--bg-secondary);color:var(--text);border:1px solid var(--border);border-radius:14px;font-weight:600;font-size:13px;cursor:pointer">
+          ✏️ Edit Tenant
+        </button>
+      </div>`;
+  } catch(e) {
+    document.getElementById('modalBody').innerHTML = `<p style="color:var(--danger)">Error loading profile: ${e.message}</p>`;
+  }
+}
+

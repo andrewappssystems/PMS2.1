@@ -8,10 +8,16 @@ const { getPagination, pageResp } = require('../utils/pagination');
 
 exports.list = async (req, res) => {
   const { page, limit, offset } = getPagination(req.query);
-  const key = `expenses_p${page}_l${limit}`;
+  const { scope = '' } = req.query; // 'portfolio' = no property, '' = all property-linked
+  const key = `expenses_p${page}_l${limit}_s${scope}`;
   const cached = getCached(key);
   if (cached) return res.json(cached);
   try {
+    const scopeFilter = scope === 'portfolio'
+      ? 'WHERE e.property_id IS NULL'
+      : scope === 'property'
+        ? 'WHERE e.property_id IS NOT NULL'
+        : ''; // all
     const [data, count] = await Promise.all([
       pool.query(`
         SELECT e.expense_id AS "ID", e.property_id AS "Property ID", p.name AS "Property Name",
@@ -19,8 +25,9 @@ exports.list = async (req, res) => {
                TO_CHAR(e.expense_date,'YYYY-MM-DD') AS "Date",
                TO_CHAR(e.created_at,'YYYY-MM-DD') AS "Date Added", e.created_by AS "Added By"
         FROM expenses e LEFT JOIN properties p ON p.property_id=e.property_id
+        ${scopeFilter}
         ORDER BY e.id DESC LIMIT $1 OFFSET $2`, [limit, offset]),
-      pool.query('SELECT COUNT(*) FROM expenses')
+      pool.query(`SELECT COUNT(*) FROM expenses e ${scopeFilter}`)
     ]);
     const result = pageResp(data.rows, count.rows[0].count, page, limit);
     setCache(key, result);

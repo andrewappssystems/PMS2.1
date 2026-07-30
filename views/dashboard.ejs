@@ -156,12 +156,25 @@
       <div class="section" id="sec-rent">
         <div class="section-title">Rent Collection</div>
         <div class="quick-actions"><button onclick="openModal('rent')">+ Record Payment</button></div>
-        <div class="data-table">
+        <!-- Tab bar -->
+        <div class="inv-tabs" id="rentTabs">
+          <button class="inv-tab active" id="rtab-payments" onclick="switchRentTab('payments')">Payment History</button>
+          <button class="inv-tab" id="rtab-deposits" onclick="switchRentTab('deposits')">Security Deposits</button>
+        </div>
+        <!-- Payments table -->
+        <div class="data-table" id="rentPane-payments">
           <div class="table-header"><h3>Payment History</h3><input class="search" placeholder="Search..." oninput="filterTable('tRent',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Type</th><th>Method</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="tRent"><tr class="sk-row"><td colspan="9"><div style="width:60%"></div></td></tr></tbody></table>
           <div class="mobile-cards" id="mcRent"></div>
           <div class="pagination" id="pgRent" style="display:none"></div>
+        </div>
+        <!-- Security Deposits table -->
+        <div class="data-table" id="rentPane-deposits" style="display:none">
+          <div class="table-header"><h3>Security Deposits</h3><input class="search" placeholder="Search tenant..." oninput="filterTable('tDeposits',this.value)"></div>
+          <table><thead><tr><th>ID</th><th>Tenant</th><th>Unit</th><th>Amount (UGX)</th><th>Period</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="tDeposits"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcDeposits"></div>
         </div>
       </div>
 
@@ -179,13 +192,29 @@
       <!-- ══ EXPENSES ══ -->
       <div class="section" id="sec-expenses">
         <div class="section-title">Expenses</div>
-        <div class="quick-actions"><button onclick="openModal('expense')">+ Add Expense</button></div>
-        <div class="data-table">
-          <div class="table-header"><h3>All Expenses</h3><input class="search" placeholder="Search..." oninput="filterTable('tExpenses',this.value)"></div>
+        <div class="quick-actions">
+          <button id="btnAddExpense" onclick="openAddExpense()">+ Add Expense</button>
+        </div>
+        <!-- Tab bar -->
+        <div class="inv-tabs" id="expTabs">
+          <button class="inv-tab active" id="etab-property" onclick="switchExpenseTab('property')">Property Expenses</button>
+          <button class="inv-tab" id="etab-portfolio" onclick="switchExpenseTab('portfolio')">Portfolio Expenses</button>
+        </div>
+        <!-- Property expenses -->
+        <div class="data-table" id="expPane-property">
+          <div class="table-header"><h3>Property Expenses</h3><input class="search" placeholder="Search..." oninput="filterTable('tExpenses',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Property</th><th>Category</th><th>Description</th><th>Amount (UGX)</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="tExpenses"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
           <div class="mobile-cards" id="mcExpenses"></div>
           <div class="pagination" id="pgExpenses" style="display:none"></div>
+        </div>
+        <!-- Portfolio expenses -->
+        <div class="data-table" id="expPane-portfolio" style="display:none">
+          <div class="table-header"><h3>Portfolio Expenses</h3><input class="search" placeholder="Search..." oninput="filterTable('tPortfolioExpenses',this.value)"></div>
+          <table><thead><tr><th>ID</th><th>Category</th><th>Description</th><th>Amount (UGX)</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="tPortfolioExpenses"><tr class="sk-row"><td colspan="6"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcPortfolioExpenses"></div>
+          <div class="pagination" id="pgPortfolioExpenses" style="display:none"></div>
         </div>
       </div>
 
@@ -198,24 +227,33 @@
           <button class="secondary" onclick="openModal('custom_invoice')">+ Custom Invoice</button>
         </div>
 
-        <!-- Standard Invoices (landlord / tenant management fees) -->
-        <div class="data-table">
-          <div class="table-header">
-            <h3>Management Invoices</h3>
-            <input class="search" placeholder="Search..." oninput="filterTable('tInvoices',this.value)">
-          </div>
+        <!-- Invoice tab bar -->
+        <div class="inv-tabs" id="invTabs">
+          <button class="inv-tab active" id="itab-mgmt" onclick="switchInvoiceTab('mgmt')">Management Fee Invoices</button>
+          <button class="inv-tab" id="itab-tenant" onclick="switchInvoiceTab('tenant')">Tenant Invoices</button>
+          <button class="inv-tab" id="itab-custom" onclick="switchInvoiceTab('custom')">Custom Service Invoices</button>
+        </div>
+
+        <!-- Management fee invoices (landlord type) -->
+        <div class="data-table" id="invPane-mgmt">
+          <div class="table-header"><h3>Management Fee Invoices</h3><input class="search" placeholder="Search..." oninput="filterTable('tInvoices',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Type</th><th>Entity</th><th>Description</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tInvoices"><tr class="sk-row"><td colspan="8"><div style="width:60%"></div></td></tr></tbody></table>
           <div class="mobile-cards" id="mcInvoices"></div>
           <div class="pagination" id="pgInvoices" style="display:none"></div>
         </div>
 
-        <!-- Custom / Service Invoices (free-form — any client) -->
-        <div class="data-table" style="margin-top:24px">
-          <div class="table-header">
-            <h3>Custom Service Invoices</h3>
-            <input class="search" placeholder="Search client / service..." oninput="filterTable('tCustomInvoices',this.value)">
-          </div>
+        <!-- Tenant rent invoices -->
+        <div class="data-table" id="invPane-tenant" style="display:none">
+          <div class="table-header"><h3>Tenant Invoices</h3><input class="search" placeholder="Search tenant..." oninput="filterTable('tTenantInvoices',this.value)"></div>
+          <table><thead><tr><th>ID</th><th>Tenant</th><th>Description</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="tTenantInvoices"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
+          <div class="mobile-cards" id="mcTenantInvoices"></div>
+        </div>
+
+        <!-- Custom service invoices -->
+        <div class="data-table" id="invPane-custom" style="display:none">
+          <div class="table-header"><h3>Custom Service Invoices</h3><input class="search" placeholder="Search client / service..." oninput="filterTable('tCustomInvoices',this.value)"></div>
           <table><thead><tr><th>ID</th><th>Client</th><th>Service</th><th>Amount (UGX)</th><th>Period</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="tCustomInvoices"><tr class="sk-row"><td colspan="7"><div style="width:60%"></div></td></tr></tbody></table>
           <div class="mobile-cards" id="mcCustomInvoices"></div>
