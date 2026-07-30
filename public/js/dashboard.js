@@ -62,10 +62,11 @@ const ll={id:l=>l.ID||'',name:l=>l.Name||'',phone:l=>l.Phone||'',email:l=>l.Emai
 const pr={id:p=>p.ID||'',name:p=>p.Name||'',llid:p=>p['Landlord ID']||'',llname:p=>p['Landlord Name']||'',addr:p=>p.Address||'',type:p=>p.Type||'Residential',units:p=>p['Total Units']||'0',status:p=>p.Status||'Active'};
 const un={id:u=>u.ID||'',prop:u=>u['Property ID']||'',pname:u=>u['Property Name']||'',num:u=>u['Unit Number']||'',type:u=>u.Type||'Studio',rent:u=>u.Rent||'0',desc:u=>u.Description||'',status:u=>u.Status||'Vacant'};
 const tn={id:t=>t.ID||'',name:t=>t.Name||'',phone:t=>t.Phone||'',email:t=>t.Email||'',idno:t=>t['ID Number']||'',unit:t=>t['Unit ID']||'',unum:t=>t['Unit Number']||'',start:t=>t['Lease Start']||'',end:t=>t['Lease End']||'',rent:t=>t['Rent Amount']||'0',deposit:t=>t.Deposit||'0',status:t=>t.Status||'Active'};
-const rn={id:r=>r.ID||'',tenant:r=>r['Tenant ID']||'',tname:r=>r['Tenant Name']||'',unit:r=>r['Unit ID']||'',unum:r=>r['Unit Number']||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r['Payment Method']||'Cash',ptype:r=>r['payment_type']||r.PaymentType||'Full',date:r=>r.Date||''};
+const rn={id:r=>r.ID||'',tenant:r=>r['Tenant ID']||'',tname:r=>r['Tenant Name']||'',unit:r=>r['Unit ID']||'',unum:r=>r['Unit Number']||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r['Payment Method']||'Cash',ptype:r=>r.Type||r['payment_type']||r.PaymentType||'Full',date:r=>r.Date||''};
 const ex={id:e=>e.ID||'',prop:e=>e['Property ID']||'',pname:e=>e['Property Name']||'',cat:e=>e.Category||'',desc:e=>e.Description||'',amt:e=>e.Amount||'0',date:e=>e.Date||''};
 const inv={id:i=>i.ID||'',type:i=>i.Type||'',eid:i=>i.EntityId||'',ename:i=>i.EntityName||'',desc:i=>i.Description||'',amt:i=>i.Amount||'0',month:i=>i.Month||'',year:i=>i.Year||'',status:i=>i.Status||'Unpaid'};
-const rc={id:r=>r.ID||'',tenant:r=>r.TenantName||'',unit:r=>r.UnitNumber||'',amt:r=>r.Amount||'0',month:r=>r.Month||'',year:r=>r.Year||'',method:r=>r.PaymentMethod||'Cash',ptype:r=>r.payment_type||r.PaymentType||'Full',date:r=>r.Date||''};
+const rc={id:r=>r.ID||r.id||'',tenant:r=>r.Tenant||r.TenantName||r.tenant_name||'',unit:r=>r.Unit||r.UnitNumber||r.unit_number||'',amt:r=>r.Amount||r.amount||'0',month:r=>r.Month||r.month||'',year:r=>r.Year||r.year||'',method:r=>r.PaymentMethod||r.payment_method||'Cash',ptype:r=>r.Type||r.PaymentType||r.payment_type||'Full',date:r=>r.Date||r.created_at||''};
+
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',()=>{
@@ -778,7 +779,13 @@ async function loadArchive(){
     if(from)     params.set('from', from);
     if(to)       params.set('to', to);
     const rows = await fetch(`/api/archive?${params}`,{credentials:'include'}).then(r=>r.json());
+    if(!Array.isArray(rows)){
+      const msg = rows?.error || 'Server returned an unexpected response';
+      tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--danger)">⚠️ ${msg}</td></tr>`;
+      return;
+    }
     if(!rows.length){tb.innerHTML=empty(8,'scroll','No audit logs found');return;}
+
     window.auditLogs = rows;
     tb.innerHTML=rows.map((r,i)=>{
       const sev = (r.severity||'INFO').toLowerCase();
@@ -836,6 +843,10 @@ function openModal(type,e,prefillTenantId=null){
   document.getElementById('modalBox').className=(['bulk_unit','bulk_invoice'].includes(type)?'modal wide':'modal');
   const body=document.getElementById('modalBody');
   const title=document.getElementById('modalTitle');
+  // Always restore save button — profile view hides it, entry forms need it
+  const saveBtn=document.getElementById('modalSave');
+  if(saveBtn){ saveBtn.style.display=''; saveBtn.textContent='Save'; }
+
 
   const llOpts=landlords.filter(isActive).map(l=>`<option value="${ll.id(l)}">${ll.name(l)}</option>`).join('');
   const propOpts=properties.filter(isActive).map(p=>`<option value="${pr.id(p)}">${pr.name(p)}</option>`).join('');
@@ -1879,16 +1890,19 @@ async function viewTenantProfile(tenantId) {
       <!-- Actions -->
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
         <button onclick="openReportModal('tenant','${tenantId}')"
-          style="padding:11px 20px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer">
-          📄 Generate Full Statement
+          style="padding:11px 20px;background:var(--primary);color:#fff;border:none;border-radius:14px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px">
+          <i data-lucide="file-text" style="width:15px;height:15px"></i> Generate Full Statement
         </button>
         <button onclick="editTenant('${tenantId}');closeModal()"
-          style="padding:11px 20px;background:var(--bg-secondary);color:var(--text);border:1px solid var(--border);border-radius:14px;font-weight:600;font-size:13px;cursor:pointer">
-          ✏️ Edit Tenant
+          style="padding:11px 20px;background:var(--bg-secondary);color:var(--text);border:1px solid var(--border);border-radius:14px;font-weight:600;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:7px">
+          <i data-lucide="pencil-line" style="width:15px;height:15px"></i> Edit Tenant
         </button>
       </div>`;
+    if(typeof lucide!=='undefined') lucide.createIcons();
   } catch(e) {
     document.getElementById('modalBody').innerHTML = `<p style="color:var(--danger)">Error loading profile: ${e.message}</p>`;
   }
 }
+
+
 

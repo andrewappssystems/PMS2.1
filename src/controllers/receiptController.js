@@ -14,8 +14,12 @@ exports.list = async (req, res) => {
   const cached = getCached(key);
   if (cached) return res.json(cached);
   try {
-    const ptFilter = paymentType ? `WHERE payment_type = $3` : '';
-    const ptParams = paymentType ? [limit, offset, paymentType] : [limit, offset];
+    // Data query: LIMIT=$1, OFFSET=$2, paymentType=$3
+    const ptFilter      = paymentType ? `WHERE payment_type = $3` : '';
+    const ptParams      = paymentType ? [limit, offset, paymentType] : [limit, offset];
+    // Count query: no LIMIT/OFFSET — paymentType is $1
+    const ptCountFilter = paymentType ? `WHERE payment_type = $1` : '';
+    const ptCountParams = paymentType ? [paymentType] : [];
     const [data, count] = await Promise.all([
       pool.query(`
         SELECT id AS "ID", rent_id AS "Rent ID",
@@ -25,14 +29,14 @@ exports.list = async (req, res) => {
                payment_method AS "PaymentMethod",
                TO_CHAR(created_at,'YYYY-MM-DD HH24:MI') AS "Date", created_by AS "Added By"
         FROM receipts ${ptFilter} ORDER BY id DESC LIMIT $1 OFFSET $2`, ptParams),
-      pool.query(`SELECT COUNT(*) FROM receipts ${ptFilter}`,
-        paymentType ? [paymentType] : [])
+      pool.query(`SELECT COUNT(*) FROM receipts ${ptCountFilter}`, ptCountParams)
     ]);
     const result = pageResp(data.rows, count.rows[0].count, page, limit);
     setCache(key, result);
     res.json(result);
   } catch (e) { res.status(500).json({ error: e.message }); }
 };
+
 
 
 exports.create = async (req, res) => {
