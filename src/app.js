@@ -9,6 +9,10 @@ const requestLogger = require('./middleware/requestLogger');
 const { notFoundHandler, globalErrorHandler } = require('./middleware/errorHandler');
 const mountRoutes = require('./routes');
 const pool       = require('../database/pool');
+const runMigrations = require('./utils/migrate');
+
+// Run DB migrations automatically on startup (idempotent — safe every boot)
+runMigrations().catch(e => console.error('[migrate] Fatal:', e.message));
 
 const app = express();
 
@@ -40,3 +44,4 @@ app.use(notFoundHandler);
 app.use(globalErrorHandler);
 
 module.exports = app;
+
