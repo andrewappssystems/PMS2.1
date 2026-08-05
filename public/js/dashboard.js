@@ -803,7 +803,7 @@ async function loadArchive(){
         <td class="actions"><button class="btn-edit" onclick="event.stopPropagation();viewAuditDetails(${i})">Details</button></td>
       </tr>`;
     }).join('');
-    renderMcArchive(rows);
+    if (typeof renderMcArchive === 'function') renderMcArchive(rows);
   }catch(e){tb.innerHTML=empty(8,'x-circle','Failed to load audit logs');}
   if(typeof lucide!=='undefined') lucide.createIcons();
 }
